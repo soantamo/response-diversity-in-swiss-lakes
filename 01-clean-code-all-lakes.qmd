@@ -20,22 +20,75 @@ library(here)
 library(readr)
 
 # function includes lakeColors
-source(here("function-Ross-et-al.r"))
+source(here("color-and-functions.R"))
 
 # load final dataset
 df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final.rds")
 ```
 
 ```{r}
+
+# include again, if temp_gradient problem is solved
+# # exclude electro data from this df
+# nets_df_final <- df_final |>
+#   filter(!Protocol == "electro") 
+# 
+# # change that presence and abundance are in one column with one column for value
+# nets_df_final <- nets_df_final |> 
+#   pivot_longer(
+#     cols = c("Abundance", "Presence"), 
+#     names_to = "Parameter", 
+#     values_to = "value"
+#   )
+```
+
+## 2. Calculating Response Diversity for all lakes
+
+First trying it with nested data. Otherwise, doing a for loop or a function
+
+```{r}
+# this does not work, is there temperature data missing? checking in df_final
+min(df_final$mean_last_7days, na.rm = TRUE)
+
+# how many NAs do we have? 339 rows with missing values
+sum(is.na(df_final$mean_last_7days))
+
+# drop all rows with NAs based on the mean_last_7days column
+library(tidyr)
+df_final <- df_final |> 
+  drop_na(mean_last_7days)
+
 # exclude electro data from this df
 nets_df_final <- df_final |>
-  filter(!Protocol == "electro") 
+  filter(!Protocol == "electro")
 
-# change that presence and abundance are in one column
+# change that presence and abundance are in one column with one column for value
 nets_df_final <- nets_df_final |> 
   pivot_longer(
     cols = c("Abundance", "Presence"), 
     names_to = "Parameter", 
     values_to = "value"
   )
+
+# new nesting 
+nstd_final_presence <- nets_df_final |>
+  filter(Parameter == "Presence") |> 
+  group_by(Lake) |>
+  nest()
+
+# make temperature gradient for the gam predictions, taking out NAs did not solve 
+# the infinity problem, should I include them again?
+# semi nice solution here
+
+temp_gradient <- data.frame(mean_last_7days = seq(from = min(nets_df_final$mean_last_7days, na.rm = TRUE), to = max(nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
+
+
+# try doing the models for every lake, presence/absence only
+nstd_final_presence_models <- nstd_final_presence |>
+  mutate(model_gam = map(data, ~ gam(data = ., value ~ s(mean_last_7days, k = 3), family = binomial))) |> 
+  mutate(model_prediction = map(model_gam, ~ predict.gam(., temp_gradient, type = "response", se.fit = TRUE)$fit)) |> 
+  mutate(derivatives = map(model_gam, ~ derivatives(.)))
+
+
 ```
+
