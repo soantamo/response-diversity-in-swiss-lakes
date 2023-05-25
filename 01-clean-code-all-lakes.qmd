@@ -54,9 +54,9 @@ min(df_final$mean_last_7days, na.rm = TRUE)
 sum(is.na(df_final$mean_last_7days))
 
 # drop all rows with NAs based on the mean_last_7days column
-library(tidyr)
-df_final <- df_final |> 
-  drop_na(mean_last_7days)
+# library(tidyr)
+# df_final <- df_final |> 
+#   drop_na(mean_last_7days)
 
 # exclude electro data from this df
 nets_df_final <- df_final |>
@@ -88,6 +88,20 @@ nstd_final_presence_models <- nstd_final_presence |>
   mutate(model_gam = map(data, ~ gam(data = ., value ~ s(mean_last_7days, k = 3), family = binomial))) |> 
   mutate(model_prediction = map(model_gam, ~ predict.gam(., temp_gradient, type = "response", se.fit = TRUE)$fit)) |> 
   mutate(derivatives = map(model_gam, ~ derivatives(.)))
+
+# calculalting response diversity based on the derivatives
+final_presence_rdiv <- nstd_final_presence_models |>
+  select(-model_gam, -model_prediction) |> # we don't need this columns
+  unnest(data)
+
+
+# too much for R... probably
+final_presence_rdiv <- final_presence_rdiv |>
+  unnest(derivatives)
+# 
+#   select(Species, data, derivative) |> # we need Species, temp and derivative
+#   pivot_wider(names_from = Species, values_from = derivative) |>   # wide frame
+#   select(1:17) #number of all rows
 
 
 ```
