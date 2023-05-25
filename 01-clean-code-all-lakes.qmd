@@ -1,0 +1,41 @@
+---
+title: "Clean code for all lakes"
+format: html
+editor: visual
+---
+
+## 1. Data for response diversity
+
+```{r}
+#| eval: false
+#rm(list = ls())
+#removes all variables from the current environment, not necessary for what I am doing here
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+library(hypervolume)
+library(here)
+library(readr)
+
+# function includes lakeColors
+source(here("function-Ross-et-al.r"))
+
+# load final dataset
+df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final.rds")
+```
+
+```{r}
+# exclude electro data from this df
+nets_df_final <- df_final |>
+  filter(!Protocol == "electro") 
+
+# change that presence and abundance are in one column
+nets_df_final <- nets_df_final |> 
+  pivot_longer(
+    cols = c("Abundance", "Presence"), 
+    names_to = "Parameter", 
+    values_to = "value"
+  )
+```
