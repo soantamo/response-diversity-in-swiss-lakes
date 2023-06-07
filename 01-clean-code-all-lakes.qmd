@@ -47,6 +47,7 @@ df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analy
 First trying it with nested data. Otherwise, doing a for loop or a function
 
 ```{r}
+# everything gone lost, taking it from version control and only submitting this one
 
 # exclude electro data from this df
 nets_df_final <- df_final |>
@@ -60,81 +61,65 @@ nets_df_final <- nets_df_final |>
     values_to = "value"
   )
 
+# make list of all lakes
+lakes_list <- nets_df_final |> 
+  distinct(Lake) |> 
+  pull(Lake)
+
+# later included inside the loop
+# species_list <- nets_df_final |> 
+#   distinct(Species) |> 
+#   pull(Species)
+
+# make empty lists for the new data provided by the loop
+gam_output <- list()
+model_prediction <- list()
+derivatives <- list()
+
+# working with an abundance subset of this dataset
+ 
+# if else statement in loop would be a possibility
+abu_nets_df_final <- nets_df_final |> 
+  filter(Parameter == "Abundance")
+
+# make temperature gradient for the prediction
+temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
+
+# looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
+
+for ( i in lakes_list){
+  presence_lake <- abu_nets_df_final |> 
+    filter(Lake == i)
+  species_list <- presence_lake |> 
+    distinct(Species) |> 
+    pull(Species)
+  for (j in species_list){ #looping through all species occuring in this lake
+    gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
+    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
+    derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
+    saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
+  }
+
+}
   
+const <- readRDS("Predictions2/predictions_Constance.rds")
+
+df_const <- const |> 
+  bind_cols() #make data frame out of it
+
+max(df_const$Alburnoides_bipunctatus)
+abu_nets_df_final |> 
+  filter(Lake == "Constance") |> 
+  filter(Species == "Alburnoides_bipunctatus")
   
-  
-mutate(model_gam = map(data, ~ gam(data = ., value ~ s(mean_last_7days, k = 3), family = binomial))) 
-# trying a for loop
-lakes <- unique(df_final$Lake)
-species <- unique(df_final$Species)
-
-# Iterate over the unique factors using a for loop
-for (spec in Species) {
-  print(spec)
-}, family = binomial
-
-```
-
-```{r}
-# this does not work, is there temperature data missing? checking in df_final
-min(df_final$mean_last_7days, na.rm = TRUE)
-
-# how many NAs do we have? 339 rows with missing values
-sum(is.na(df_final$mean_last_7days))
-
-# drop all rows with NAs based on the mean_last_7days column
-# library(tidyr)
-# df_final <- df_final |> 
-#   drop_na(mean_last_7days)
-
-# exclude electro data from this df
-nets_df_final <- df_final |>
-  filter(!Protocol == "electro")
-
-# change that presence and abundance are in one column with one column for value
-nets_df_final <- nets_df_final |> 
-  pivot_longer(
-    cols = c("Abundance", "Presence"), 
-    names_to = "Parameter", 
-    values_to = "value"
-  )
-
-# new nesting 
-nstd_final_presence <- nets_df_final |>
-  filter(Parameter == "Presence") |> 
-  group_by(Lake) |>
-  nest()
-
-# make temperature gradient for the gam predictions, taking out NAs did not solve 
-# the infinity problem, should I include them again?
-# semi nice solution here
-
-temp_gradient <- data.frame(mean_last_7days = seq(from = min(nets_df_final$mean_last_7days, na.rm = TRUE), to = max(nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
-
-
-# try doing the models for every lake, presence/absence only
-nstd_final_presence_models <- nstd_final_presence |>
-  mutate(model_gam = map(data, ~ gam(data = ., value ~ s(mean_last_7days, k = 3), family = binomial))) |> 
-  mutate(model_prediction = map(model_gam, ~ predict.gam(., temp_gradient, type = "response", se.fit = TRUE)$fit)) 
-
-
-# |> 
-  # mutate(derivatives = map(model_gam, ~ derivatives(.)))
-
-# calculalting response diversity based on the derivatives
-final_presence_rdiv <- nstd_final_presence_models |>
- # we don't need this columns
-  unnest(data)
-
-
-# too much for R... probably
-# R can definitely not handle this
-final_presence_rdiv <- final_presence_rdiv |>
-   unnest(derivatives)
-# 
-#   select(Species, data, derivative) |> # we need Species, temp and derivative
-#   pivot_wider(names_from = Species, values_from = derivative) |>   # wide frame
-#   select(1:17) #number of all rows
+###TO DO ####
+# add negative binomial to gam predictions
+# change name to abundance: done 
+# noch Seen herauslöschen (evtl mit Spezifikation der columns 1:16 (da immer alle seen dabei sein sollten))
+#response diversity berechnen
+# plots ausprobieren
+# make for loop for presence/absence data
 
 
 ```
