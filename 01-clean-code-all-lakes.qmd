@@ -8,7 +8,7 @@ editor: visual
 
 ```{r}
 #| eval: false
-#rm(list = ls())
+# rm(list = ls())
 #removes all variables from the current environment, not necessary for what I am doing here
 library(tidyverse)
 library(patchwork)
@@ -23,7 +23,8 @@ library(readr)
 source(here("color-and-functions.R"))
 
 # load final dataset
-df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final.rds")
+df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+
 ```
 
 ## 2. Calculating Response Diversity for all lakes
@@ -31,14 +32,10 @@ df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analy
 First trying it with nested data. Otherwise, doing a for loop or a function
 
 ```{r}
-# everything gone lost, taking it from version control and only submitting this one
-
-# exclude electro data from this df
-nets_df_final <- df_final |>
-  filter(!Protocol == "electro")
+# df_final_ne does not include the data from electro fishing -> different number of fish species per lake
 
 # change that presence and abundance are in one column with one column for value
-nets_df_final <- nets_df_final |> 
+nets_df_final <- df_final_no_electro |> 
   pivot_longer(
     cols = c("Abundance", "Presence"), 
     names_to = "Parameter", 
@@ -70,65 +67,124 @@ abu_nets_df_final <- nets_df_final |>
 temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
 
 # looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
-
-for (i in lakes_list){
-  presence_lake <- abu_nets_df_final |> 
-    filter(Lake == i)
-  species_list <- presence_lake |> 
-    distinct(Species) |> 
-    pull(Species)
-  for (j in species_list){ #looping through all species occuring in this lake
-    gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
-    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-    saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
-    derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
-    saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
-  }
-
-}
-  
+# 
+# for (i in lakes_list){
+#   presence_lake <- abu_nets_df_final |> 
+#     filter(Lake == i)
+#   species_list <- presence_lake |> 
+#     distinct(Species) |> 
+#     pull(Species)
+#   saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+#   for (j in species_list){ #looping through all species occuring in this lake
+#     gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
+#     model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+#     saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
+#     derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
+#     saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
+#   }
+# 
+# }
+#   
 
 #testing first part, works perfectly, why is list of species longer then?
-#testing one lake
-presence_lake <- abu_nets_df_final |>
-  filter(Lake == "Biel")
+#first part works perfectly, second part only works when species_list is written outside of the loop, for one lake
+#testing one lake,it should work
 
-min(presence_lake$LakePresence)
-
-species_list <- presence_lake |>
-  distinct(Species) |>
-  pull(Species)
-
-  for (j in species_list) {
-    gam_output <- gam(data = presence_lake |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
+for (i in lakes_list){
+  species_list <- abu_nets_df_final |>
+    filter(Lake == i) |> 
+    distinct(Species) |>
+    pull(Species)
+  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){
+    gam_output <- gam(data = abu_nets_df_final |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
     model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit
-    saveRDS(model_prediction,paste0("test_biel/predictions_",i,".rds"))
+    saveRDS(model_prediction,paste0("pred_test/predictions_", i , ".rds"))
     derivatives[[j]] <- derivatives(gam_output)
-    saveRDS(model_prediction,paste0("test_biel/derivatives_",i,".rds"))
+    saveRDS(derivatives, paste0("deriv_test/derivatives_", i, ".rds"))
+    
   }
+}
 
-#2
-#testing one lake. does not work
-lake_constance <- readRDS("test_biel/derivatives_Constance.rds")
-lake_const <- lake_constance |> 
+species_const<- abu_nets_df_final |>
+    filter(Lake == "") |> 
+    distinct(Species) |>
+    pull(Species)
+
+work <- readRDS("pred_test/predictions_Biel.rds")
+works <- readRDS("pred_test/predictions_Zug.rds")
+
+workss <- works |> 
+  bind_cols()
+workk <- work |> 
   bind_cols()
 
-max(lake_const$Alburnoides_bipunctatus) 
-#1
-#why are all species in the list?
-#first for loop works, we have a species_list with the right length
-#   saveRDS(species_list,paste0("Species_list_test/species_",i,".rds"))
-#species_const <- readRDS("Species_list_test/species_Constance.rds")
-#does it work?
-#constance <- abu_nets_df_final |> 
-  #filter(Lake == "Constance")
+for (i in lakes_list){
+  presence_lake <- abu_nets_df_final |>
+    filter(Lake == i)
+  species_list <- presence_lake |>
+    distinct(Species) |>
+    pull(Species)
+  saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){
+    gam_output <- gam(data = presence_lake |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
+    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit
+    saveRDS(model_prediction,paste0("pred_test/predictions_", i,".rds"))
+    derivatives[[j]] <- derivatives(gam_output)
+    saveRDS(derivatives, paste0("deriv_test/derivatives_",i,".rds"))
+    
+  }
+  
+}
 
-# constance$Species <- as.factor(constance$Species)
-# levels(constance$Species)
-# also 32, should work
+###TO DO ###
+# change name to abundance: done 
+#response diversity berechnen: done
+# plots ausprobieren: works
+#. species list is always 97 long: specifying the second for loop?
+#solved: same loop but new df_final_ne without electro data, now number of species are the right number. 
+
+# make for loop for presence/absence data
+
+# list of problems:
+#1. adding negbin not working
+#2. still too many species in list
+#3. name temp column is strange
+
+# next steps_
+#solve problems
+#make one data frame with model_predictions and derivative
+#is there a faster way to generate the df for lake plotting?
 
 
+```
 
+### Dfs for plotting
+
+```{r}
+# preparing data sets for plotting
+
+directory <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
+
+# Create an empty list to store the loaded objects
+loaded_objects <- list()
+
+# Create a vector of file names in the directory
+file_names <- list.files(directory, pattern = "\\.rds$", full.names = TRUE)
+
+# Iterate over each file name and load the RDS file
+for (file_name in file_names) {
+  loaded_object <- readRDS(file_name)
+  loaded_objects[[file_name]] <- loaded_object
+   saveRDS(model_prediction,paste0("deriv_test/derivatives_",i,".rds")
+}
+
+for (file in file_path){
+  df_i <- readRDS("pred_test/derivatives", i, ".rds")
+}
+
+left_join()
+cols = everything()
 
 # make df for rdiv, model predictions and derivatives
 
@@ -151,6 +207,7 @@ pred_const <- const |>
   bind_cols()
 
 #add temp
+df_pred_const <- cbind(pred_const, temp_gradient)
 pred_const$mean_last_7days <- temp_gradient
 
 #make df long
@@ -171,26 +228,9 @@ df_deriv_const <- df_deriv_const |>
     cols = c(1:97),
     names_to = "Species", 
     values_to = "derivatives")
-
-###TO DO ###
-# change name to abundance: done 
-#response diversity berechnen: done
-# plots ausprobieren: works
-
-# make for loop for presence/absence data
-
-# list of problems:
-#1. adding negbin not working
-#2. species list is always 97 long: specifying the second for loop?
-#3. name temp column is strange
-
-# next steps_
-#solve problems
-#make one data frame with model_predictions and derivative
-#is there a faster way to generate the df for lake plotting?
-
-
 ```
+
+#### Plotting
 
 ```{r}
 ##plotting test constance
