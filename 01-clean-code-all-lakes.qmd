@@ -26,22 +26,6 @@ source(here("color-and-functions.R"))
 df_final <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final.rds")
 ```
 
-```{r}
-
-# include again, if temp_gradient problem is solved
-# # exclude electro data from this df
-# nets_df_final <- df_final |>
-#   filter(!Protocol == "electro") 
-# 
-# # change that presence and abundance are in one column with one column for value
-# nets_df_final <- nets_df_final |> 
-#   pivot_longer(
-#     cols = c("Abundance", "Presence"), 
-#     names_to = "Parameter", 
-#     values_to = "value"
-#   )
-```
-
 ## 2. Calculating Response Diversity for all lakes
 
 First trying it with nested data. Otherwise, doing a for loop or a function
@@ -87,7 +71,7 @@ temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$m
 
 # looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
 
-for ( i in lakes_list){
+for (i in lakes_list){
   presence_lake <- abu_nets_df_final |> 
     filter(Lake == i)
   species_list <- presence_lake |> 
@@ -103,23 +87,157 @@ for ( i in lakes_list){
 
 }
   
-const <- readRDS("Predictions2/predictions_Constance.rds")
 
-df_const <- const |> 
+#testing first part, works perfectly, why is list of species longer then?
+#testing one lake
+presence_lake <- abu_nets_df_final |>
+  filter(Lake == "Biel")
+
+min(presence_lake$LakePresence)
+
+species_list <- presence_lake |>
+  distinct(Species) |>
+  pull(Species)
+
+  for (j in species_list) {
+    gam_output <- gam(data = presence_lake |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
+    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit
+    saveRDS(model_prediction,paste0("test_biel/predictions_",i,".rds"))
+    derivatives[[j]] <- derivatives(gam_output)
+    saveRDS(model_prediction,paste0("test_biel/derivatives_",i,".rds"))
+  }
+
+#2
+#testing one lake. does not work
+lake_constance <- readRDS("test_biel/derivatives_Constance.rds")
+lake_const <- lake_constance |> 
+  bind_cols()
+
+max(lake_const$Alburnoides_bipunctatus) 
+#1
+#why are all species in the list?
+#first for loop works, we have a species_list with the right length
+#   saveRDS(species_list,paste0("Species_list_test/species_",i,".rds"))
+#species_const <- readRDS("Species_list_test/species_Constance.rds")
+#does it work?
+#constance <- abu_nets_df_final |> 
+  #filter(Lake == "Constance")
+
+# constance$Species <- as.factor(constance$Species)
+# levels(constance$Species)
+# also 32, should work
+
+
+
+
+# make df for rdiv, model predictions and derivatives
+
+deriv_const <- readRDS("Derivatives2/derivatives_Constance.rds")
+
+#make df with derviatives data and use this to calculate resposne diversity
+resp_div_const <- deriv_const |> 
   bind_cols() #make data frame out of it
 
-max(df_const$Alburnoides_bipunctatus)
-abu_nets_df_final |> 
-  filter(Lake == "Constance") |> 
-  filter(Species == "Alburnoides_bipunctatus")
-  
-###TO DO ####
-# add negative binomial to gam predictions
+resp_div_const$rdiv<-apply(resp_div_const[,c(1:97)], 1, resp_div, sign_sens = F)
+resp_div_const$sign<-apply(resp_div_const[,c(1:97)], 1, resp_div, sign_sens = T)
+resp_div_const$Med<-median(resp_div_const$rdiv)
+
+resp_div_const$mean_last_7days <- temp_gradient
+
+# make df with model predictions
+const <- readRDS("Predictions2/predictions_Constance.rds")
+
+pred_const <- const |> 
+  bind_cols()
+
+#add temp
+pred_const$mean_last_7days <- temp_gradient
+
+#make df long
+df_pred_const <- pred_const |> 
+  pivot_longer(
+    cols = c(1:97),
+    names_to = "Species", 
+    values_to = "model_prediction")
+# make df for derivative data
+
+df_deriv_const <- deriv_const |> 
+  bind_cols()
+
+df_deriv_const$mean_last_7days <- temp_gradient
+
+df_deriv_const <- df_deriv_const |> 
+  pivot_longer(
+    cols = c(1:97),
+    names_to = "Species", 
+    values_to = "derivatives")
+
+###TO DO ###
 # change name to abundance: done 
-# noch Seen herauslöschen (evtl mit Spezifikation der columns 1:16 (da immer alle seen dabei sein sollten))
-#response diversity berechnen
-# plots ausprobieren
+#response diversity berechnen: done
+# plots ausprobieren: works
+
 # make for loop for presence/absence data
 
+# list of problems:
+#1. adding negbin not working
+#2. species list is always 97 long: specifying the second for loop?
+#3. name temp column is strange
 
+# next steps_
+#solve problems
+#make one data frame with model_predictions and derivative
+#is there a faster way to generate the df for lake plotting?
+
+
+```
+
+```{r}
+##plotting test constance
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_pred_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+
+# plotting derivatives of presence
+
+fig_b <- ggplot(data = df_deriv_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = derivatives, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "c)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line() +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(dmin, dmax))
+
+fig_b
+
+# plotting dissimilarity of derivatives
+fig_c <- ggplot(data = resp_div_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "e)") +
+  geom_hline(yintercept = resp_div_const$Med, lty = 2) +
+  geom_line()
+  # lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+# plot divergence
+
+fig_d <- ggplot(data = resp_div_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "g)") +
+  geom_line()
+  # lims(y = c(smin, smax))
+
+fig_d
 ```
