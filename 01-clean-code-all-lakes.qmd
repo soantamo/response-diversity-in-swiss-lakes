@@ -67,57 +67,6 @@ abu_nets_df_final <- nets_df_final |>
 temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
 
 # looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
-# 
-# for (i in lakes_list){
-#   presence_lake <- abu_nets_df_final |> 
-#     filter(Lake == i)
-#   species_list <- presence_lake |> 
-#     distinct(Species) |> 
-#     pull(Species)
-#   saveRDS(species_list,paste0("test_species/species_", i,".rds"))
-#   for (j in species_list){ #looping through all species occuring in this lake
-#     gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
-#     model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-#     saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
-#     derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
-#     saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
-#   }
-# 
-# }
-#   
-
-#testing first part, works perfectly, why is list of species longer then?
-#first part works perfectly, second part only works when species_list is written outside of the loop, for one lake
-#testing one lake,it should work
-
-for (i in lakes_list){
-  species_list <- abu_nets_df_final |>
-    filter(Lake == i) |> 
-    distinct(Species) |>
-    pull(Species)
-  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
-  for (j in species_list){
-    gam_output <- gam(data = abu_nets_df_final |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
-    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit
-    saveRDS(model_prediction,paste0("pred_test/predictions_", i , ".rds"))
-    derivatives[[j]] <- derivatives(gam_output)
-    saveRDS(derivatives, paste0("deriv_test/derivatives_", i, ".rds"))
-    
-  }
-}
-
-species_const<- abu_nets_df_final |>
-    filter(Lake == "") |> 
-    distinct(Species) |>
-    pull(Species)
-
-work <- readRDS("pred_test/predictions_Biel.rds")
-works <- readRDS("pred_test/predictions_Zug.rds")
-
-workss <- works |> 
-  bind_cols()
-workk <- work |> 
-  bind_cols()
 
 for (i in lakes_list){
   presence_lake <- abu_nets_df_final |>
@@ -125,17 +74,22 @@ for (i in lakes_list){
   species_list <- presence_lake |>
     distinct(Species) |>
     pull(Species)
-  saveRDS(species_list,paste0("test_species/species_", i,".rds"))
-  for (j in species_list){
-    gam_output <- gam(data = presence_lake |> filter(Species == j), value ~ s(mean_last_7days, k = 3))
-    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit
-    saveRDS(model_prediction,paste0("pred_test/predictions_", i,".rds"))
-    derivatives[[j]] <- derivatives(gam_output)
-    saveRDS(derivatives, paste0("deriv_test/derivatives_",i,".rds"))
-    
+  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){ #looping through all species occuring in this lake
+    gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
+    model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
+    derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
+    saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
   }
-  
+
 }
+
+
+#testing first part, works perfectly, why is list of species longer then?
+#first part works perfectly, second part only works when species_list is written outside of the loop, for one lake
+#testing one lake,it should work
+
 
 ###TO DO ###
 # change name to abundance: done 
@@ -162,6 +116,9 @@ for (i in lakes_list){
 ### Dfs for plotting
 
 ```{r}
+#trying to for loop to make the DFs for plotting
+#lose Ideen
+
 # preparing data sets for plotting
 
 directory <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
@@ -186,6 +143,9 @@ for (file in file_path){
 left_join()
 cols = everything()
 
+```
+
+```{r}
 # make df for rdiv, model predictions and derivatives
 
 deriv_const <- readRDS("Derivatives2/derivatives_Constance.rds")
