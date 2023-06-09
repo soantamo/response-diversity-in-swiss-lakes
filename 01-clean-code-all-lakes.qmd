@@ -88,6 +88,7 @@ temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$m
 #   
 
 # looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
+#small lake subset to change the loop
 
 gam_output <- list()
 model_prediction <- list()
@@ -119,85 +120,105 @@ for (i in small_lakes){
 
 }
 
+
+# make df with predictions of one lake
+
 path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/pred_test"
-
-#path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
-
 
 predictions_list <-list.files(path_pred)
 
-predictions_test <- list()
+predictions_test <- tibble()
 
 for (i in small_lakes){
   predictions_test <- predictions_list |> 
-  as_tibble() |> 
-  filter(str_detect(value, i)) |> 
-  pull(value)
-  
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  saveRDS(predictions_test, paste0("lake_test/predictions_",i,".rds"))
 }
 
+lake_biel <- readRDS("lake_test/predictions_Biel.rds")
+biel_predictions <- list()
+
+for (i in lake_biel){
+  biel_predictions[[i]] <- readRDS(paste0(path,"/", i))
+}
+
+df_biel <- biel_predictions |> 
+  bind_cols() |> 
+  rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
+  rename_with(~ sub(".rds$", "", .x), everything())
+
+df_biel_pred <- df_biel |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Species", 
+    values_to = "model_prediction")
+
+df_biel_pred <- cbind(df_biel_pred, temp_gradient)
+df_biel_pred <- df_biel_pred |> 
+  rename(temp = mean_last_7days)
+
+#make df with derivatives and combine both dfs
+# something is definitely wrong here
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_test <- tibble()
+
+for (i in small_lakes){
+  deriv_test <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  saveRDS(deriv_test, paste0("lake_test/derivatives_",i,".rds"))
+}
+
+lake_biel_deriv <- readRDS("lake_test/derivatives_Biel.rds")
+biel_deriv <- list()
+
+for (i in lake_biel_deriv){
+  biel_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
+}
+
+df_biel_resp_div <- biel_deriv |> 
+  bind_rows() 
+
+df_biel_deriv <- df_biel_resp_div |> 
+  pivot_longer(
+    cols = everything(),
+    names_to = "Species", 
+    values_to = "derivative")
+
+df_biel_pred <- cbind(df_biel_pred, temp_gradient)
+df_biel_pred <- df_biel_pred |> 
+  rename(temp = mean_last_7days)
+
+
+
+
+
+
+#zum abluege
 predictions_list |> 
   as_tibble() |> 
   filter(str_detect(value, "Biel")) |> 
   pull(value)
 predictions_biel_list <- predictions_list[1:22]
 
-biel_predictions <- list()
-
-for (i in predictions_biel_list){
-  biel_predictions[[i]] <- readRDS(paste0(path,"/", i))
-}
-
-biel_df <- biel_predictions |> 
-  bind_cols()
-  
-
-biu_abramis <- readRDS("pred_test/predictions_Biel_Abramis_brama.rds")
-
-df_small |> 
-  filter(Lake == "Biel") |> 
-  distinct(Species)
-biu |> 
-  names()
-
-walen <- readRDS("pred_test/predictions_Walen.rds")
-
-walen |> 
-  names()
-
-df_small |> 
-  filter(Lake == "Walen") |> 
-  distinct(Species)
-
-brienz <- readRDS("pred_test/predictions_Brienz.rds")
-
-brienz |> 
-  names()
-
-
-
-#testing first part, works perfectly, why is list of species longer then?
-#first part works perfectly, second part only works when species_list is written outside of the loop, for one lake
-#testing one lake,it should work
-
 
 ###TO DO ###
-# change name to abundance: done 
-#response diversity berechnen: done
-# plots ausprobieren: works
-#. species list is always 97 long: specifying the second for loop?
-#solved: same loop but new df_final_ne without electro data, now number of species are the right number. 
-
+#make loop and preparation ready for lake subset(small lakes)
+#make this ready for all lakes
 # make for loop for presence/absence data
 
 # list of problems:
 #1. adding negbin not working
-#2. still too many species in list
-#3. name temp column is strange
 
 # next steps_
 #solve problems
-#make one data frame with model_predictions and derivative
 #is there a faster way to generate the df for lake plotting?
 
 
