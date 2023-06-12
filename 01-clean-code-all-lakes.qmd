@@ -170,14 +170,14 @@ path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swis
 
 deriv_list <-list.files(path_deriv)
 
-deriv_test <- tibble()
+deriv_test <- list()
 
 for (i in lakes_list){
   deriv_test <- deriv_list |> 
     as_tibble() |> 
     filter(str_detect(value, i)) |> 
     pull(value)
-  saveRDS(deriv_test, paste0("derivatives_lake/derivatives_",i,".rds"))
+  saveRDS(deriv_test, paste0("derivatives_lake/derivatives_", i,".rds"))
 }
 
 #start of problem
@@ -190,17 +190,21 @@ for (i in lake_biel_deriv){
 
 #hier problembeginn
 df_biel_resp_div <- biel_deriv |> 
-   bind_rows()
+   bind_rows(.id = "id")
 
-df_biel_deriv <- df_biel_resp_div |> 
-  pivot_longer(
-    cols = everything(),
-    names_to = "Species", 
-    values_to = "derivative")
+df_biel_resp_div$id <- gsub("derivatives_Biel_", "", df_biel_resp_div$id)
+df_biel_resp_div$id <- sub(".rds$", "", df_biel_resp_div$id)
+
+
+df_biel_resp_div |> 
+  distinct()
 
 df_biel_pred <- cbind(df_biel_pred, temp_gradient)
 df_biel_pred <- df_biel_pred |> 
   rename(temp = mean_last_7days)
+
+
+#preparing response diversity next
 
 ###TO DO ###
 #make loop and preparation ready for lake subset(small lakes)
