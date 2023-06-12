@@ -8,7 +8,7 @@ editor: visual
 
 ```{r}
 #| eval: false
-# rm(list = ls())
+#rm(list = ls())
 #removes all variables from the current environment, not necessary for what I am doing here
 library(tidyverse)
 library(patchwork)
@@ -57,9 +57,8 @@ lakes_list <- nets_df_final |>
 abu_nets_df_final <- nets_df_final |> 
   filter(Parameter == "Abundance")
 
-
 # make temperature gradient for the prediction
-temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
+# temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
 
 
 # make empty lists for the new data provided by the loop
@@ -75,6 +74,7 @@ for (i in lakes_list){
   species_list <- presence_lake |>
     distinct(Species) |>
     pull(Species)
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
   #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
   for (j in species_list){ #looping through all species occuring in this lake
     data <- presence_lake |> 
@@ -88,29 +88,30 @@ for (i in lakes_list){
 
 }
 
-# looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
-#small lake subset to change the loop
+
+#small lake subset to try loop
 
 # gam_output <- list()
 # model_prediction <- list()
 # derivatives <- list()
 # 
-# df_small <- abu_nets_df_final |> 
+# df_small <- abu_nets_df_final |>
 #   filter(Lake %in% c("Biel", "Brienz", "Walen"))
 # 
-# small_lakes <- df_small |> 
-#   distinct(Lake) |> 
+# small_lakes <- df_small |>
+#   distinct(Lake) |>
 #   pull(Lake)
-# 
+
 # for (i in small_lakes){
 #   presence_lake <- df_small |>
 #     filter(Lake == i)
 #   species_list <- presence_lake |>
 #     distinct(Species) |>
 #     pull(Species)
+#   temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
 #   #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
 #   for (j in species_list){ #looping through all species occuring in this lake
-#     data <- presence_lake |> 
+#     data <- presence_lake |>
 #       filter(Species == j)
 #     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
 #     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
@@ -120,7 +121,7 @@ for (i in lakes_list){
 #   }
 # 
 # }
-# 
+
 
 # make df with predictions of one lake
 
@@ -151,7 +152,12 @@ df_biel <- biel_predictions |>
   rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
   rename_with(~ sub(".rds$", "", .x), everything())
 
-df_biel <- cbind(df_biel, temp_gradient)
+biel_temp <- abu_nets_df_final |> 
+  filter(Lake == "Biel")
+
+biel_temp_gradient <- data.frame(mean_last_7days = seq(from = min(biel_temp$mean_last_7days, na.rm = TRUE), to = max(biel_temp$mean_last_7days, na.rm = TRUE), by = 0.02))
+
+df_biel <- cbind(df_biel, biel_temp_gradient)
 
 
 df_biel_pred <- df_biel |> 
@@ -203,8 +209,7 @@ df_biel_deriv <- df_biel_deriv |>
 #response diversity
 
 df_biel_resp_div <- df_biel_deriv |> 
-  select(Species, data, derivative) |> 
-  rename(temp = data) |> 
+  select(Species, temp, derivative) |> 
    pivot_wider(
      names_from = Species,
      values_from = derivative)
@@ -221,13 +226,65 @@ df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
 
 # list of problems:
 #1. adding negbin not working
-#2. temperature gradient needs to be inside the loop 
+#2. temperature gradient needs to be inside the loop? what is wrong with the temperature?
+#3. not all species have a color, fix this in lakecolors
 
 # next steps_
 #solve problems
 #is there a faster way to generate the df for lake plotting?
 
 
+```
+
+### Loop testing
+
+```{r}
+
+# make df with predictions of one lake
+
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/pred_test"
+
+predictions_list <-list.files(path_pred)
+
+predictions_test <- tibble()
+
+for (i in small_lakes){
+  predictions_test <- predictions_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  saveRDS(predictions_test, paste0("lake_test/predictions_",i,".rds"))
+}
+
+
+lake_biel <- readRDS("lake_test/predictions_Biel.rds")
+biel_predictions <- list()
+
+for (i in lake_biel){
+  biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
+}
+
+df_biel <- biel_predictions |> 
+  bind_cols() |> 
+  rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
+  rename_with(~ sub(".rds$", "", .x), everything())
+
+biel_temp <- abu_nets_df_final |> 
+  filter(Lake == "Biel")
+
+biel_temp_gradient <- data.frame(mean_last_7days = seq(from = min(biel_temp$mean_last_7days, na.rm = TRUE), to = max(biel_temp$mean_last_7days, na.rm = TRUE), by = 0.02))
+
+df_biel <- cbind(df_biel, biel_temp_gradient)
+
+
+df_biel_pred_test <- df_biel |> 
+  pivot_longer(
+    cols = c(1:22),
+    names_to = "Species", 
+    values_to = "model_prediction")
+
+df_biel_pred_test <- df_biel_pred |> 
+  rename(temp = mean_last_7days)
 ```
 
 ### Efficiently do dfs for pred, deriv and resp diversity
@@ -246,12 +303,11 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
-  scale_colour_manual(values = lakeColors)
+  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) 
+  # scale_colour_manual(values = lakeColors)
   # lims(y = c(ymin_p, ymax_p))
 
 fig_a
-
 
 # plotting derivatives of presence
 
@@ -261,8 +317,8 @@ fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = temp, y = derivative, co
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line() +
-  scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line() 
+  # scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(dmin, dmax))
 
 fig_b
