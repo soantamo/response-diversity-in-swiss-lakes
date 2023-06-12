@@ -52,13 +52,7 @@ lakes_list <- nets_df_final |>
 #   distinct(Species) |> 
 #   pull(Species)
 
-# make empty lists for the new data provided by the loop
-gam_output <- list()
-model_prediction <- list()
-derivatives <- list()
-
 # working with an abundance subset of this dataset
- 
 # if else statement in loop would be a possibility
 abu_nets_df_final <- nets_df_final |> 
   filter(Parameter == "Abundance")
@@ -68,41 +62,15 @@ abu_nets_df_final <- nets_df_final |>
 temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
 
 
-#loop 
-# for (i in lakes_list){
-#   presence_lake <- abu_nets_df_final |> 
-#     filter(Lake == i)
-#   species_list <- presence_lake |> 
-#     distinct(Species) |> 
-#     pull(Species)
-#   saveRDS(species_list,paste0("test_species/species_", i,".rds"))
-#   for (j in species_list){ #looping through all species occuring in this lake
-#     gam_output <- gam(data = presence_lake |> filter(Species== j), value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
-#     model_prediction[[j]] <- predict.gam(gam_output, temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-#     saveRDS(model_prediction,paste0("Predictions2/predictions_",i,".rds"))
-#     derivatives[[j]] <- derivatives(gam_output) #making derivatives and saving them in a RDS
-#     saveRDS(model_prediction,paste0("Derivatives2/derivatives_",i,".rds"))
-#   }
-# 
-# }
-#   
-
-# looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
-#small lake subset to change the loop
-
+# make empty lists for the new data provided by the loop
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
 
-df_small <- abu_nets_df_final |> 
-  filter(Lake %in% c("Biel", "Brienz", "Walen"))
+#loop for all lakes
 
-small_lakes <- df_small |> 
-  distinct(Lake) |> 
-  pull(Lake)
-
-for (i in small_lakes){
-  presence_lake <- df_small |>
+for (i in lakes_list){
+  presence_lake <- abu_nets_df_final |>
     filter(Lake == i)
   species_list <- presence_lake |>
     distinct(Species) |>
@@ -113,35 +81,69 @@ for (i in small_lakes){
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-    saveRDS(model_prediction[[j]], paste0("pred_test/predictions_",i,"_",j,".rds"))
+    saveRDS(model_prediction[[j]], paste0("predictions_abundance/predictions_",i,"_",j,".rds"))
     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
-    saveRDS(derivatives[[j]], paste0("deriv_test/derivatives_",i,"_",j,".rds"))
+    saveRDS(derivatives[[j]], paste0("derivatives_abundance/derivatives_",i,"_",j,".rds"))
   }
 
 }
 
+# looping through every lake, filtering it by the current lake and pulling a list of in this lake occuring species
+#small lake subset to change the loop
+
+# gam_output <- list()
+# model_prediction <- list()
+# derivatives <- list()
+# 
+# df_small <- abu_nets_df_final |> 
+#   filter(Lake %in% c("Biel", "Brienz", "Walen"))
+# 
+# small_lakes <- df_small |> 
+#   distinct(Lake) |> 
+#   pull(Lake)
+# 
+# for (i in small_lakes){
+#   presence_lake <- df_small |>
+#     filter(Lake == i)
+#   species_list <- presence_lake |>
+#     distinct(Species) |>
+#     pull(Species)
+#   #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+#   for (j in species_list){ #looping through all species occuring in this lake
+#     data <- presence_lake |> 
+#       filter(Species == j)
+#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3)) #GAM per species in all lakes
+#     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+#     saveRDS(model_prediction[[j]], paste0("pred_test/predictions_",i,"_",j,".rds"))
+#     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+#     saveRDS(derivatives[[j]], paste0("deriv_test/derivatives_",i,"_",j,".rds"))
+#   }
+# 
+# }
+# 
 
 # make df with predictions of one lake
 
-path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/pred_test"
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/predictions_abundance"
 
 predictions_list <-list.files(path_pred)
 
 predictions_test <- tibble()
 
-for (i in small_lakes){
+for (i in lakes_list){
   predictions_test <- predictions_list |> 
     as_tibble() |> 
     filter(str_detect(value, i)) |> 
     pull(value)
-  saveRDS(predictions_test, paste0("lake_test/predictions_",i,".rds"))
+  saveRDS(predictions_test, paste0("predictions_lake/predictions_",i,".rds"))
 }
 
-lake_biel <- readRDS("lake_test/predictions_Biel.rds")
+
+lake_biel <- readRDS("predictions_lake/predictions_Biel.rds")
 biel_predictions <- list()
 
 for (i in lake_biel){
-  biel_predictions[[i]] <- readRDS(paste0(path,"/", i))
+  biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
 }
 
 df_biel <- biel_predictions |> 
@@ -149,42 +151,46 @@ df_biel <- biel_predictions |>
   rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
   rename_with(~ sub(".rds$", "", .x), everything())
 
+df_biel <- cbind(df_biel, temp_gradient)
+
 df_biel_pred <- df_biel |> 
   pivot_longer(
-    cols = everything(),
+    cols = c(1:22),
     names_to = "Species", 
     values_to = "model_prediction")
 
-df_biel_pred <- cbind(df_biel_pred, temp_gradient)
 df_biel_pred <- df_biel_pred |> 
   rename(temp = mean_last_7days)
 
 #make df with derivatives and combine both dfs
 # something is definitely wrong here
+#not working because these are all tibbles
 
-path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_abundance"
 
 deriv_list <-list.files(path_deriv)
 
 deriv_test <- tibble()
 
-for (i in small_lakes){
+for (i in lakes_list){
   deriv_test <- deriv_list |> 
     as_tibble() |> 
     filter(str_detect(value, i)) |> 
     pull(value)
-  saveRDS(deriv_test, paste0("lake_test/derivatives_",i,".rds"))
+  saveRDS(deriv_test, paste0("derivatives_lake/derivatives_",i,".rds"))
 }
 
-lake_biel_deriv <- readRDS("lake_test/derivatives_Biel.rds")
+#start of problem
+lake_biel_deriv <- readRDS("derivatives_lake/derivatives_Biel.rds")
 biel_deriv <- list()
 
 for (i in lake_biel_deriv){
   biel_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
 }
 
+#hier problembeginn
 df_biel_resp_div <- biel_deriv |> 
-  bind_rows() 
+   bind_rows()
 
 df_biel_deriv <- df_biel_resp_div |> 
   pivot_longer(
@@ -195,19 +201,6 @@ df_biel_deriv <- df_biel_resp_div |>
 df_biel_pred <- cbind(df_biel_pred, temp_gradient)
 df_biel_pred <- df_biel_pred |> 
   rename(temp = mean_last_7days)
-
-
-
-
-
-
-#zum abluege
-predictions_list |> 
-  as_tibble() |> 
-  filter(str_detect(value, "Biel")) |> 
-  pull(value)
-predictions_biel_list <- predictions_list[1:22]
-
 
 ###TO DO ###
 #make loop and preparation ready for lake subset(small lakes)
@@ -224,37 +217,7 @@ predictions_biel_list <- predictions_list[1:22]
 
 ```
 
-### Dfs for plotting
-
-```{r}
-#trying to for loop to make the DFs for plotting
-#lose Ideen
-
-# preparing data sets for plotting
-
-directory <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
-
-# Create an empty list to store the loaded objects
-loaded_objects <- list()
-
-# Create a vector of file names in the directory
-file_names <- list.files(directory, pattern = "\\.rds$", full.names = TRUE)
-
-# Iterate over each file name and load the RDS file
-for (file_name in file_names) {
-  loaded_object <- readRDS(file_name)
-  loaded_objects[[file_name]] <- loaded_object
-   saveRDS(model_prediction,paste0("deriv_test/derivatives_",i,".rds")
-}
-
-for (file in file_path){
-  df_i <- readRDS("pred_test/derivatives", i, ".rds")
-}
-
-left_join()
-cols = everything()
-
-```
+### Response diversity
 
 ```{r}
 # make df for rdiv, model predictions and derivatives
@@ -364,6 +327,5 @@ fig_d <- ggplot(data = resp_div_const, mapping = aes(x = mean_last_7days$mean_la
   # lims(y = c(smin, smax))
 
 fig_d
-```
 
-r
+```
