@@ -153,6 +153,7 @@ df_biel <- biel_predictions |>
 
 df_biel <- cbind(df_biel, temp_gradient)
 
+
 df_biel_pred <- df_biel |> 
   pivot_longer(
     cols = c(1:22),
@@ -189,22 +190,29 @@ for (i in lake_biel_deriv){
 }
 
 #hier problembeginn
-df_biel_resp_div <- biel_deriv |> 
+df_biel_deriv <- biel_deriv |> 
    bind_rows(.id = "id")
 
-df_biel_resp_div$id <- gsub("derivatives_Biel_", "", df_biel_resp_div$id)
-df_biel_resp_div$id <- sub(".rds$", "", df_biel_resp_div$id)
+df_biel_deriv$id <- gsub("derivatives_Biel_", "", df_biel_deriv$id)
+df_biel_deriv$id <- sub(".rds$", "", df_biel_deriv$id)
 
+df_biel_deriv <- df_biel_deriv |> 
+  rename(Species = id) |> 
+  rename(temp = data)
 
-df_biel_resp_div |> 
-  distinct()
+#response diversity
 
-df_biel_pred <- cbind(df_biel_pred, temp_gradient)
-df_biel_pred <- df_biel_pred |> 
-  rename(temp = mean_last_7days)
+df_biel_resp_div <- df_biel_deriv |> 
+  select(Species, data, derivative) |> 
+  rename(temp = data) |> 
+   pivot_wider(
+     names_from = Species,
+     values_from = derivative)
 
+df_biel_resp_div$rdiv <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = F)
+df_biel_resp_div$sign <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = T)
+df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
 
-#preparing response diversity next
 
 ###TO DO ###
 #make loop and preparation ready for lake subset(small lakes)
@@ -213,6 +221,7 @@ df_biel_pred <- df_biel_pred |>
 
 # list of problems:
 #1. adding negbin not working
+#2. temperature gradient needs to be inside the loop 
 
 # next steps_
 #solve problems
@@ -221,78 +230,24 @@ df_biel_pred <- df_biel_pred |>
 
 ```
 
-### Response diversity
+### Efficiently do dfs for pred, deriv and resp diversity
 
 ```{r}
-# make df for rdiv, model predictions and derivatives
 
-deriv_const <- readRDS("Derivatives2/derivatives_Constance.rds")
-
-#make df with derviatives data and use this to calculate resposne diversity
-resp_div_const <- deriv_const |> 
-  bind_cols() #make data frame out of it
-
-resp_div_const$rdiv<-apply(resp_div_const[,c(1:92)], 1, resp_div, sign_sens = F)
-resp_div_const$sign<-apply(resp_div_const[,c(1:92)], 1, resp_div, sign_sens = T)
-resp_div_const$Med<-median(resp_div_const$rdiv)
-
-df_rdiv_const <- cbind(resp_div_const, temp_gradient)
-
-# make df with model predictions and derivatives
-const <- readRDS("Predictions2/predictions_Constance.rds")
-
-pred_const <- const |> 
-  bind_cols()
-
-#make df long
-df_pred_const <- pred_const |> 
-  pivot_longer(
-    cols = c(1:92),
-    names_to = "Species", 
-    values_to = "model_prediction")
-
-# make df for derivative data
-
-df_deriv_const <- deriv_const |> 
-  bind_cols()
-
-df_deriv_const <- df_deriv_const |> 
-  pivot_longer(
-    cols = c(1:92),
-    names_to = "Species", 
-    values_to = "derivatives")
-
-df_pred_deriv_const <- df_pred_const |> 
-  left_join(df_deriv_const)
-
-
-#add temp
-df_pred_const <- cbind(pred_const, temp_gradient)
-pred_const$mean_last_7days <- temp_gradient
-
-
-
-df_deriv_const$mean_last_7days <- temp_gradient
-
-df_deriv_const <- df_deriv_const |> 
-  pivot_longer(
-    cols = c(1:97),
-    names_to = "Species", 
-    values_to = "derivatives")
 ```
 
 #### Plotting
 
 ```{r}
-##plotting test constance
+##plotting test biel
 fig_a <- ggplot() +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Abundance", tag = "a)") +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_pred_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = model_prediction, color = Species)) +
-  scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors)
   # lims(y = c(ymin_p, ymax_p))
 
 fig_a
@@ -300,7 +255,7 @@ fig_a
 
 # plotting derivatives of presence
 
-fig_b <- ggplot(data = df_deriv_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = derivatives, color = Species)) +
+fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative", tag = "c)") +
   geom_hline(
@@ -313,10 +268,10 @@ fig_b <- ggplot(data = df_deriv_const, mapping = aes(x = mean_last_7days$mean_la
 fig_b
 
 # plotting dissimilarity of derivatives
-fig_c <- ggplot(data = resp_div_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = rdiv)) +
+fig_c <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_classic(base_size = 14) +
   labs(x = NULL, y = "Dissimilarity", tag = "e)") +
-  geom_hline(yintercept = resp_div_const$Med, lty = 2) +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
   geom_line()
   # lims(y = c(rmin_p, rmax_p))
 
@@ -324,8 +279,8 @@ fig_c
 
 # plot divergence
 
-fig_d <- ggplot(data = resp_div_const, mapping = aes(x = mean_last_7days$mean_last_7days, y = sign)) +
-  theme_bw(base_size = 14) +
+fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Sign", tag = "g)") +
   geom_line()
   # lims(y = c(smin, smax))
