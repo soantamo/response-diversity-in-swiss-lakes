@@ -160,6 +160,11 @@ for (i in lakes_list){
 #is there a faster way to generate the df for lake plotting?
 
 
+#ideas for solving error message and negbin problem
+#remove NAs in df: e.g. df <- na.omit(df)
+#or is.nan(x) and is.infinity(x) in data
+
+sum(is.nan(abu_nets_df_final$mean_last_7days))
 ```
 
 ### Predictions, derivatives and response diversity DFs
