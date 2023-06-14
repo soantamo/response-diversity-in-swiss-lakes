@@ -67,10 +67,10 @@ abu_nets_df_final <- nets_df_final |>
 
 #301 NAs in Temperature data
 
-sum(is.na(abu_nets_df_final$mean_last_7days))
-# 
-abu_nets_df_final <- abu_nets_df_final |> 
-   drop_na(mean_last_7days)
+# sum(is.na(abu_nets_df_final$mean_last_7days))
+# # 
+# abu_nets_df_final <- abu_nets_df_final |> 
+#    drop_na(mean_last_7days)
 
 # make empty lists for the new data provided by the loop
 gam_output <- list()
@@ -91,7 +91,7 @@ for (i in lakes_list){
   for (j in species_list){ #looping through all species occuring in this lake
     data <- presence_lake |> 
       filter(Species == j)
-    gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days), family = negbin(1), method = "REML") #GAM per species in all lakes
+    gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
     saveRDS(model_prediction[[j]], paste0("predictions_abundance/predictions_",i,"_",j,".rds"))
     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
@@ -163,8 +163,7 @@ for (i in lakes_list){
 #ideas for solving error message and negbin problem
 #remove NAs in df: e.g. df <- na.omit(df)
 #or is.nan(x) and is.infinity(x) in data
-
-sum(is.nan(abu_nets_df_final$mean_last_7days))
+#bs = "cs" seems to solve problem, thanks to zuur book
 ```
 
 ### Predictions, derivatives and response diversity DFs
@@ -341,20 +340,48 @@ for (i in files_path){
 ```{r}
 #what is the problem with negbin? works with small_lakes, in big df always stopping at sarnen third species (Barbus barbus)
 # no sarnen test
-df_sarnen <- abu_nets_df_final |> 
-  filter(Lake == "Sarnen")
+# df_sarnen <- abu_nets_df_final |> 
+#   filter(Lake == "Sarnen")
+# 
+# df_sarnen |> 
+#   distinct(Species) |> 
+#   pull(Species)
+# 
+# df_no_sarnen <- abu_nets_df_final |> 
+#   filter(!Lake == "Sarnen")
+# 
+# nosa_list <- df_no_sarnen |> 
+#   distinct(Lake) |> 
+#   pull(Lake)
+# 
+# gam_output <- list()
+# model_prediction <- list()
+# derivatives <- list()
+# 
+# 
+# for (i in lakes_list){
+#   presence_lake <- abu_nets_df_final |>
+#     filter(Lake == i)
+#   species_list <- presence_lake |>
+#     distinct(Species) |>
+#     pull(Species)
+#   temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
+#   #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+#   for (j in species_list){ #looping through all species occuring in this lake
+#     data <- presence_lake |>
+#       filter(Species == j)
+#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
+#     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+#     saveRDS(model_prediction[[j]], paste0("pred_test/predictions_",i,"_",j,".rds"))
+#     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+#     saveRDS(derivatives[[j]], paste0("deriv_test/derivatives_",i,"_",j,".rds"))
+#   }
+# 
+# }
+# 
 
-df_sarnen |> 
-  distinct(Species) |> 
-  pull(Species)
-
-df_no_sarnen <- abu_nets_df_final |> 
-  filter(!Lake == "Sarnen")
-
-nosa_list <- df_no_sarnen |> 
-  distinct(Lake) |> 
-  pull(Lake)
-
+# works! bs = "cs" needs to be added!!
+#sarnen seems to be the problem
 #loop testing here
 ```
 
