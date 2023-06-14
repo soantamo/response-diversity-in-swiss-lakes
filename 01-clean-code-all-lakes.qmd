@@ -61,16 +61,6 @@ abu_nets_df_final <- nets_df_final |>
 # make temperature gradient for the prediction
 # temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
 
-# looking at all NAs in the df, NAs should be gone for the GAM (might be the problem why negbin does not work), does it work when all NAs are gone?
-# df_NA <- abu_nets_df_final |> 
-#   filter_all(any_vars(is.na(.)))
-
-#301 NAs in Temperature data
-
-# sum(is.na(abu_nets_df_final$mean_last_7days))
-# # 
-# abu_nets_df_final <- abu_nets_df_final |> 
-#    drop_na(mean_last_7days)
 
 # make empty lists for the new data provided by the loop
 gam_output <- list()
@@ -105,17 +95,11 @@ for (i in lakes_list){
 # gam_output <- list()
 # model_prediction <- list()
 # derivatives <- list()
-# # 
+# # # 
 # df_small <- abu_nets_df_final |>
 #   filter(Lake %in% c("Biel", "Brienz", "Walen"))
 
-# drop NAs in temp column
 
-# df_small <- df_small |> 
-#   drop_na(mean_last_7days)
-# 
-# sum(is.na(df_small$Species))
-# 
 # small_lakes <- df_small |>
 #   distinct(Lake) |>
 #   pull(Lake)
@@ -131,7 +115,7 @@ for (i in lakes_list){
 #   for (j in species_list){ #looping through all species occuring in this lake
 #     data <- presence_lake |>
 #       filter(Species == j)
-#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 4), family = negbin(1), method = "REML") #GAM per species in all lakes
+#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
 #     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
 #     saveRDS(model_prediction[[j]], paste0("pred_test/predictions_",i,"_",j,".rds"))
 #     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
@@ -141,28 +125,27 @@ for (i in lakes_list){
 # }
 
 
-#make df with derivatives and combine both dfs
-# something is definitely wrong here
-#not working because these are all tibbles
 
-###TO DO ###
-#make loop and preparation ready for lake subset(small lakes)
-#make this ready for all lakes
-# make for loop for presence/absence data
 
 # list of problems:
-#1. adding negbin not working! works until sarnen, then problems 
+#1. adding negbin not working! works until sarnen, then problems, solved
 #2. temperature gradient needs to be inside the loop? what is wrong with the temperature?: should work now
 #3. not all species have a color, fix this in lakecolors
 
+###TO DO ###
+#find efficient way to prepare predictions, derivatives and response diversity for all lakes
+# make for loop for presence/absence data
+#plotting
+
 # next steps_
-#solve problems
+#solve problems: done
 #is there a faster way to generate the df for lake plotting?
 
 
 #ideas for solving error message and negbin problem
 #remove NAs in df: e.g. df <- na.omit(df)
 #or is.nan(x) and is.infinity(x) in data
+#update: drop_na not necessary!
 #bs = "cs" seems to solve problem, thanks to zuur book
 ```
 
@@ -321,68 +304,35 @@ path_lake <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss
 
 files_path <- list.files(path_lake)
 
+predictions <- list()
+
 for (i in files_path){
-  name <- paste0("df", i)
   lake <- readRDS(paste0(path_lake, "/", i))
   for (j in lake){
-    predictions[[j]] <- list()
     predictions[[j]] <- readRDS(paste0(path_pred,"/", j))
-    df[[i]] <- predictions |> 
+    # saveRDS(predictions, paste0("test/test_",j,".rds"))
+    df <- predictions[[j]] |> 
       bind_cols()
   }
 }
 
+#can you store list of all data in the loop for every lake
+# predictions is a large list (also not yet the one we want, we want one per lake)
+#bind_cols() is the problem inside the loop 
+    
+    
+lake_biel <- readRDS("predictions_lake/predictions_Biel.rds")
+biel_predictions <- list()
+
+for (i in lake_biel){
+  biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
+}
+
+df_biel <- biel_predictions |> 
+  bind_cols() |> 
+  rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
+  rename_with(~ sub(".rds$", "", .x), everything())
 #not working
-```
-
-### Loop testing
-
-```{r}
-#what is the problem with negbin? works with small_lakes, in big df always stopping at sarnen third species (Barbus barbus)
-# no sarnen test
-# df_sarnen <- abu_nets_df_final |> 
-#   filter(Lake == "Sarnen")
-# 
-# df_sarnen |> 
-#   distinct(Species) |> 
-#   pull(Species)
-# 
-# df_no_sarnen <- abu_nets_df_final |> 
-#   filter(!Lake == "Sarnen")
-# 
-# nosa_list <- df_no_sarnen |> 
-#   distinct(Lake) |> 
-#   pull(Lake)
-# 
-# gam_output <- list()
-# model_prediction <- list()
-# derivatives <- list()
-# 
-# 
-# for (i in lakes_list){
-#   presence_lake <- abu_nets_df_final |>
-#     filter(Lake == i)
-#   species_list <- presence_lake |>
-#     distinct(Species) |>
-#     pull(Species)
-#   temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
-#   #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
-#   for (j in species_list){ #looping through all species occuring in this lake
-#     data <- presence_lake |>
-#       filter(Species == j)
-#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
-#     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-#     saveRDS(model_prediction[[j]], paste0("pred_test/predictions_",i,"_",j,".rds"))
-#     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
-#     saveRDS(derivatives[[j]], paste0("deriv_test/derivatives_",i,"_",j,".rds"))
-#   }
-# 
-# }
-# 
-
-# works! bs = "cs" needs to be added!!
-#sarnen seems to be the problem
-#loop testing here
 ```
 
 #### Plotting
