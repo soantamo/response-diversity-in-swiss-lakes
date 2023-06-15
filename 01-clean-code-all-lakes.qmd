@@ -212,7 +212,7 @@ df_brienz <- brienz_predictions |>
   rename_all(~stringr::str_replace(.,"^predictions_Brienz_","")) |> 
   rename_with(~ sub(".rds$", "", .x), everything())
 
-biel_temp <- abu_nets_df_final |> 
+brienz_temp <- abu_nets_df_final |> 
   filter(Lake == "Brienz")
 
 brienz_temp_gradient <- data.frame(mean_last_7days = seq(from = min(brienz_temp$mean_last_7days, na.rm = TRUE), to = max(brienz_temp$mean_last_7days, na.rm = TRUE), by = 0.02))
@@ -222,18 +222,18 @@ df_brienz <- cbind(df_brienz, brienz_temp_gradient)
 
 df_brienz_pred <- df_brienz |> 
   pivot_longer(
-    cols = c(1:22),
+    cols = c(1:16),
     names_to = "Species", 
     values_to = "model_prediction")
 
 df_brienz_pred <- df_brienz_pred |> 
   rename(temp = mean_last_7days)
 
-
-
 #make df with derivatives and combine both dfs
 # something is definitely wrong here
 #not working because these are all tibbles
+
+#all lakes
 
 path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_abundance"
 
@@ -249,7 +249,7 @@ for (i in lakes_list){
   saveRDS(deriv_test, paste0("derivatives_lake/derivatives_", i,".rds"))
 }
 
-#start of problem
+#biel 
 lake_biel_deriv <- readRDS("derivatives_lake/derivatives_Biel.rds")
 biel_deriv <- list()
 
@@ -257,7 +257,6 @@ for (i in lake_biel_deriv){
   biel_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
 }
 
-#hier problembeginn
 df_biel_deriv <- biel_deriv |> 
    bind_rows(.id = "id")
 
@@ -268,7 +267,27 @@ df_biel_deriv <- df_biel_deriv |>
   rename(Species = id) |> 
   rename(temp = data)
 
+#brienz
+lake_brienz_deriv <- readRDS("derivatives_lake/derivatives_Brienz.rds")
+brienz_deriv <- list()
+
+for (i in lake_brienz_deriv){
+  brienz_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
+}
+
+df_brienz_deriv <- brienz_deriv |> 
+   bind_rows(.id = "id")
+
+df_brienz_deriv$id <- gsub("derivatives_Brienz_", "", df_brienz_deriv$id)
+df_brienz_deriv$id <- sub(".rds$", "", df_brienz_deriv$id)
+
+df_brienz_deriv <- df_brienz_deriv |> 
+  rename(Species = id) |> 
+  rename(temp = data)
+
+
 #response diversity
+#biel
 
 df_biel_resp_div <- df_biel_deriv |> 
   select(Species, temp, derivative) |> 
@@ -279,6 +298,17 @@ df_biel_resp_div <- df_biel_deriv |>
 df_biel_resp_div$rdiv <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = F)
 df_biel_resp_div$sign <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = T)
 df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
+
+#brienz
+df_brienz_resp_div <- df_brienz_deriv |> 
+  select(Species, temp, derivative) |> 
+   pivot_wider(
+     names_from = Species,
+     values_from = derivative)
+
+df_brienz_resp_div$rdiv <- apply(df_brienz_resp_div[,c(2:17)], 1, resp_div, sign_sens = F)
+df_brienz_resp_div$sign <- apply(df_brienz_resp_div[,c(2:17)], 1, resp_div, sign_sens = T)
+df_brienz_resp_div$Med <- median(df_brienz_resp_div$rdiv)
 ```
 
 #### Efficient
@@ -384,5 +414,56 @@ fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
   # lims(y = c(smin, smax))
 
 fig_d
+
+```
+
+```{r}
+##plotting brienz
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) 
+  # scale_colour_manual(values = lakeColors)
+  # lims(y = c(ymin_p, ymax_p))
+
+fig_e
+
+# plotting derivatives of presence
+
+fig_f <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "c)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line() 
+  # scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(dmin, dmax))
+
+fig_f
+
+# plotting dissimilarity of derivatives
+fig_g <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "e)") +
+  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  geom_line()
+  # lims(y = c(rmin_p, rmax_p))
+
+fig_g
+
+# plot divergence
+
+fig_h <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "g)") +
+  geom_line()
+  # lims(y = c(smin, smax))
+
+fig_h
 
 ```
