@@ -320,49 +320,36 @@ path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss
 
 predictions_list <-list.files(path_pred)
 
-predictions_test <- tibble()
+predictions_small <- list()
 
+#loop works!!!!!!! first real loop of my life
 for (i in small_lakes){
-  predictions_test <- predictions_list |> 
+  predictions_small <- predictions_list |> 
     as_tibble() |> 
     filter(str_detect(value, i)) |> 
     pull(value)
-  saveRDS(predictions_test, paste0("lake_test/predictions_",i,".rds"))
-}
-
-path_lake <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/lake_test"
-
-files_path <- list.files(path_lake)
-
-predictions <- list()
-
-for (i in files_path){
-  lake <- readRDS(paste0(path_lake, "/", i))
-  for (j in lake){
-    predictions[[j]] <- readRDS(paste0(path_pred,"/", j))
-    # saveRDS(predictions, paste0("test/test_",j,".rds"))
-    df <- predictions[[j]] |> 
-      bind_cols()
+  pred <- list()
+  lake_data <- abu_nets_df_final |>
+    filter(Lake == i)
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02))
+  for (j in predictions_small){
+    # print(predictions_test)
+    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+    df <- pred |>
+      bind_cols() |> 
+      rename_all(~stringr::str_replace(.,"^predictions_","")) |> #lake in column name needs to be removed too
+      rename_with(~ sub(".rds$", "", .x), everything())
+    df_temp <- cbind(df, temp_gradient)
+    # saveRDS(df_temp, paste0("df_test/df_pred_", i, ".rds"))
+    df_pred <- df_temp |> 
+      pivot_longer(
+        cols = !last_col(), 
+        names_to = "Species",
+        values_to = "model_prediction")
+    saveRDS(df_pred, paste0("df_long/df_pred_", i, ".rds"))
   }
 }
 
-#can you store list of all data in the loop for every lake
-# predictions is a large list (also not yet the one we want, we want one per lake)
-#bind_cols() is the problem inside the loop 
-    
-    
-lake_biel <- readRDS("predictions_lake/predictions_Biel.rds")
-biel_predictions <- list()
-
-for (i in lake_biel){
-  biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
-}
-
-df_biel <- biel_predictions |> 
-  bind_cols() |> 
-  rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
-  rename_with(~ sub(".rds$", "", .x), everything())
-#not working
 ```
 
 #### Plotting
