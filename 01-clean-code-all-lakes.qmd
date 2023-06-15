@@ -311,28 +311,28 @@ df_brienz_resp_div$sign <- apply(df_brienz_resp_div[,c(2:17)], 1, resp_div, sign
 df_brienz_resp_div$Med <- median(df_brienz_resp_div$rdiv)
 ```
 
-#### Efficient
+### DFs loops
 
 ```{r}
-#predictions, tested with small lakes
+#preparing dfs with predictions for all lakes
 
-path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/pred_test"
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/predictions_abundance"
 
 predictions_list <-list.files(path_pred)
 
-predictions_small <- list()
+predictions_lakes <- list()
 
 #loop works!!!!!!! first real loop of my life
-for (i in small_lakes){
-  predictions_small <- predictions_list |> 
+for (i in lakes_list){
+  predictions_lakes <- predictions_list |> 
     as_tibble() |> 
     filter(str_detect(value, i)) |> 
     pull(value)
   pred <- list()
   lake_data <- abu_nets_df_final |>
     filter(Lake == i)
-  temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02))
-  for (j in predictions_small){
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  for (j in predictions_lakes){
     # print(predictions_test)
     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
     df <- pred |>
@@ -345,10 +345,162 @@ for (i in small_lakes){
       pivot_longer(
         cols = !last_col(), 
         names_to = "Species",
-        values_to = "model_prediction")
-    saveRDS(df_pred, paste0("df_long/df_pred_", i, ".rds"))
+        values_to = "model_prediction") |> 
+      rename(temp = mean_last_7days)
+    saveRDS(df_pred, paste0("df_predictions/df_pred_", i, ".rds"))
   }
 }
+
+# derivatives
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_abundance"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    saveRDS(df_deriv, paste0("df_derivatives/df_deriv_", i, ".rds"))
+  }
+}
+
+#response diversity
+
+###TO DO #####
+#1. remove lake names in front of species names in predictions
+#2. remove blabla around species name in derivatives in column
+#3. find easy way to calculate response diversity
+```
+
+### Testing Efficient
+
+```{r}
+#predictions, tested with small lakes
+# 
+# path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/pred_test"
+# 
+# predictions_list <-list.files(path_pred)
+# 
+# predictions_small <- list()
+# 
+# #loop works!!!!!!! first real loop of my life
+# for (i in small_lakes){
+#   predictions_small <- predictions_list |> 
+#     as_tibble() |> 
+#     filter(str_detect(value, i)) |> 
+#     pull(value)
+#   pred <- list()
+#   lake_data <- abu_nets_df_final |>
+#     filter(Lake == i)
+#   temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02))
+#   for (j in predictions_small){
+#     # print(predictions_test)
+#     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+#     df <- pred |>
+#       bind_cols() |> 
+#       rename_all(~stringr::str_replace(.,"^predictions_","")) |> #lake in column name needs to be removed too
+#       rename_with(~ sub(".rds$", "", .x), everything())
+#     df_temp <- cbind(df, temp_gradient)
+#     # saveRDS(df_temp, paste0("df_test/df_pred_", i, ".rds"))
+#     df_pred <- df_temp |> 
+#       pivot_longer(
+#         cols = !last_col(), 
+#         names_to = "Species",
+#         values_to = "model_prediction") |> 
+#       rename(temp = mean_last_7days)
+#     saveRDS(df_pred, paste0("df_long/df_pred_", i, ".rds"))
+#   }
+# }
+
+
+#make loop for derivatives with small lakes
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_small <- list()
+
+for (i in small_lakes){
+  deriv_small <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_small){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    saveRDS(df_deriv, paste0("df_deriv_test/df_deriv_", i, ".rds"))
+  }
+}
+
+
+test <- readRDS("df_deriv_test/df_deriv_Brienz.rds")
+
+#response diversity
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/deriv_test"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_small <- list()
+
+for (i in small_lakes){
+  deriv_small <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_small){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    df_resp_div <- df_deriv |> 
+      select(Species, temp, derivative) |> 
+      pivot_wider(
+        names_from = Species,
+        values_from = derivative) |> 
+      rename_all(~stringr::str_replace(.,"^derivatives_","")) |> 
+      rename_with(~ sub(".rds$", "", .x), everything())
+    #test <- df_resp_div |>
+      #select (-temp) |>
+      #mutate_all(rdiv = resp_div(1, sign_sens = F))
+    saveRDS(df_resp_div, paste0("test_response/df_resp_div_", i, ".rds"))
+  }
+}
+
+#try to find way to open deriv files in loop and changing these (this code works though)
+
+test3 <- readRDS("test_response/df_resp_div_Brienz.rds")
+
+
+
+df_biel_resp_div$rdiv <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = F)
+df_biel_resp_div$sign <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = T)
+df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
+
+# ideen
+select (-temp) |>
+  mutate(rdiv = resp_div(sign_sens = F))
+# mutate(Med = median(rdiv)
+
 
 ```
 
