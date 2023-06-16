@@ -96,13 +96,13 @@ for (i in lakes_list){
 # model_prediction <- list()
 # derivatives <- list()
 # # # 
-df_small <- abu_nets_df_final |>
-  filter(Lake %in% c("Biel", "Brienz", "Walen"))
-
-
-small_lakes <- df_small |>
-  distinct(Lake) |>
-  pull(Lake)
+# df_small <- abu_nets_df_final |>
+#   filter(Lake %in% c("Biel", "Brienz", "Walen"))
+# 
+# 
+# small_lakes <- df_small |>
+#   distinct(Lake) |>
+#   pull(Lake)
 
 # for (i in small_lakes){
 #   presence_lake <- df_small |>
@@ -154,107 +154,107 @@ small_lakes <- df_small |>
 ```{r}
 # make df with predictions of one lake
 
-path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/predictions_abundance"
-
-predictions_list <-list.files(path_pred)
-
-predictions_test <- tibble()
-
-for (i in lakes_list){
-  predictions_test <- predictions_list |> 
-    as_tibble() |> 
-    filter(str_detect(value, i)) |> 
-    pull(value)
-  saveRDS(predictions_test, paste0("predictions_lake/predictions_",i,".rds"))
-}
-
-# biel
-lake_biel <- readRDS("predictions_lake/predictions_Biel.rds")
-biel_predictions <- list()
-
-for (i in lake_biel){
-  biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
-}
-
-df_biel <- biel_predictions |> 
-  bind_cols() |> 
-  rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
-  rename_with(~ sub(".rds$", "", .x), everything())
-
-biel_temp <- abu_nets_df_final |> 
-  filter(Lake == "Biel")
-
-biel_temp_gradient <- data.frame(mean_last_7days = seq(from = min(biel_temp$mean_last_7days, na.rm = TRUE), to = max(biel_temp$mean_last_7days, na.rm = TRUE), by = 0.02))
-
-df_biel <- cbind(df_biel, biel_temp_gradient)
-
-
-df_biel_pred <- df_biel |> 
-  pivot_longer(
-    cols = c(1:22),
-    names_to = "Species", 
-    values_to = "model_prediction")
-
-df_biel_pred <- df_biel_pred |> 
-  rename(temp = mean_last_7days)
-
-#test if loop gives the same results
-biel_pred_test <- readRDS("df_predictions/df_pred_Biel.rds")
-#predictions work!
-#all lakes
-
-path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_abundance"
-
-deriv_list <-list.files(path_deriv)
-
-deriv_test <- list()
-
-for (i in lakes_list){
-  deriv_test <- deriv_list |> 
-    as_tibble() |> 
-    filter(str_detect(value, i)) |> 
-    pull(value)
-  saveRDS(deriv_test, paste0("derivatives_lake/derivatives_", i,".rds"))
-}
-
-#biel 
-lake_biel_deriv <- readRDS("derivatives_lake/derivatives_Biel.rds")
-biel_deriv <- list()
-
-for (i in lake_biel_deriv){
-  biel_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
-}
-
-df_biel_deriv <- biel_deriv |> 
-   bind_rows(.id = "id")
-
-df_biel_deriv$id <- gsub("derivatives_Biel_", "", df_biel_deriv$id)
-df_biel_deriv$id <- sub(".rds$", "", df_biel_deriv$id)
-
-df_biel_deriv <- df_biel_deriv |> 
-  rename(Species = id) |> 
-  rename(temp = data)
-
-#does it work?
-biel_deriv_test <- readRDS("df_derivatives/df_deriv_Biel.rds")
-#works!!
-
-#response diversity
-#biel
-
-df_biel_resp_div <- df_biel_deriv |> 
-  select(Species, temp, derivative) |> 
-   pivot_wider(
-     names_from = Species,
-     values_from = derivative)
-
-df_biel_resp_div$rdiv <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = F)
-df_biel_resp_div$sign <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = T)
-df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
-
-#does it work?
-biel_resp_div_test <- readRDS("df_response_diversity/df_resp_div_Biel.rds")
-#not all values are exactly the same, why?
+# path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/predictions_abundance"
+# 
+# predictions_list <-list.files(path_pred)
+# 
+# predictions_test <- tibble()
+# 
+# for (i in lakes_list){
+#   predictions_test <- predictions_list |> 
+#     as_tibble() |> 
+#     filter(str_detect(value, i)) |> 
+#     pull(value)
+#   saveRDS(predictions_test, paste0("predictions_lake/predictions_",i,".rds"))
+# }
+# 
+# # biel
+# lake_biel <- readRDS("predictions_lake/predictions_Biel.rds")
+# biel_predictions <- list()
+# 
+# for (i in lake_biel){
+#   biel_predictions[[i]] <- readRDS(paste0(path_pred,"/", i))
+# }
+# 
+# df_biel <- biel_predictions |> 
+#   bind_cols() |> 
+#   rename_all(~stringr::str_replace(.,"^predictions_Biel_","")) |> 
+#   rename_with(~ sub(".rds$", "", .x), everything())
+# 
+# biel_temp <- abu_nets_df_final |> 
+#   filter(Lake == "Biel")
+# 
+# biel_temp_gradient <- data.frame(mean_last_7days = seq(from = min(biel_temp$mean_last_7days, na.rm = TRUE), to = max(biel_temp$mean_last_7days, na.rm = TRUE), by = 0.02))
+# 
+# df_biel <- cbind(df_biel, biel_temp_gradient)
+# 
+# 
+# df_biel_pred <- df_biel |> 
+#   pivot_longer(
+#     cols = c(1:22),
+#     names_to = "Species", 
+#     values_to = "model_prediction")
+# 
+# df_biel_pred <- df_biel_pred |> 
+#   rename(temp = mean_last_7days)
+# 
+# #test if loop gives the same results
+# biel_pred_test <- readRDS("df_predictions/df_pred_Biel.rds")
+# #predictions work!
+# #all lakes
+# 
+# path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_abundance"
+# 
+# deriv_list <-list.files(path_deriv)
+# 
+# deriv_test <- list()
+# 
+# for (i in lakes_list){
+#   deriv_test <- deriv_list |> 
+#     as_tibble() |> 
+#     filter(str_detect(value, i)) |> 
+#     pull(value)
+#   saveRDS(deriv_test, paste0("derivatives_lake/derivatives_", i,".rds"))
+# }
+# 
+# #biel 
+# lake_biel_deriv <- readRDS("derivatives_lake/derivatives_Biel.rds")
+# biel_deriv <- list()
+# 
+# for (i in lake_biel_deriv){
+#   biel_deriv[[i]] <- readRDS(paste0(path_deriv, "/", i))
+# }
+# 
+# df_biel_deriv <- biel_deriv |> 
+#    bind_rows(.id = "id")
+# 
+# df_biel_deriv$id <- gsub("derivatives_Biel_", "", df_biel_deriv$id)
+# df_biel_deriv$id <- sub(".rds$", "", df_biel_deriv$id)
+# 
+# df_biel_deriv <- df_biel_deriv |> 
+#   rename(Species = id) |> 
+#   rename(temp = data)
+# 
+# #does it work?
+# biel_deriv_test <- readRDS("df_derivatives/df_deriv_Biel.rds")
+# #works!!
+# 
+# #response diversity
+# #biel
+# 
+# df_biel_resp_div <- df_biel_deriv |> 
+#   select(Species, temp, derivative) |> 
+#    pivot_wider(
+#      names_from = Species,
+#      values_from = derivative)
+# 
+# df_biel_resp_div$rdiv <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = F)
+# df_biel_resp_div$sign <- apply(df_biel_resp_div[,c(2:22)], 1, resp_div, sign_sens = T)
+# df_biel_resp_div$Med <- median(df_biel_resp_div$rdiv)
+# 
+# #does it work?
+# biel_resp_div_test <- readRDS("df_response_diversity/df_resp_div_Biel.rds")
+# #not all values are exactly the same, why?
 ```
 
 ### DFs loops
@@ -480,7 +480,54 @@ for (i in lakes_list){
 #try to find way to open deriv files in loop and changing these (this code works though)
 ```
 
-#### Plotting
+### Plotting part
+
+```{r}
+#| eval: false
+#rm(list = ls())
+#removes all variables from the current environment, not necessary for what I am doing here
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+#library(hypervolume)
+library(here)
+library(readr)
+
+# function includes lakeColors
+source(here("color-and-functions.R"))
+
+```
+
+### Loading DFs
+
+```{r}
+#loading all dfs
+#predictions
+file_path <-  "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/df_predictions"
+
+file_list <-list.files(file_path)
+liste_predictions <- list()
+
+for (i in lakes_list){
+  liste_predictions <- file_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  for (j in liste_predictions){
+    
+    
+  }
+}
+
+df_biel_pred <- readRDS("df_predictions/df_pred_Biel.rds")
+df_brienz_pred <- readRDS("df_predictions/df_pred_Brienz.rds")
+df_constance_pred <- readRDS("df_predictions/df_pred_Constance.rds")
+
+```
+
+### Plots
 
 ```{r}
 ##plotting test biel
