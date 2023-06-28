@@ -27,7 +27,9 @@ df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master T
 
 ```
 
-## 2. Calculating Response Diversity for all lakes
+## 2. Abundance: Calculating Response Diversity for all lakes
+
+### Preparing predictions and derivatives
 
 First trying it with nested data. Otherwise, doing a for loop or a function
 
@@ -47,9 +49,6 @@ nets_df_final <- df_final_no_electro |>
 lakes_list <- nets_df_final |> 
   distinct(Lake) |> 
   pull(Lake)
-
-
-
 # working with an abundance subset of this dataset
 # if else statement in loop would be a possibility
 abu_nets_df_final <- nets_df_final |> 
@@ -208,10 +207,211 @@ for (i in lakes_list){
 #3. find easy way to calculate response diversity: done
 
 ##Fakultative ###
-#response diversity kürzen
+#response diversity kürze
 ```
 
-### Plotting part
+## 3. Presence
+
+Deleting everything to reduce possibility of errors
+
+```{r}
+#| eval: false
+rm(list = ls())
+#removes all variables from the current environment, not necessary for what I am doing here
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+#library(hypervolume)
+library(here)
+library(readr)
+
+# function includes lakeColors
+source(here("color-and-functions.R"))
+
+# load final dataset
+df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+
+```
+
+```{r}
+# df_final_ne does not include the data from electro fishing -> different number of fish species per lake
+
+# change that presence and abundance are in one column with one column for value
+nets_df_final <- df_final_no_electro |> 
+  pivot_longer(
+    cols = c("Abundance", "Presence"), 
+    names_to = "Parameter", 
+    values_to = "value"
+  )
+
+
+# make list of all lakes
+lakes_list <- nets_df_final |> 
+  distinct(Lake) |> 
+  pull(Lake)
+
+
+# working with a presence subset of this dataset
+pre_nets_df_final <- nets_df_final |> 
+  filter(Parameter == "Presence")
+
+# make temperature gradient for the prediction
+# temp_gradient <- data.frame(mean_last_7days = seq(from = min(abu_nets_df_final$mean_last_7days, na.rm = TRUE), to = max(abu_nets_df_final$mean_last_7days, na.rm = TRUE), by = 0.02))
+
+
+# make empty lists for the new data provided by the loop
+gam_output <- list()
+model_prediction <- list()
+derivatives <- list()
+
+
+#loop for all lakes
+
+for (i in lakes_list){
+  presence_lake <- pre_nets_df_final |>
+    filter(Lake == i)
+  species_list <- presence_lake |>
+    distinct(Species) |>
+    pull(Species)
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
+  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){ #looping through all species occuring in this lake
+    data <- presence_lake |> 
+      filter(Species == j)
+    gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = binomial, method = "REML") #GAM per species in all lakes
+    model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    saveRDS(model_prediction[[j]], paste0("predictions_presence/predictions_",i,"_",j,".rds"))
+    derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+    saveRDS(derivatives[[j]], paste0("derivatives_presence/derivatives_",i,"_",j,".rds"))
+  }
+
+}
+
+# list of problems:
+#3. not all species have a color, fix this in lakecolors
+
+###TO DO ###
+# make for loop for presence/absence data
+#plotting
+
+# freiwillig
+#is there a faster way to generate the df for lake plotting?
+```
+
+```{r}
+#preparing dfs with predictions for all lakes
+
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/predictions_presence"
+
+predictions_list <-list.files(path_pred)
+
+predictions_lakes <- list()
+
+#loop works!!!!!!! first real loop of my life
+for (i in lakes_list){
+  predictions_lakes <- predictions_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  pred <- list()
+  lake_data <- pre_nets_df_final |>
+    filter(Lake == i)
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  for (j in predictions_lakes){
+    # print(predictions_test)
+    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+    df <- pred |>
+      bind_cols() |> 
+      rename_all(~stringr::str_replace(.,"^predictions_","")) |> #lake in column name needs to be removed too
+      rename_with(~ sub(".rds$", "", .x), everything())
+    df_temp <- cbind(df, temp_gradient)
+    # saveRDS(df_temp, paste0("df_test/df_pred_", i, ".rds"))
+    df_pred <- df_temp |> 
+      pivot_longer(
+        cols = !last_col(), 
+        names_to = "Species",
+        values_to = "model_prediction") |> 
+      rename(temp = mean_last_7days)
+    saveRDS(df_pred, paste0("df_predictions_presence/df_pred_", i, ".rds"))
+  }
+}
+
+# derivatives
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_presence"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    saveRDS(df_deriv, paste0("df_derivatives_presence/df_deriv_", i, ".rds"))
+  }
+}
+
+#response diversity
+
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/derivatives_presence"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    df_resp_div <- df_deriv |> 
+      select(Species, temp, derivative) |> 
+      pivot_wider(
+        names_from = Species,
+        values_from = derivative) |> 
+      rename_all(~stringr::str_replace(.,"^derivatives_","")) |> 
+      rename_with(~ sub(".rds$", "", .x), everything())
+    #test <- df_resp_div |>
+      #select (-temp) |>
+      #mutate_all(rdiv = resp_div(1, sign_sens = F))
+    df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+    df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+    df_resp_div$Med <- median(df_resp_div$rdiv)
+    saveRDS(df_resp_div, paste0("df_response_diversity_presence/df_resp_div_", i, ".rds"))
+  }
+}
+
+
+###TO DO #####
+#1. remove lake names in front of species names in predictions
+#2. remove blabla around species name in derivatives in column
+#3. find easy way to calculate response diversity: done
+
+##Fakultative ###
+#response diversity kürze
+```
+
+## 4. Plotting part
 
 ```{r}
 #| eval: false
@@ -236,31 +436,38 @@ source(here("color-and-functions.R"))
 ```{r}
 #loading all dfs
 #predictions
-file_path <-  "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/df_predictions"
-
-file_list <-list.files(file_path)
-liste_predictions <- list()
-
-for (i in lakes_list){
-  liste_predictions <- file_list |> 
-    as_tibble() |> 
-    filter(str_detect(value, i)) |> 
-    pull(value)
-  for (j in liste_predictions){
-    
-    
-  }
-}
-
-df_biel_pred <- readRDS("df_predictions/df_pred_Biel.rds")
-df_brienz_pred <- readRDS("df_predictions/df_pred_Brienz.rds")
-df_constance_pred <- readRDS("df_predictions/df_pred_Constance.rds")
+# file_path <-  "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/df_predictions"
+# 
+# file_list <-list.files(file_path)
+# liste_predictions <- list()
+# 
+# for (i in lakes_list){
+#   liste_predictions <- file_list |> 
+#     as_tibble() |> 
+#     filter(str_detect(value, i)) |> 
+#     pull(value)
+#   for (j in liste_predictions){
+#     
+#     
+#   }
+# }
 
 ```
 
-### Plots
+## Plots
+
+#### Biel
 
 ```{r}
+
+#not working because of species names!!
+df_biel_pred <- readRDS("df_predictions/df_pred_Biel.rds")
+df_biel_pred_pres <- readRDS("df_predictions_presence/df_pred_Biel.rds")
+df_biel_deriv <- readRDS("df_derivatives/df_deriv_Biel.rds")
+df_biel_deriv_pres <- readRDS("df_derivatives_presence/df_deriv_Biel.rds")
+df_biel_resp_div <- readRDS("df_response_diversity/df_resp_div_Biel.rds")
+df_biel_resp_div_pres <- readRDS("df_response_diversity_presence/df_resp_div_Biel.rds")
+
 ##plotting test biel
 fig_a <- ggplot() +
   theme_classic(base_size = 14) +
@@ -268,95 +475,248 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) 
-  # scale_colour_manual(values = lakeColors)
+  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors)
   # lims(y = c(ymin_p, ymax_p))
 
 fig_a
 
-# plotting derivatives of presence
-
 fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
-  labs(x = "Temperature", y = "Derivative", tag = "c)") +
+  labs(x = "Temperature", y = "Derivative", tag = "b)") +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line() 
-  # scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(dmin, dmax))
 
-fig_b
 
-# plotting dissimilarity of derivatives
 fig_c <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_classic(base_size = 14) +
-  labs(x = NULL, y = "Dissimilarity", tag = "e)") +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
   geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
   geom_line()
   # lims(y = c(rmin_p, rmax_p))
 
-fig_c
-
-# plot divergence
-
 fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_classic(base_size = 14) +
-  labs(x = "Temperature", y = "Sign", tag = "g)") +
+  labs(x = "Temperature", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_biel_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_biel_deriv_pres, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_biel_resp_div_pres, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_biel_resp_div_pres, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "h)") +
   geom_line()
   # lims(y = c(smin, smax))
 
-fig_d
+plot_lake_biel <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Biel')
+
+plot_lake_biel
+
 
 ```
 
-```{r}
-##plotting brienz
+#### Brienz
 
-fig_e <- ggplot() +
+```{r}
+
+df_brienz_pred <- readRDS("df_predictions/df_pred_Brienz.rds")
+df_brienz_pred_pres <- readRDS("df_predictions_presence/df_pred_Brienz.rds")
+df_brienz_deriv <- readRDS("df_derivatives/df_deriv_Brienz.rds")
+df_brienz_deriv_pres <- readRDS("df_derivatives_presence/df_deriv_Brienz.rds")
+df_brienz_resp_div <- readRDS("df_response_diversity/df_resp_div_Brienz.rds")
+df_brienz_resp_div_pres <- readRDS("df_response_diversity_presence/df_resp_div_Brienz.rds")
+
+##plotting test brienz
+fig_a <- ggplot() +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Abundance", tag = "a)") +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) 
-  # scale_colour_manual(values = lakeColors)
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
+  # scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(ymin_p, ymax_p))
 
-fig_e
-
-# plotting derivatives of presence
-
-fig_f <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
-  labs(x = "Temperature", y = "Derivative", tag = "c)") +
+  labs(x = "Temperature", y = "Derivative", tag = "b)") +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line() 
+  geom_line(show.legend = FALSE)
   # scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(dmin, dmax))
 
-fig_f
 
-# plotting dissimilarity of derivatives
-fig_g <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
+fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_classic(base_size = 14) +
-  labs(x = NULL, y = "Dissimilarity", tag = "e)") +
-  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
   geom_line()
   # lims(y = c(rmin_p, rmax_p))
 
-fig_g
-
-# plot divergence
-
-fig_h <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
+fig_d <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_classic(base_size = 14) +
-  labs(x = "Temperature", y = "Sign", tag = "g)") +
+  labs(x = "Temperature", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
+  # scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_brienz_deriv_pres, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE)
+  # scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_brienz_resp_div_pres, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_brienz_resp_div_pres, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "h)") +
   geom_line()
   # lims(y = c(smin, smax))
 
-fig_h
+plot_lake_brienz <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Brienz')
+
+plot_lake_brienz
+
+
+```
+
+#### Constance
+
+```{r}
+df_constance_pred <- readRDS("df_predictions/df_pred_Constance.rds")
+df_constance_pred_pres <- readRDS("df_predictions_presence/df_pred_Constance.rds")
+df_constance_deriv <- readRDS("df_derivatives/df_deriv_Constance.rds")
+df_constance_deriv_pres <- readRDS("df_derivatives_presence/df_deriv_Constance.rds")
+df_constance_resp_div <- readRDS("df_response_diversity/df_resp_div_Constance.rds")
+df_constance_resp_div_pres <- readRDS("df_response_diversity_presence/df_resp_div_Constance.rds")
+
+##plotting test constance
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
+# scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE)
+# scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
+# scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_constance_deriv_pres, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE)
+# scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_constance_resp_div_pres, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_constance_resp_div_pres, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_constance <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake constance')
+
+plot_lake_constance
 
 ```
