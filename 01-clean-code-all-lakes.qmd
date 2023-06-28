@@ -475,8 +475,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
-  scale_colour_manual(values = lakeColors)
+
+  
   # lims(y = c(ymin_p, ymax_p))
 
 fig_a
