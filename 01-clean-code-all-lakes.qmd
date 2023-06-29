@@ -408,6 +408,8 @@ for (i in lakes_list){
     saveRDS(df_resp_div, paste0("df_response_diversity_presence/df_resp_div_", i, ".rds"))
   }
 }
+
+#should it be -2?
 ```
 
 ## 4. Plotting part
@@ -543,7 +545,7 @@ plot_lake_biel <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h 
 
 plot_lake_biel
 
-
+ggsave(filename = "plot_lake_biel.pdf", plot = plot_lake_biel, width = 7, height = 7)
 ```
 
 #### Brienz
@@ -564,8 +566,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-  # scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -574,8 +576,8 @@ fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, 
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-  # scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
   # lims(y = c(dmin, dmax))
 
 
@@ -598,8 +600,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_brienz_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-  # scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_brienz_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -609,8 +611,8 @@ fig_f <- ggplot(data = df_brienz_deriv_pres, mapping = aes(x = temp, y = derivat
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-  # scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -631,7 +633,7 @@ plot_lake_brienz <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_brienz
 
-
+ggsave(filename = "plot_lake_brienz.pdf", plot = plot_lake_brienz, width = 7, height = 7)
 ```
 
 #### Constance
@@ -651,8 +653,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_constance_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_constance_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -661,8 +663,8 @@ fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = temp, y = derivativ
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -685,8 +687,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_constance_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_constance_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -696,8 +698,8 @@ fig_f <- ggplot(data = df_constance_deriv_pres, mapping = aes(x = temp, y = deri
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -718,6 +720,7 @@ plot_lake_constance <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + f
 
 plot_lake_constance
 
+ggsave(filename = "plot_lake_constance.pdf", plot = plot_lake_constance, width = 7, height = 7)
 ```
 
 #### Geneva
@@ -737,8 +740,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_geneva_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_geneva_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_geneva_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -747,8 +750,8 @@ fig_b <- ggplot(data = df_geneva_deriv, mapping = aes(x = temp, y = derivative, 
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -771,8 +774,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_geneva_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_geneva_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -782,8 +785,8 @@ fig_f <- ggplot(data = df_geneva_deriv_pres, mapping = aes(x = temp, y = derivat
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -804,6 +807,8 @@ plot_lake_geneva <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_geneva
 
+ggsave(filename = "plot_lake_geneva.pdf", plot = plot_lake_geneva, width = 7, height = 7)
+
 ```
 
 #### Joux
@@ -823,8 +828,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_joux_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_joux_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_joux_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -833,8 +838,8 @@ fig_b <- ggplot(data = df_joux_deriv, mapping = aes(x = temp, y = derivative, co
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -857,8 +862,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_joux_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_joux_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -868,8 +873,8 @@ fig_f <- ggplot(data = df_joux_deriv_pres, mapping = aes(x = temp, y = derivativ
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -890,6 +895,7 @@ plot_lake_joux <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h 
 
 plot_lake_joux
 
+ggsave(filename = "plot_lake_joux.pdf", plot = plot_lake_joux, width = 7, height = 7)
 ```
 
 #### Lucerne
@@ -909,8 +915,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_lucerne_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_lucerne_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_lucerne_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -919,8 +925,8 @@ fig_b <- ggplot(data = df_lucerne_deriv, mapping = aes(x = temp, y = derivative,
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -943,8 +949,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_lucerne_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_lucerne_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -954,8 +960,8 @@ fig_f <- ggplot(data = df_lucerne_deriv_pres, mapping = aes(x = temp, y = deriva
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -976,6 +982,7 @@ plot_lake_lucerne <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig
 
 plot_lake_lucerne
 
+ggsave(filename = "plot_lake_lucerne.pdf", plot = plot_lake_lucerne, width = 7, height = 7)
 ```
 
 #### Lugano
@@ -995,8 +1002,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_lugano_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_lugano_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_lugano_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1005,8 +1012,8 @@ fig_b <- ggplot(data = df_lugano_deriv, mapping = aes(x = temp, y = derivative, 
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1029,8 +1036,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_lugano_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_lugano_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1040,8 +1047,8 @@ fig_f <- ggplot(data = df_lugano_deriv_pres, mapping = aes(x = temp, y = derivat
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1062,6 +1069,7 @@ plot_lake_lugano <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_lugano
 
+ggsave(filename = "plot_lake_lugano.pdf", plot = plot_lake_lugano, width = 7, height = 7)
 ```
 
 #### Maggiore
@@ -1081,8 +1089,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_maggiore_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_maggiore_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_maggiore_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1091,8 +1099,8 @@ fig_b <- ggplot(data = df_maggiore_deriv, mapping = aes(x = temp, y = derivative
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1115,8 +1123,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_maggiore_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_maggiore_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1126,8 +1134,8 @@ fig_f <- ggplot(data = df_maggiore_deriv_pres, mapping = aes(x = temp, y = deriv
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1148,6 +1156,7 @@ plot_lake_maggiore <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fi
 
 plot_lake_maggiore
 
+ggsave(filename = "plot_lake_maggiore.pdf", plot = plot_lake_maggiore, width = 7, height = 7)
 ```
 
 #### Morat
@@ -1167,8 +1176,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_morat_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_morat_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1177,8 +1186,8 @@ fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = temp, y = derivative, c
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1201,8 +1210,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_morat_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_morat_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1212,8 +1221,8 @@ fig_f <- ggplot(data = df_morat_deriv_pres, mapping = aes(x = temp, y = derivati
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1234,6 +1243,7 @@ plot_lake_morat <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h
 
 plot_lake_morat
 
+ggsave(filename = "plot_lake_morat.pdf", plot = plot_lake_morat, width = 7, height = 7)
 ```
 
 #### Neuchatel
@@ -1253,8 +1263,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_neuchatel_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_neuchatel_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_neuchatel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1263,8 +1273,8 @@ fig_b <- ggplot(data = df_neuchatel_deriv, mapping = aes(x = temp, y = derivativ
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1287,8 +1297,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_neuchatel_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_neuchatel_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1298,8 +1308,8 @@ fig_f <- ggplot(data = df_neuchatel_deriv_pres, mapping = aes(x = temp, y = deri
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1320,6 +1330,7 @@ plot_lake_neuchatel <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + f
 
 plot_lake_neuchatel
 
+ggsave(filename = "plot_lake_neuchatel.pdf", plot = plot_lake_neuchatel, width = 7, height = 7)
 ```
 
 #### Poschiavo
@@ -1339,8 +1350,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_poschiavo_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_poschiavo_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1349,8 +1360,8 @@ fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = temp, y = derivativ
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1373,8 +1384,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_poschiavo_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_poschiavo_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1384,8 +1395,8 @@ fig_f <- ggplot(data = df_poschiavo_deriv_pres, mapping = aes(x = temp, y = deri
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1406,6 +1417,7 @@ plot_lake_poschiavo <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + f
 
 plot_lake_poschiavo
 
+ggsave(filename = "plot_lake_poschiavo.pdf", plot = plot_lake_poschiavo, width = 7, height = 7)
 ```
 
 #### Sarnen
@@ -1425,8 +1437,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_sarnen_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_sarnen_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1435,8 +1447,8 @@ fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = temp, y = derivative, 
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1459,8 +1471,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_sarnen_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_sarnen_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1470,8 +1482,8 @@ fig_f <- ggplot(data = df_sarnen_deriv_pres, mapping = aes(x = temp, y = derivat
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1492,6 +1504,9 @@ plot_lake_sarnen <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_sarnen
 
+
+ggsave(filename = "plot_lake_sarnen.pdf", plot = plot_lake_sarnen, width = 7, height = 7)
+
 ```
 
 #### Thun
@@ -1511,8 +1526,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_thun_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_thun_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1521,8 +1536,8 @@ fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = temp, y = derivative, co
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1545,8 +1560,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_thun_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_thun_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1556,8 +1571,8 @@ fig_f <- ggplot(data = df_thun_deriv_pres, mapping = aes(x = temp, y = derivativ
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1578,6 +1593,8 @@ plot_lake_thun <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h 
 
 plot_lake_thun
 
+ggsave(filename = "plot_lake_thun.pdf", plot = plot_lake_thun, width = 7, height = 7)
+
 ```
 
 #### Walen
@@ -1597,8 +1614,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_walen_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_walen_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1607,8 +1624,8 @@ fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = temp, y = derivative, c
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1631,8 +1648,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_walen_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_walen_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1642,8 +1659,8 @@ fig_f <- ggplot(data = df_walen_deriv_pres, mapping = aes(x = temp, y = derivati
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1664,6 +1681,7 @@ plot_lake_walen <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h
 
 plot_lake_walen
 
+ggsave(filename = "plot_lake_walen.pdf", plot = plot_lake_walen, width = 7, height = 7)
 ```
 
 #### Zug
@@ -1683,8 +1701,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_zug_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_zug_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1693,8 +1711,8 @@ fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = temp, y = derivative, col
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1717,8 +1735,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_zug_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_zug_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1728,8 +1746,8 @@ fig_f <- ggplot(data = df_zug_deriv_pres, mapping = aes(x = temp, y = derivative
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1750,6 +1768,7 @@ plot_lake_zug <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +
 
 plot_lake_zug
 
+ggsave(filename = "plot_lake_zug.pdf", plot = plot_lake_zug, width = 7, height = 7)
 ```
 
 #### Zurich
@@ -1769,8 +1788,8 @@ fig_a <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_zurich_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_zurich_pred, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
 fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
@@ -1779,8 +1798,8 @@ fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = temp, y = derivative, 
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
 
@@ -1803,8 +1822,8 @@ fig_e <- ggplot() +
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(data = df_zurich_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(data = df_zurich_pred_pres, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1814,8 +1833,8 @@ fig_f <- ggplot(data = df_zurich_deriv_pres, mapping = aes(x = temp, y = derivat
   geom_hline(
     yintercept = 0,
     lty = 2) +
-  geom_line(show.legend = FALSE)
-# scale_colour_manual(values = lakeColors, guide = NULL)
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
 
 
 
@@ -1836,4 +1855,5 @@ plot_lake_zurich <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_zurich
 
+ggsave(filename = "plot_lake_zurich.pdf", plot = plot_lake_zurich, width = 7, height = 7)
 ```
