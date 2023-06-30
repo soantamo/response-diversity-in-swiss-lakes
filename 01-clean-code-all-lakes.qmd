@@ -457,6 +457,17 @@ source(here("color-and-functions.R"))
 
 ## Plots
 
+Testing
+
+```{r}
+# df_walen_pred <- readRDS("df_predictions/df_pred_Walen.rds")
+df_walen_pred_pres <- readRDS("df_predictions_presence/df_pred_Walen.rds")
+# df_walen_deriv <- readRDS("df_derivatives/df_deriv_Walen.rds")
+df_walen_deriv_pres <- readRDS("df_derivatives_presence/df_deriv_Walen.rds")
+# df_walen_resp_div <- readRDS("df_response_diversity/df_resp_div_Walen.rds")
+df_walen_resp_div_pres <- readRDS("df_response_diversity_presence/df_resp_div_Walen.rds")
+```
+
 #### Biel
 
 ```{r}
