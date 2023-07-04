@@ -7,6 +7,11 @@ editor: visual
 ## 1. Data for response diversity
 
 ```{r}
+#to do:
+#what is going on with sign and dissimilarity in plots? why dotted line always at 5?
+```
+
+```{r}
 #| eval: false
 #rm(list = ls())
 #removes all variables from the current environment, not necessary for what I am doing here
