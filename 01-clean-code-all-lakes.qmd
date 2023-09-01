@@ -7,14 +7,6 @@ editor: visual
 ## 1. Data for response diversity
 
 ```{r}
-#to do:
-#1 what is going on with sign and dissimilarity in plots? why dotted line always at 5?
-# i think i found it. Lake Biel is reference in all plots
-#2. plot interpretation
-
-```
-
-```{r}
 #| eval: false
 #rm(list = ls())
 #removes all variables from the current environment, not necessary for what I am doing here
@@ -36,10 +28,13 @@ df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master T
 
 ```
 
-## 1.5 Troubleshooting Divergence and Dissimilarity
+## 1.5 Small lakes for testing
 
 ```{r}
-# using small lakes to test problem with dissimilarity and divergence
+#now checking all summaries, try to add summary of gam to code
+#working
+#next: how can I interpret the summary?
+#repeat interpretation for all species in all lakes in abundance and presence/absence
 
 # change that presence and abundance are in one column with one column for value
 nets_df_final <- df_final_no_electro |> 
@@ -80,6 +75,8 @@ for (i in small_lakes){
     data <- presence_lake |> 
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
+    summary <- summary(gam_output[[j]])
+    saveRDS(summary, paste0("test_summary/summary",i,"_",j,".rds"))
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
     model_bind <- cbind(model_prediction[[j]], temp_gradient)
     saveRDS(model_bind, paste0("test_predictions_abu_small/predictions_",i,"_",j,".rds"))
@@ -89,6 +86,9 @@ for (i in small_lakes){
 
 }
 
+
+test <- readRDS("test_summary/summaryBiel_Abramis_brama.rds")
+test2 <- readRDS("test_summary/summaryBiel_Barbus_barbus.rds")
 ```
 
 ```{r}
@@ -407,115 +407,115 @@ for (i in lakes_list){
 # !!!Testing problems of Temperature in df_pred
 
 ```{r}
-
-#small lake subset to try loop
-
-
-gam_output <- list()
-model_prediction <- list()
-
-derivatives <- list()
-
-df_small <- abu_nets_df_final |>
-  filter(Lake %in% c("Biel", "Brienz", "Walen"))
-
-small_lakes <- df_small |>
-  distinct(Lake) |>
-  pull(Lake)
-
-#neue änderung: cbind of model_prediction and temp_gradient and then save this as RDS
-for (i in small_lakes){
-  presence_lake <- df_small |>
-    filter(Lake == i)
-  species_list <- presence_lake |>
-    distinct(Species) |>
-    pull(Species)
-  temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
-  for (j in species_list){ #looping through all species occuring in this lake
-    data <- presence_lake |>
-      filter(Species == j)
-    gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
-    model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-    test_bind <- cbind(model_prediction[[j]], temp_gradient)
-    saveRDS(test_bind, paste0("aa_pred_test/predictions_",i,"_",j,".rds"))
-    derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
-    # saveRDS(derivatives[[j]], paste0("aa_deriv_test/derivatives_",i,"_",j,".rds"))
-    }
-}
-
-#testing if bind works to get the temperature data too
-test_pred <- readRDS("aa_pred_test/predictions_Biel_Abramis_brama.rds")
-#now temperature gradient present
-# loop for df_pred
-
-path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/aa_pred_test"
-
-predictions_list <-list.files(path_pred)
-
-predictions_lakes <- list()
-
-#loop works!!!!!!! first real loop of my life
-for (i in small_lakes){
-  predictions_lakes <- predictions_list |> 
-    as_tibble() |> 
-    filter(str_detect(value, i)) |> 
-    pull(value)
-  pred <- list()
-  lake_data <- abu_nets_df_final |>
-    filter(Lake == i)
-  # temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02)) 
-  for (j in predictions_lakes){
-    # print(predictions_test)
-    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
-    # df_new <- pred |>
-    #   bind_cols() |> 
-    #   rename_all(~stringr::str_replace(.,"^predictions_","")) |>
-    #   rename_all(~stringr::str_replace(.,"^[^_]*_", "")) |> #lake is also subsetted
-    #   rename_with(~ sub(".rds$", "", .x), everything())
-    df_test <- pred |>
-      bind_rows(.id ="id") |>
-      rename(Species = id) |> 
-      rename(model_prediction = `model_prediction[[j]]`) |> #does not work
-      rename(temp = mean_last_7days) |> 
-      mutate(Species = sub("^[^_]*_", "", Species)) |> 
-      mutate(Species = sub("^[^_]*_", "", Species)) |>
-      mutate(Species = sub("\\.rds$", "", Species))
-    # df_pred <- df_new |>
-    #   pivot_longer(
-    #     cols = everything(),
-    #     names_to = "Species",
-    #     values_to = "model_prediction")
-    saveRDS(df_test, paste0("aa_test/df_pred_", i, ".rds"))
-  }
-}
-
-test_pred <- readRDS("aa_pred_test/predictions_Biel_Abramis_brama.rds")
-deriv_test <- readRDS("derivatives_abundance/derivatives_Biel_Abramis_brama.rds")
-
-###problem: in derivatives a tibble is made, in predictions it is just values (array), we need a tibble
-test <- readRDS("aa_test/df_pred_Biel.rds")
-test2 <- readRDS("aa_test/df_pred_Brienz.rds")
-
-test_new <- test2 |> 
-  rename(model_prediction = `model_prediction[[j]]`)
-
-walen <- readRDS("aa_test/df_pred_Walen.rds")
-#solved
-#to do
-#1. check if the tibble is the same as with the former code: done
-#2. change name of model_prediction column: done
-#3. change code for all species
-
-fig_a <- ggplot() +
-  theme_classic(base_size = 14) +
-  labs(x = "Temperature", y = "Abundance", tag = "a)") +
-  geom_hline(
-    yintercept = 0,
-    lty = 2) +
-  geom_line(data = test, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
-  scale_colour_manual(values = lakeColors, guide = NULL)
-
-fig_a
+# 
+# #small lake subset to try loop
+# 
+# 
+# gam_output <- list()
+# model_prediction <- list()
+# 
+# derivatives <- list()
+# 
+# df_small <- abu_nets_df_final |>
+#   filter(Lake %in% c("Biel", "Brienz", "Walen"))
+# 
+# small_lakes <- df_small |>
+#   distinct(Lake) |>
+#   pull(Lake)
+# 
+# #neue änderung: cbind of model_prediction and temp_gradient and then save this as RDS
+# for (i in small_lakes){
+#   presence_lake <- df_small |>
+#     filter(Lake == i)
+#   species_list <- presence_lake |>
+#     distinct(Species) |>
+#     pull(Species)
+#   temp_gradient <- data.frame(mean_last_7days = seq(from = min(presence_lake$mean_last_7days, na.rm = TRUE), to = max(presence_lake$mean_last_7days, na.rm = TRUE), by = 0.02))
+#   for (j in species_list){ #looping through all species occuring in this lake
+#     data <- presence_lake |>
+#       filter(Species == j)
+#     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
+#     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+#     test_bind <- cbind(model_prediction[[j]], temp_gradient)
+#     saveRDS(test_bind, paste0("aa_pred_test/predictions_",i,"_",j,".rds"))
+#     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+#     # saveRDS(derivatives[[j]], paste0("aa_deriv_test/derivatives_",i,"_",j,".rds"))
+#     }
+# }
+# 
+# #testing if bind works to get the temperature data too
+# test_pred <- readRDS("aa_pred_test/predictions_Biel_Abramis_brama.rds")
+# #now temperature gradient present
+# # loop for df_pred
+# 
+# path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/aa_pred_test"
+# 
+# predictions_list <-list.files(path_pred)
+# 
+# predictions_lakes <- list()
+# 
+# #loop works!!!!!!! first real loop of my life
+# for (i in small_lakes){
+#   predictions_lakes <- predictions_list |> 
+#     as_tibble() |> 
+#     filter(str_detect(value, i)) |> 
+#     pull(value)
+#   pred <- list()
+#   lake_data <- abu_nets_df_final |>
+#     filter(Lake == i)
+#   # temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02)) 
+#   for (j in predictions_lakes){
+#     # print(predictions_test)
+#     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+#     # df_new <- pred |>
+#     #   bind_cols() |> 
+#     #   rename_all(~stringr::str_replace(.,"^predictions_","")) |>
+#     #   rename_all(~stringr::str_replace(.,"^[^_]*_", "")) |> #lake is also subsetted
+#     #   rename_with(~ sub(".rds$", "", .x), everything())
+#     df_test <- pred |>
+#       bind_rows(.id ="id") |>
+#       rename(Species = id) |> 
+#       rename(model_prediction = `model_prediction[[j]]`) |> #does not work
+#       rename(temp = mean_last_7days) |> 
+#       mutate(Species = sub("^[^_]*_", "", Species)) |> 
+#       mutate(Species = sub("^[^_]*_", "", Species)) |>
+#       mutate(Species = sub("\\.rds$", "", Species))
+#     # df_pred <- df_new |>
+#     #   pivot_longer(
+#     #     cols = everything(),
+#     #     names_to = "Species",
+#     #     values_to = "model_prediction")
+#     saveRDS(df_test, paste0("aa_test/df_pred_", i, ".rds"))
+#   }
+# }
+# 
+# test_pred <- readRDS("aa_pred_test/predictions_Biel_Abramis_brama.rds")
+# deriv_test <- readRDS("derivatives_abundance/derivatives_Biel_Abramis_brama.rds")
+# 
+# ###problem: in derivatives a tibble is made, in predictions it is just values (array), we need a tibble
+# test <- readRDS("aa_test/df_pred_Biel.rds")
+# test2 <- readRDS("aa_test/df_pred_Brienz.rds")
+# 
+# test_new <- test2 |> 
+#   rename(model_prediction = `model_prediction[[j]]`)
+# 
+# walen <- readRDS("aa_test/df_pred_Walen.rds")
+# #solved
+# #to do
+# #1. check if the tibble is the same as with the former code: done
+# #2. change name of model_prediction column: done
+# #3. change code for all species
+# 
+# fig_a <- ggplot() +
+#   theme_classic(base_size = 14) +
+#   labs(x = "Temperature", y = "Abundance", tag = "a)") +
+#   geom_hline(
+#     yintercept = 0,
+#     lty = 2) +
+#   geom_line(data = test, mapping = aes(x = temp, y = model_prediction, color = Species), show.legend = FALSE) +
+#   scale_colour_manual(values = lakeColors, guide = NULL)
+# 
+# fig_a
 
 ```
 
