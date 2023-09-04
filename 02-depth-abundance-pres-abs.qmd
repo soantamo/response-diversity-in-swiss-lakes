@@ -354,3 +354,372 @@ depth_lake_walen <- fig_a + fig_b + fig_c + fig_d
 depth_lake_walen
   
 ```
+
+## All Lakes
+
+```{r}
+#| eval: false
+rm(list = ls())
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+#library(hypervolume)
+library(here)
+library(readr)
+
+# function from Ross et al. and species colors are now seperate
+source(here("functions.R"))
+source(here("species_colors.R"))
+
+# load final dataset
+df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+```
+
+### Abundance
+
+#### Predictions and derivatives
+
+```{r}
+#looking at depth
+# change that presence and abundance are in one column with one column for value
+nets_df_final <- df_final_no_electro |> 
+  pivot_longer(
+    cols = c("Abundance", "Presence"), 
+    names_to = "Parameter", 
+    values_to = "value"
+  )
+
+abu_nets_df_final <- nets_df_final |> 
+  filter(Parameter == "Abundance")
+         
+lakes_list <- abu_nets_df_final |>
+  distinct(Lake) |>
+  pull(Lake)
+
+
+# make empty lists for the new data provided by the loop
+gam_output <- list()
+model_prediction <- list()
+derivatives <- list()
+
+
+#loop for all lakes
+
+for (i in lakes_list){
+  presence_lake <- abu_nets_df_final |>
+    filter(Lake == i)
+  species_list <- presence_lake |>
+    distinct(Species) |>
+    pull(Species)
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(presence_lake$Depth_sample, na.rm = TRUE), to = max(presence_lake$Depth_sample, na.rm = TRUE), by = 0.02))
+  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){ #looping through all species occuring in this lake
+    data <- presence_lake |> 
+      filter(Species == j)
+    gam_output[[j]] <- gam(data = data, value ~ s(Depth_sample, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
+    # summary <- summary(gam_output[[j]])
+    # saveRDS(summary, paste0("Depth/test_summary/summary_",i,"_",j,".rds"))
+    model_prediction[[j]] <- predict.gam(gam_output[[j]], depth_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    model_bind <- cbind(model_prediction[[j]], depth_gradient)
+    saveRDS(model_bind, paste0("Depth/predictions_abundance/predictions_",i,"_",j,".rds"))
+    derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+    saveRDS(derivatives[[j]], paste0("Depth/derivatives_abundance/derivatives_",i,"_",j,".rds"))
+  }
+
+}
+
+# test <- readRDS("Depth/derivatives_abundance/derivatives_Biel_Abramis_brama.rds")
+# test2 <- readRDS("Depth/predictions_abundance/predictions_Biel_Coregonus_sp.rds")
+```
+
+#### Data frames for plotting
+
+```{r}
+#preparing dfs with predictions for all lakes
+
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/predictions_abundance"
+
+predictions_list <-list.files(path_pred)
+
+predictions_lakes <- list()
+
+#loop works!!!!!!! first real loop of my life
+for (i in lakes_list){
+  predictions_lakes <- predictions_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  pred <- list()
+  lake_data <- df_small |>
+    filter(Lake == i)
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  for (j in predictions_lakes){
+    # print(predictions_test)
+    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+    df_pred <- pred |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(model_prediction = `model_prediction[[j]]`) |> #does not work
+      rename(depth = Depth_sample) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_pred, paste0("Depth/df_predictions_abundance/df_pred_", i, ".rds"))
+      
+  }
+}
+
+# derivatives
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/derivatives_abundance"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(depth = data) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_deriv, paste0("Depth/df_derivatives_abundance/df_deriv_", i, ".rds"))
+  }
+}
+
+# test <- readRDS("df_derivatives/df_deriv_Biel.rds")
+#response diversity
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/derivatives_abundance"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(depth = data)
+    df_resp_div <- df_deriv |> 
+      select(Species, depth, derivative) |> 
+      pivot_wider(
+        names_from = Species,
+        values_from = derivative) |> 
+      rename_all(~stringr::str_replace(.,"^derivatives_","")) |> 
+      rename_all(~stringr::str_replace(.,"^[^_]*_", "")) |>
+      rename_with(~ sub(".rds$", "", .x), everything())
+    #test <- df_resp_div |>
+      #select (-temp) |>
+      #mutate_all(rdiv = resp_div(1, sign_sens = F))
+    df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+    df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+    df_resp_div$Med <- median(df_resp_div$rdiv)
+    saveRDS(df_resp_div, paste0("Depth/df_respdiv_abundance/df_resp_div_", i, ".rds"))
+  }
+}
+
+
+
+```
+
+### Presence
+
+```{r}
+#| eval: false
+rm(list = ls())
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+#library(hypervolume)
+library(here)
+library(readr)
+
+# function from Ross et al. and species colors are now seperate
+source(here("functions.R"))
+source(here("species_colors.R"))
+
+# load final dataset
+df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+```
+
+#### Predictions and derivatives
+
+```{r}
+#looking at depth
+# change that presence and abundance are in one column with one column for value
+nets_df_final <- df_final_no_electro |> 
+  pivot_longer(
+    cols = c("Abundance", "Presence"), 
+    names_to = "Parameter", 
+    values_to = "value"
+  )
+
+abu_nets_df_final <- nets_df_final |> 
+  filter(Parameter == "Presence")
+         
+lakes_list <- abu_nets_df_final |>
+  distinct(Lake) |>
+  pull(Lake)
+
+
+# make empty lists for the new data provided by the loop
+gam_output <- list()
+model_prediction <- list()
+derivatives <- list()
+
+
+#loop for all lakes
+
+for (i in lakes_list){
+  presence_lake <- abu_nets_df_final |>
+    filter(Lake == i)
+  species_list <- presence_lake |>
+    distinct(Species) |>
+    pull(Species)
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(presence_lake$Depth_sample, na.rm = TRUE), to = max(presence_lake$Depth_sample, na.rm = TRUE), by = 0.02))
+  #saveRDS(species_list,paste0("test_species/species_", i,".rds"))
+  for (j in species_list){ #looping through all species occuring in this lake
+    data <- presence_lake |> 
+      filter(Species == j)
+    gam_output[[j]] <- gam(data = data, value ~ s(Depth_sample, k = 3, bs = "cs"), family = binomial, method = "REML") #GAM per species in all lakes
+    # summary <- summary(gam_output[[j]])
+    # saveRDS(summary, paste0("Depth/test_summary/summary_",i,"_",j,".rds"))
+    model_prediction[[j]] <- predict.gam(gam_output[[j]], depth_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    model_bind <- cbind(model_prediction[[j]], depth_gradient)
+    saveRDS(model_bind, paste0("Depth/predictions_presence/predictions_",i,"_",j,".rds"))
+    derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+    saveRDS(derivatives[[j]], paste0("Depth/derivatives_presence/derivatives_",i,"_",j,".rds"))
+  }
+
+}
+
+```
+
+#### Data frame for plotting
+
+```{r}
+#preparing dfs with predictions for all lakes
+
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/predictions_presence"
+
+predictions_list <-list.files(path_pred)
+
+predictions_lakes <- list()
+
+#loop works!!!!!!! first real loop of my life
+for (i in lakes_list){
+  predictions_lakes <- predictions_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  pred <- list()
+  lake_data <- df_small |>
+    filter(Lake == i)
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  for (j in predictions_lakes){
+    # print(predictions_test)
+    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+    df_pred <- pred |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(model_prediction = `model_prediction[[j]]`) |> #does not work
+      rename(depth = Depth_sample) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_pred, paste0("Depth/df_predictions_presence/df_pred_", i, ".rds"))
+      
+  }
+}
+
+# derivatives
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/derivatives_presence"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(depth = data) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_deriv, paste0("Depth/df_derivatives_presence/df_deriv_", i, ".rds"))
+  }
+}
+
+#response diversity
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Depth/derivatives_presence"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in lakes_list){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(depth = data)
+    df_resp_div <- df_deriv |> 
+      select(Species, depth, derivative) |> 
+      pivot_wider(
+        names_from = Species,
+        values_from = derivative) |> 
+      rename_all(~stringr::str_replace(.,"^derivatives_","")) |> 
+      rename_all(~stringr::str_replace(.,"^[^_]*_", "")) |>
+      rename_with(~ sub(".rds$", "", .x), everything())
+    #test <- df_resp_div |>
+      #select (-temp) |>
+      #mutate_all(rdiv = resp_div(1, sign_sens = F))
+    df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+    df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+    df_resp_div$Med <- median(df_resp_div$rdiv)
+    saveRDS(df_resp_div, paste0("Depth/df_respdiv_presence/df_resp_div_", i, ".rds"))
+  }
+}
+
+
+
+```
