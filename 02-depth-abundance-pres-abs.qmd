@@ -452,7 +452,7 @@ for (i in lakes_list){
     filter(str_detect(value, i)) |> 
     pull(value)
   pred <- list()
-  lake_data <- df_small |>
+  lake_data <- abu_nets_df_final |>
     filter(Lake == i)
   depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
   for (j in predictions_lakes){
@@ -635,7 +635,7 @@ for (i in lakes_list){
     filter(str_detect(value, i)) |> 
     pull(value)
   pred <- list()
-  lake_data <- df_small |>
+  lake_data <- abu_nets_df_final |>
     filter(Lake == i)
   depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
   for (j in predictions_lakes){
