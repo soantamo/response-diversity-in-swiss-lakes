@@ -104,7 +104,7 @@ for (i in small_lakes){
   pred <- list()
   lake_data <- df_small |>
     filter(Lake == i)
-  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add Depth gradient to add to the df
   for (j in predictions_lakes){
     # print(predictions_test)
     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
@@ -454,7 +454,7 @@ for (i in lakes_list){
   pred <- list()
   lake_data <- abu_nets_df_final |>
     filter(Lake == i)
-  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add Depth gradient to add to the df
   for (j in predictions_lakes){
     # print(predictions_test)
     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
@@ -538,7 +538,8 @@ for (i in lakes_list){
   }
 }
 
-
+#test <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Biel.rds")
+#test2 <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Brienz.rds")
 
 ```
 
@@ -615,6 +616,7 @@ for (i in lakes_list){
 
 }
 
+test <- readRDS("Depth/predictions_presence/predictions_Geneva_Scardinius_erythrophthalmus.rds")
 ```
 
 #### Data frame for plotting
@@ -637,7 +639,7 @@ for (i in lakes_list){
   pred <- list()
   lake_data <- abu_nets_df_final |>
     filter(Lake == i)
-  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  depth_gradient <- data.frame(Depth_sample = seq(from = min(lake_data$Depth_sample, na.rm = TRUE), to = max(lake_data$Depth_sample, na.rm = TRUE), by = 0.02)) #add Depth gradient to add to the df
   for (j in predictions_lakes){
     # print(predictions_test)
     pred[[j]] <- readRDS(paste0(path_pred,"/", j))
@@ -722,4 +724,1447 @@ for (i in lakes_list){
 
 
 
+```
+
+## Plots
+
+```{r}
+#| eval: false
+rm(list = ls())
+library(tidyverse)
+library(patchwork)
+library(ggtext)
+library(mgcv)
+library(gratia)
+#library(hypervolume)
+library(here)
+library(readr)
+
+# function from Ross et al. and species colors are now seperate
+# source(here("functions.R"))
+source(here("species_colors.R"))
+```
+
+#### Biel
+
+```{r}
+df_biel_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Biel.rds")
+df_biel_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Biel.rds")
+df_biel_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Biel.rds")
+df_biel_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Biel.rds")
+df_biel_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Biel.rds")
+df_biel_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Biel.rds")
+
+##plotting test biel
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_biel_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_biel_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+  # lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_biel_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_biel_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_biel_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_biel_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+  # lims(y = c(smin, smax))
+
+plot_lake_biel <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Biel (Depth)')
+
+plot_lake_biel
+
+ggsave(filename = "plot_depth_lake_biel.pdf", plot = plot_lake_biel, width = 7, height = 7)
+```
+
+#### Brienz
+
+```{r}
+df_brienz_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Brienz.rds")
+df_brienz_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Brienz.rds")
+df_brienz_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Brienz.rds")
+df_brienz_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Brienz.rds")
+df_brienz_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Brienz.rds")
+df_brienz_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Brienz.rds")
+
+##plotting test brienz
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_brienz_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_brienz_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_brienz_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_brienz_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_brienz <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Brienz (Depth)')
+
+plot_lake_brienz
+
+ggsave(filename = "plot_depth_lake_brienz.pdf", plot = plot_lake_brienz, width = 7, height = 7)
+```
+
+#### Constance
+
+```{r}
+df_constance_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Constance.rds")
+df_constance_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Constance.rds")
+df_constance_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Constance.rds")
+df_constance_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Constance.rds")
+df_constance_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Constance.rds")
+df_constance_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Constance.rds")
+
+##plotting test constance
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_constance_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_constance_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_constance_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_constance_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_constance_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_constance_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_constance_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_constance <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Constance (Depth)')
+
+plot_lake_constance
+
+ggsave(filename = "plot_depth_lake_constance.pdf", plot = plot_lake_constance, width = 7, height = 7)
+```
+
+#### Geneva
+
+```{r}
+df_geneva_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Geneva.rds")
+df_geneva_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Geneva.rds")
+df_geneva_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Geneva.rds")
+df_geneva_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Geneva.rds")
+df_geneva_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Geneva.rds")
+df_geneva_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Geneva.rds")
+
+##plotting test geneva
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_geneva_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_geneva_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_geneva_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_geneva_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_geneva_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_geneva_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_geneva_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_geneva_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_geneva_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_geneva_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_geneva <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Geneva (Depth)')
+
+plot_lake_geneva
+
+ggsave(filename = "plot_depth_lake_geneva.pdf", plot = plot_lake_geneva, width = 7, height = 7)
+```
+
+#### Joux
+
+```{r}
+df_joux_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Joux.rds")
+df_joux_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Joux.rds")
+df_joux_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Joux.rds")
+df_joux_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Joux.rds")
+df_joux_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Joux.rds")
+df_joux_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Joux.rds")
+
+##plotting test joux
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_joux_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_joux_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_joux_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_joux_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_joux_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_joux_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_joux_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_joux_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_joux_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_joux_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_joux <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Joux (Depth)')
+
+plot_lake_joux
+
+ggsave(filename = "plot_depth_lake_joux.pdf", plot = plot_lake_joux, width = 7, height = 7)
+```
+
+#### Lucerne
+
+```{r}
+df_lucerne_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Lucerne.rds")
+df_lucerne_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Lucerne.rds")
+df_lucerne_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Lucerne.rds")
+df_lucerne_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Lucerne.rds")
+df_lucerne_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Lucerne.rds")
+df_lucerne_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Lucerne.rds")
+
+##plotting test lucerne
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lucerne_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_lucerne_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_lucerne_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_lucerne_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_lucerne_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lucerne_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_lucerne_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_lucerne_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_lucerne_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_lucerne_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_lucerne <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Lucerne (Depth)')
+
+plot_lake_lucerne
+
+ggsave(filename = "plot_depth_lake_lucerne.pdf", plot = plot_lake_lucerne, width = 7, height = 7)
+```
+
+#### Lugano
+
+```{r}
+df_lugano_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Lugano.rds")
+df_lugano_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Lugano.rds")
+df_lugano_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Lugano.rds")
+df_lugano_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Lugano.rds")
+df_lugano_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Lugano.rds")
+df_lugano_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Lugano.rds")
+
+##plotting test lugano
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lugano_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_lugano_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_lugano_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_lugano_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_lugano_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lugano_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_lugano_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_lugano_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_lugano_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_lugano_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_lugano <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Lugano (Depth)')
+
+plot_lake_lugano
+
+ggsave(filename = "plot_depth_lake_lugano.pdf", plot = plot_lake_lugano, width = 7, height = 7)
+```
+
+#### Maggiore
+
+```{r}
+df_maggiore_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Maggiore.rds")
+df_maggiore_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Maggiore.rds")
+df_maggiore_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Maggiore.rds")
+df_maggiore_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Maggiore.rds")
+df_maggiore_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Maggiore.rds")
+df_maggiore_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Maggiore.rds")
+
+##plotting test maggiore
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_maggiore_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_maggiore_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_maggiore_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_maggiore_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_maggiore_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_maggiore_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_maggiore_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_maggiore_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_maggiore_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_maggiore_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_maggiore <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Maggiore (Depth)')
+
+plot_lake_maggiore
+
+ggsave(filename = "plot_depth_lake_maggiore.pdf", plot = plot_lake_maggiore, width = 7, height = 7)
+```
+
+#### Morat
+
+```{r}
+df_morat_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Morat.rds")
+df_morat_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Morat.rds")
+df_morat_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Morat.rds")
+df_morat_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Morat.rds")
+df_morat_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Morat.rds")
+df_morat_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Morat.rds")
+
+##plotting test morat
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_morat_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_morat_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_morat_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_morat_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_morat_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_morat_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_morat_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_morat_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_morat_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_morat <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Morat (Depth)')
+
+plot_lake_morat
+
+ggsave(filename = "plot_depth_lake_morat.pdf", plot = plot_lake_morat, width = 7, height = 7)
+```
+
+#### Neuchatel
+
+```{r}
+df_neuchatel_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Neuchatel.rds")
+df_neuchatel_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Neuchatel.rds")
+df_neuchatel_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Neuchatel.rds")
+df_neuchatel_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Neuchatel.rds")
+df_neuchatel_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Neuchatel.rds")
+df_neuchatel_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Neuchatel.rds")
+
+##plotting test neuchatel
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_neuchatel_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_neuchatel_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_neuchatel_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_neuchatel_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_neuchatel_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_neuchatel_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_neuchatel_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_neuchatel_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_neuchatel_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_neuchatel_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_neuchatel <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Neuchatel (Depth)')
+
+plot_lake_neuchatel
+
+ggsave(filename = "plot_depth_lake_neuchatel.pdf", plot = plot_lake_neuchatel, width = 7, height = 7)
+```
+
+#### Poschiavo
+
+```{r}
+df_poschiavo_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Poschiavo.rds")
+df_poschiavo_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Poschiavo.rds")
+df_poschiavo_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Poschiavo.rds")
+df_poschiavo_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Poschiavo.rds")
+df_poschiavo_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Poschiavo.rds")
+df_poschiavo_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Poschiavo.rds")
+
+##plotting test poschiavo
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_poschiavo_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_poschiavo_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_poschiavo_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_poschiavo_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_poschiavo_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_poschiavo_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_poschiavo_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_poschiavo <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Poschiavo (Depth)')
+
+plot_lake_poschiavo
+
+ggsave(filename = "plot_depth_lake_poschiavo.pdf", plot = plot_lake_poschiavo, width = 7, height = 7)
+```
+
+#### Sarnen
+
+```{r}
+df_sarnen_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Sarnen.rds")
+df_sarnen_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Sarnen.rds")
+df_sarnen_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Sarnen.rds")
+df_sarnen_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Sarnen.rds")
+df_sarnen_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Sarnen.rds")
+df_sarnen_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Sarnen.rds")
+
+##plotting test sarnen
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_sarnen_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_sarnen_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_sarnen_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_sarnen_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_sarnen_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_sarnen_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_sarnen_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_sarnen <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Sarnen (Depth)')
+
+plot_lake_sarnen
+
+ggsave(filename = "plot_depth_lake_sarnen.pdf", plot = plot_lake_sarnen, width = 7, height = 7)
+```
+
+#### Thun
+
+```{r}
+df_thun_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Thun.rds")
+df_thun_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Thun.rds")
+df_thun_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Thun.rds")
+df_thun_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Thun.rds")
+df_thun_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Thun.rds")
+df_thun_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Thun.rds")
+
+##plotting test thun
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_thun_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_thun_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_thun_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_thun_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_thun_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_thun_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_thun_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_thun_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_thun_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_thun <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Thun (Depth)')
+
+plot_lake_thun
+
+ggsave(filename = "plot_depth_lake_thun.pdf", plot = plot_lake_thun, width = 7, height = 7)
+```
+
+#### Walen
+
+```{r}
+df_walen_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Walen.rds")
+df_walen_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Walen.rds")
+df_walen_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Walen.rds")
+df_walen_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Walen.rds")
+df_walen_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Walen.rds")
+df_walen_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Walen.rds")
+
+##plotting test walen
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_walen_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_walen_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_walen_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_walen_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_walen_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_walen_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_walen_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_walen <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Walen (Depth)')
+
+plot_lake_walen
+
+ggsave(filename = "plot_depth_lake_walen.pdf", plot = plot_lake_walen, width = 7, height = 7)
+```
+
+#### Zug
+
+```{r}
+df_zug_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Zug.rds")
+df_zug_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Zug.rds")
+df_zug_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Zug.rds")
+df_zug_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Zug.rds")
+df_zug_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Zug.rds")
+df_zug_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Zug.rds")
+
+##plotting test zug
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zug_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_zug_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_zug_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_zug_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zug_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_zug_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_zug_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_zug_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_zug_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_zug <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Zug (Depth)')
+
+plot_lake_zug
+
+ggsave(filename = "plot_depth_lake_zug.pdf", plot = plot_lake_zug, width = 7, height = 7)
+```
+
+#### Zurich
+
+```{r}
+df_zurich_pred <- readRDS("Depth/df_predictions_abundance/df_pred_Zurich.rds")
+df_zurich_pred_pres <- readRDS("Depth/df_predictions_presence/df_pred_Zurich.rds")
+df_zurich_deriv <- readRDS("Depth/df_derivatives_abundance/df_deriv_Zurich.rds")
+df_zurich_deriv_pres <- readRDS("Depth/df_derivatives_presence/df_deriv_Zurich.rds")
+df_zurich_resp_div <- readRDS("Depth/df_respdiv_abundance/df_resp_div_Zurich.rds")
+df_zurich_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Zurich.rds")
+
+##plotting test zurich
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zurich_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+# fig_a
+
+fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_c <- ggplot(data = df_zurich_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_zurich_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_d <- ggplot(data = df_zurich_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "d)") +
+  geom_line()
+
+
+fig_e <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Presence", tag = "e)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zurich_pred_pres, mapping = aes(x = depth, y = model_prediction, color = Species), show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_f <- ggplot(data = df_zurich_deriv_pres, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative", tag = "f)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+
+
+
+fig_g <- ggplot(data = df_zurich_resp_div_pres, mapping = aes(x = depth, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "g)") +
+  geom_hline(yintercept = df_zurich_resp_div$Med, lty = 2) +
+  geom_line()
+
+
+fig_h <- ggplot(data = df_zurich_resp_div_pres, mapping = aes(x = depth, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Sign", tag = "h)") +
+  geom_line()
+# lims(y = c(smin, smax))
+
+plot_lake_zurich <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_h +plot_layout(nrow = 4, byrow = FALSE) +   plot_annotation(title = 'Response diversity in Lake Zurich (Depth)')
+
+plot_lake_zurich
+
+ggsave(filename = "plot_depth_lake_zurich.pdf", plot = plot_lake_zurich, width = 7, height = 7)
 ```
