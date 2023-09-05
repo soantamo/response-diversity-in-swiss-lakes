@@ -36,6 +36,8 @@ df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master T
 #next: how can I interpret the summary?
 #repeat interpretation for all species in all lakes in abundance and presence/absence
 
+#gam.check cant be stored as a RDS file
+
 # change that presence and abundance are in one column with one column for value
 nets_df_final <- df_final_no_electro |> 
   pivot_longer(
@@ -61,6 +63,8 @@ model_prediction <- list()
 derivatives <- list()
 
 
+
+#how can I store the summary outputs for all species?? sink() works with append
 #loop for all lakes
 
 for (i in small_lakes){
@@ -76,7 +80,10 @@ for (i in small_lakes){
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
     summary <- summary(gam_output[[j]])
-    saveRDS(summary, paste0("test_summary/summary",i,"_",j,".rds"))
+    sink("gam_summary.txt", append = TRUE)
+    print(summary)
+    sink()
+    saveRDS(summary, paste0("test_summary/summary_",i,"_", j,".rds"))
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
     model_bind <- cbind(model_prediction[[j]], temp_gradient)
     saveRDS(model_bind, paste0("test_predictions_abu_small/predictions_",i,"_",j,".rds"))
@@ -87,8 +94,10 @@ for (i in small_lakes){
 }
 
 
-test <- readRDS("test_summary/summaryBiel_Abramis_brama.rds")
-test2 <- readRDS("test_summary/summaryBiel_Barbus_barbus.rds")
+test <- readRDS("test_summary/summary_Biel_Abramis_brama.rds")
+# test4 <- readRDS("test_summary/summary_Biel_Cobitis_bilineata.rds")
+# test2 <- readRDS("test_summary/summaryBiel_Perca_fluviatilis.rds")
+# test3 <- readRDS("test_summary/summaryWalen_Coregonus_sp.rds")
 ```
 
 ```{r}
