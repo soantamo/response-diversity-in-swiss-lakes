@@ -80,10 +80,10 @@ for (i in small_lakes){
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
     summary <- summary(gam_output[[j]])
-    sink("gam_summary.txt", append = TRUE)
+    sink("gam_summary_small.txt", append = TRUE)
     print(summary)
     sink()
-    saveRDS(summary, paste0("test_summary/summary_",i,"_", j,".rds"))
+    #saveRDS(summary, paste0("test_summary/summary_",i,"_", j,".rds"))
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
     model_bind <- cbind(model_prediction[[j]], temp_gradient)
     saveRDS(model_bind, paste0("test_predictions_abu_small/predictions_",i,"_",j,".rds"))
@@ -94,7 +94,7 @@ for (i in small_lakes){
 }
 
 
-test <- readRDS("test_summary/summary_Biel_Abramis_brama.rds")
+# test <- readRDS("test_summary/summary_Biel_Abramis_brama.rds")
 # test4 <- readRDS("test_summary/summary_Biel_Cobitis_bilineata.rds")
 # test2 <- readRDS("test_summary/summaryBiel_Perca_fluviatilis.rds")
 # test3 <- readRDS("test_summary/summaryWalen_Coregonus_sp.rds")
