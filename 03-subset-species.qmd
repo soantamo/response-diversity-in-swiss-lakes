@@ -46,12 +46,27 @@ nets_df_final <- df_final_no_electro |>
 abu_nets_df_final <- nets_df_final |> 
   filter(Parameter == "Abundance")
 
-#only species with significant coefficients and smoothing parameters included, BIel only 
-df_small <- abu_nets_df_final |>
-  filter(Lake %in% c("Biel", "Brienz", "Walen")) |> 
-  filter(Species %in% c("Alburnus_alburnus", "Coregonus_confusus", "Coregonus_sp", "Perca_fluviatilis", "Rutilus_rutilus", "Sander_lucioperca", "Tinca_tinca"))
+#only species with significant coefficients and smoothing parameters included
+#How can I get one dataset with my subsets? 
+#Brienz significant one: Alburnus_alburnus, Coregonus_albellus, Coregonus_brienzii, Coregonus_fatioi, Coregonus_sp, Leuciscus_leuciscus, Perca_fluviatilis, Rutilus_rutilus
 
-small_lakes <- df_small_sub|>
+biel_subset <- abu_nets_df_final |>
+  filter(Lake %in% "Biel") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_confusus", "Coregonus_sp", "Perca_fluviatilis", "Rutilus_rutilus", "Sander_lucioperca", "Tinca_tinca")) #double-checked, these are the species, two are almost significant (alb_alb, sander), I decided to include them because 4 oder 5 nachkommastelle
+
+brienz_subset <- abu_nets_df_final |>
+  filter(Lake %in% "Brienz") |> 
+  filter(Species %in% c("Alburnus_alburnus"," Coregonus_albellus", "Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_sp", "Leuciscus_leuciscus", "Perca_fluviatilis", "Rutilus_rutilus")) #double-checked
+
+walen_subset <- abu_nets_df_final |>
+  filter(Lake %in% "Walen") |> 
+  filter(Species %in% c("Alburnus_alburnus"," Coregonus_sp", "Cottus_gobio_Aare_littoral", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_Walen_I", "Salvelinus_umbla", "Squalius_cephalus")) #double checked
+
+
+df_small <- bind_rows(biel_subset, brienz_subset, walen_subset) #qorks with bind_rows, make all subsets separately and then new df from this -> can be used for the loop 
+
+
+small_lakes <- df_small|>
   distinct(Lake) |>
   pull(Lake)
 
@@ -193,6 +208,8 @@ for (i in small_lakes){
 
 Plots
 
+Biel
+
 ```{r}
 df_biel_pred <- readRDS("Subset/test_df_pred/df_pred_Biel.rds")
 df_biel_deriv <- readRDS("Subset/test_df_deriv/df_deriv_Biel.rds")
@@ -243,4 +260,124 @@ fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
   geom_line()
 
 fig_d
+
+plot_lake_biel <- fig_a + fig_b + fig_c + fig_d
+
+plot_lake_biel
+```
+
+Brienz
+
+```{r}
+df_brienz_pred <- readRDS("Subset/test_df_pred/df_pred_Brienz.rds")
+df_brienz_deriv <- readRDS("Subset/test_df_deriv/df_deriv_Brienz.rds")
+df_brienz_resp_div <- readRDS("Subset/test_df_respdiv/df_resp_div_Brienz.rds")
+
+mean(df_brienz_resp_div$rdiv)
+mean(df_brienz_resp_div$sign)
+vergleich <- readRDS("test_df_mean_dissimilarity.rds")
+vergleich2 <- readRDS("test_df_mean_divergence.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "d)") +
+  geom_line()
+
+fig_d
+
+plot_lake_brienz <- fig_a + fig_b + fig_c + fig_d
+
+plot_lake_brienz
+```
+
+Walen
+
+```{r}
+df_walen_pred <- readRDS("Subset/test_df_pred/df_pred_Walen.rds")
+df_walen_deriv <- readRDS("Subset/test_df_deriv/df_deriv_Walen.rds")
+df_walen_resp_div <- readRDS("Subset/test_df_respdiv/df_resp_div_Walen.rds")
+
+mean(df_walen_resp_div$rdiv)
+mean(df_walen_resp_div$sign)
+vergleich <- readRDS("test_df_mean_dissimilarity.rds")
+vergleich2 <- readRDS("test_df_mean_divergence.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance", tag = "a)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative", tag = "b)") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_walen_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_classic(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity", tag = "c)") +
+  geom_hline(yintercept = df_walen_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_walen_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Sign", tag = "d)") +
+  geom_line()
+
+fig_d
+
+plot_lake_walen <- fig_a + fig_b + fig_c + fig_d
+
+plot_lake_walen
 ```
