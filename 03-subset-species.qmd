@@ -436,17 +436,59 @@ geneva_subset <- abu_nets_df_final |>
   filter(Lake %in% "Geneva") |> 
   filter(!Species %in% c("Barbus_barbus", "Cyprinus_carpio", "Esox_lucius", "Gasterosteus_gymnurus")) #negation used, 17 included, 2 are graubereich (15, 20)
 
+joux_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Joux") |> 
+  filter(Species %in% c("Coregonus_sp", "Leuciscus_leuciscus", "Perca_fluviatilis"))
+
+lucerne_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Lucerne") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_intermundia", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Aare_littoral", "Gymnocephalus_cernua", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Lucerne_Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Sander_lucioperca"))
+
+lugano_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Lugano") |> 
+  filter(Species %in% c("Coregonus_helveticus", "Lota_lota", "Rutilus_rutilus", "Sander_lucioperca"))
+
+maggiore_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Maggiore") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Alosa_agone", "Ameiurus_melas", "Coregonus_sarnensis", "Coregonus_sp", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca", "Scardinius_hesperidicus"))
+
+morat_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Morat") |> 
+  filter(Species %in% c("Abramis_brama", "Coregonus_palaea", "Esox_lucius", "Leuciscus_leuciscus", "Perca_fluviatilis", "Salmo_trutta", "Sander_lucioperca", "Scardinius_erythrophthalmus", "Tinca_tinca"))
+
+neuchatel_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Neuchatel") |> 
+  filter(Species %in% c("Alburnu_alburnus", "Cobitis_bilineata", "Coregonus_candida", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
+
+poschiavo_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Poschiavo") |> 
+  filter(Species %in% c("Salmo_sp_Blackspot", "Salmo_trutta", "Salvelinus_umbla"))
+
+sarnen_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Sarnen") |> 
+  filter(Species %in% c("Coregonus_litoralis", "Coregonus_sarnensis", "Cottus_gobio_unknownlineage", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salmo_trutta")) #(salmo_trutta is graubereich)
+
+thun_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Thun") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Barbus_barbus", "Coregonus_acrinasus", "Coregonus_albellus", "Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_profundus", "Coregonus_sp", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Phoxinus_csikii", "Rutilus_rutilus", "Salvelinus_umbla"))
+
 
 walen_subset <- abu_nets_df_final |>
   filter(Lake %in% "Walen") |> 
   filter(Species %in% c("Alburnus_alburnus"," Coregonus_sp", "Cottus_gobio_Aare_littoral", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_Walen_I", "Salvelinus_umbla", "Squalius_cephalus")) #double checked
 
+zug_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Zug") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cyprinus_carpio", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leucsicus", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_umbla", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
 
-###BELOW ANPASSEN
-df_small <- bind_rows(biel_subset, brienz_subset, walen_subset) #qorks with bind_rows, make all subsets separately and then new df from this -> can be used for the loop 
+zurich_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Zurich") |> 
+  filter(Species %in% c("Abramis_brama", "Alburnus_alburnus", "Coregonus_heglingus", "Coregonus_sp", "Coregonus_zuerichensis", "Esox_lucius", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus" )) #c. heglingus graubereich
+
+df_subset <- bind_rows(biel_subset, brienz_subset, constance_subset, geneva_subset, joux_subset, lucerne_subset, lugano_subset, maggiore_subset, morat_subset, neuchatel_subset, poschiavo_subset, sarnen_subset, thun_subset, walen_subset, zug_subset, zurich_subset) #works with bind_rows, make all subsets separately and then new df from this -> can be used for the loop 
 
 
-small_lakes <- df_small|>
+sub_lakes <- df_subset|>
   distinct(Lake) |>
   pull(Lake)
 
@@ -455,8 +497,8 @@ model_prediction <- list()
 derivatives <- list()
 
 
-for (i in small_lakes){
-  presence_lake <- df_small |>
+for (i in sub_lakes){
+  presence_lake <- df_subset |>
     filter(Lake == i)
   species_list <- presence_lake |>
     distinct(Species) |>
@@ -467,13 +509,920 @@ for (i in small_lakes){
     data <- presence_lake |> 
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
+    summary <- summary.gam(gam_output[[j]]) 
+    sink("subset_check.txt", append = TRUE) #double-check if gams are well fitted
+    print(summary)
+    sink()
     model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
     model_bind <- cbind(model_prediction[[j]], temp_gradient)
-    saveRDS(model_bind, paste0("Subset/test_pred/predictions_",i,"_",j,".rds"))
+    saveRDS(model_bind, paste0("Subset/predictions_abundance/predictions_",i,"_",j,".rds"))
     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
-    saveRDS(derivatives[[j]], paste0("Subset/test_deriv/derivatives_",i,"_",j,".rds"))
+    saveRDS(derivatives[[j]], paste0("Subset/derivatives_abundance/derivatives_",i,"_",j,".rds"))
   }
 
 }
 
+```
+
+#### Dfs
+
+```{r}
+#preparing dfs with predictions for all lakes
+
+path_pred <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Subset/predictions_abundance"
+
+predictions_list <-list.files(path_pred)
+
+predictions_lakes <- list()
+
+#loop works!!!!!!! first real loop of my life
+for (i in sub_lakes){
+  predictions_lakes <- predictions_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  pred <- list()
+  lake_data <- df_subset |>
+    filter(Lake == i)
+  temp_gradient <- data.frame(mean_last_7days = seq(from = min(lake_data$mean_last_7days, na.rm = TRUE), to = max(lake_data$mean_last_7days, na.rm = TRUE), by = 0.02)) #add temperature gradient to add to the df
+  for (j in predictions_lakes){
+    # print(predictions_test)
+    pred[[j]] <- readRDS(paste0(path_pred,"/", j))
+    df_pred <- pred |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(model_prediction = `model_prediction[[j]]`) |> #does not work
+      rename(temp = mean_last_7days) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_pred, paste0("Subset/df_predictions/df_pred_", i, ".rds"))
+      
+  }
+}
+
+# derivatives
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Subset/derivatives_abundance"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in sub_lakes){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |> 
+      mutate(Species = sub("^[^_]*_", "", Species)) |>
+      mutate(Species = sub("\\.rds$", "", Species))
+    saveRDS(df_deriv, paste0("Subset/df_derivatives/df_deriv_", i, ".rds"))
+  }
+}
+
+#response diversity
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/Subset/derivatives_abundance"
+
+deriv_list <-list.files(path_deriv)
+
+deriv_lakes <- list()
+
+for (i in sub_lakes){
+  deriv_lakes <- deriv_list |> 
+    as_tibble() |> 
+    filter(str_detect(value, i)) |> 
+    pull(value)
+  deriv <- list()
+  for (j in deriv_lakes){
+    # print(predictions_test)
+    deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    df_deriv <- deriv |>
+      bind_rows(.id ="id") |>
+      rename(Species = id) |> 
+      rename(temp = data)
+    df_resp_div <- df_deriv |> 
+      select(Species, temp, derivative) |> 
+      pivot_wider(
+        names_from = Species,
+        values_from = derivative) |> 
+      rename_all(~stringr::str_replace(.,"^derivatives_","")) |> 
+      rename_all(~stringr::str_replace(.,"^[^_]*_", "")) |>
+      rename_with(~ sub(".rds$", "", .x), everything())
+    #test <- df_resp_div |>
+      #select (-temp) |>
+      #mutate_all(rdiv = resp_div(1, sign_sens = F))
+    df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+    df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+    df_resp_div$Med <- median(df_resp_div$rdiv)
+    saveRDS(df_resp_div, paste0("Subset/df_response_diversity/df_resp_div_", i, ".rds"))
+  }
+}
+
+
+```
+
+#### Plots
+
+#### Biel
+
+```{r}
+
+df_biel_pred <- readRDS("Subset/df_predictions/df_pred_Biel.rds")
+df_biel_deriv <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
+df_biel_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Biel.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+  # lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
+  geom_line()
+  # lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+
+#respdiv_lake_biel <- fig_c + fig_d + plot_layout(nrow= 2)
+
+#resp_div_lake_biel
+```
+
+#### Brienz
+
+```{r}
+df_brienz_pred <- readRDS("Subset/df_predictions/df_pred_Brienz.rds")
+df_brienz_deriv <- readRDS("Subset/df_derivatives/df_deriv_Brienz.rds")
+df_brienz_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Brienz.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+
+# resp_div_lake_brienz <- fig_c + fig_d + plot_layout(nrow= 2)
+# 
+# resp_div_lake_brienz
+```
+
+#### Constance
+
+```{r}
+df_constance_pred <- readRDS("Subset/df_predictions/df_pred_Constance.rds")
+df_constance_deriv <- readRDS("Subset/df_derivatives/df_deriv_Constance.rds")
+df_constance_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Constance.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_constance_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+
+```
+
+#### Geneva
+
+```{r}
+df_geneva_pred <- readRDS("Subset/df_predictions/df_pred_Geneva.rds")
+df_geneva_deriv <- readRDS("Subset/df_derivatives/df_deriv_Geneva.rds")
+df_geneva_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Geneva.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_geneva_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_geneva_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_geneva_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_geneva_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_geneva_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Sign") +
+  geom_line()
+
+fig_d
+
+```
+
+#### Joux 
+
+```{r}
+df_joux_pred <- readRDS("Subset/df_predictions/df_pred_Joux.rds")
+df_joux_deriv <- readRDS("Subset/df_derivatives/df_deriv_Joux.rds")
+df_joux_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Joux.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_joux_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_joux_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_joux_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_joux_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_joux_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Lucerne
+
+```{r}
+df_lucerne_pred <- readRDS("Subset/df_predictions/df_pred_Lucerne.rds")
+df_lucerne_deriv <- readRDS("Subset/df_derivatives/df_deriv_Lucerne.rds")
+df_lucerne_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Lucerne.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lucerne_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_lucerne_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_lucerne_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_lucerne_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_lucerne_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Lugano
+
+```{r}
+df_lugano_pred <- readRDS("Subset/df_predictions/df_pred_Lugano.rds")
+df_lugano_deriv <- readRDS("Subset/df_derivatives/df_deriv_Lugano.rds")
+df_lugano_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Lugano.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lugano_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_lugano_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_lugano_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_lugano_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_lugano_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Maggiore
+
+```{r}
+df_maggiore_pred <- readRDS("Subset/df_predictions/df_pred_Maggiore.rds")
+df_maggiore_deriv <- readRDS("Subset/df_derivatives/df_deriv_Maggiore.rds")
+df_maggiore_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Maggiore.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_maggiore_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_maggiore_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_maggiore_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_maggiore_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_maggiore_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Morat
+
+```{r}
+df_morat_pred <- readRDS("Subset/df_predictions/df_pred_Morat.rds")
+df_morat_deriv <- readRDS("Subset/df_derivatives/df_deriv_Morat.rds")
+df_morat_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Morat.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_morat_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_morat_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_morat_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_morat_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Neuchatel
+
+```{r}
+df_neuchatel_pred <- readRDS("Subset/df_predictions/df_pred_Neuchatel.rds")
+df_neuchatel_deriv <- readRDS("Subset/df_derivatives/df_deriv_Neuchatel.rds")
+df_neuchatel_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Neuchatel.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_neuchatel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_neuchatel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_neuchatel_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_neuchatel_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_neuchatel_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Poschiavo
+
+```{r}
+df_poschiavo_pred <- readRDS("Subset/df_predictions/df_pred_Poschiavo.rds")
+df_poschiavo_deriv <- readRDS("Subset/df_derivatives/df_deriv_Poschiavo.rds")
+df_poschiavo_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Poschiavo.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_poschiavo_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_poschiavo_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Sarnen
+
+```{r}
+df_sarnen_pred <- readRDS("Subset/df_predictions/df_pred_Sarnen.rds")
+df_sarnen_deriv <- readRDS("Subset/df_derivatives/df_deriv_Sarnen.rds")
+df_sarnen_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Sarnen.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_sarnen_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_sarnen_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Thun
+
+```{r}
+df_thun_pred <- readRDS("Subset/df_predictions/df_pred_Thun.rds")
+df_thun_deriv <- readRDS("Subset/df_derivatives/df_deriv_Thun.rds")
+df_thun_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Thun.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_thun_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_thun_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_thun_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_thun_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Walen
+
+```{r}
+df_walen_pred <- readRDS("Subset/df_predictions/df_pred_Walen.rds")
+df_walen_deriv <- readRDS("Subset/df_derivatives/df_deriv_Walen.rds")
+df_walen_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Walen.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_walen_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_walen_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_walen_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Zug
+
+```{r}
+df_zug_pred <- readRDS("Subset/df_predictions/df_pred_Zug.rds")
+df_zug_deriv <- readRDS("Subset/df_derivatives/df_deriv_Zug.rds")
+df_zug_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Zug.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zug_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_zug_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_zug_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_zug_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
+```
+
+#### Zurich
+
+```{r}
+df_zurich_pred <- readRDS("Subset/df_predictions/df_pred_Zurich.rds")
+df_zurich_deriv <- readRDS("Subset/df_derivatives/df_deriv_Zurich.rds")
+df_zurich_resp_div <- readRDS("Subset/df_response_diversity/df_resp_div_Zurich.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zurich_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL)
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_zurich_resp_div, mapping = aes(x = temp, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_hline(yintercept = df_zurich_resp_div$Med, lty = 2) +
+  geom_line()
+# lims(y = c(rmin_p, rmax_p))
+
+fig_c
+
+fig_d <- ggplot(data = df_zurich_resp_div, mapping = aes(x = temp, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line()
+
+fig_d
 ```
