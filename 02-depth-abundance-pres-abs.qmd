@@ -419,19 +419,19 @@ for (i in lakes_list){
     data <- presence_lake |> 
       filter(Species == j)
     gam_output[[j]] <- gam(data = data, value ~ s(Depth_sample, k = 3, bs = "cs"), family = negbin(1), method = "REML") #GAM per species in all lakes
-    # summary <- summary(gam_output[[j]])
-    # saveRDS(summary, paste0("Depth/test_summary/summary_",i,"_",j,".rds"))
-    model_prediction[[j]] <- predict.gam(gam_output[[j]], depth_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
-    model_bind <- cbind(model_prediction[[j]], depth_gradient)
-    saveRDS(model_bind, paste0("Depth/predictions_abundance/predictions_",i,"_",j,".rds"))
-    derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
-    saveRDS(derivatives[[j]], paste0("Depth/derivatives_abundance/derivatives_",i,"_",j,".rds"))
+    summary <- summary.gam(gam_output[[j]]) #txt file prepared with all summaries 
+    sink("summary_gams_abundance_depth.txt", append = TRUE)
+    print(summary)
+    sink()
+    #model_prediction[[j]] <- predict.gam(gam_output[[j]], depth_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    #model_bind <- cbind(model_prediction[[j]], depth_gradient)
+    #saveRDS(model_bind, paste0("Depth/predictions_abundance/predictions_",i,"_",j,".rds"))
+    #derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
+    #saveRDS(derivatives[[j]], paste0("Depth/derivatives_abundance/derivatives_",i,"_",j,".rds"))
   }
 
 }
 
-# test <- readRDS("Depth/derivatives_abundance/derivatives_Biel_Abramis_brama.rds")
-# test2 <- readRDS("Depth/predictions_abundance/predictions_Biel_Coregonus_sp.rds")
 ```
 
 #### Data frames for plotting
@@ -2167,4 +2167,23 @@ plot_lake_zurich <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 plot_lake_zurich
 
 ggsave(filename = "plot_depth_lake_zurich.pdf", plot = plot_lake_zurich, width = 7, height = 7)
+```
+
+## Subset
+
+```{r}
+
+biel_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Biel") |> 
+  filter(Species %in% c("Blicca_bjoerkna", "Coregonus_confusus", "Coregonus_sp", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Scardinius_hesperidicus", "Squalius_cephalus")) #blicca graubereich
+
+brienz_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Brienz") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_albellus", "Coregonus_fatioi", "Coregonus_sp", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus"))
+
+constance_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Constance") |> 
+  filter(!Species %in% c("Barbus_barbus", "Coregonus_arenicolus", "Esox_lucius", "Gobio_obtusirostris", "Oncorhynchus_mykiss", "Salvelinus_profundus"))
+
+
 ```
