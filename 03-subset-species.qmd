@@ -669,15 +669,16 @@ fig_c <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = "Dissimilarity") +
   geom_hline(yintercept = df_biel_resp_div$Med, lty = 2) +
-  geom_line()
-  # lims(y = c(rmin_p, rmax_p))
+  geom_line() +
+  coord_cartesian(ylim=c(0,6))
 
 fig_c
 
 fig_d <- ggplot(data = df_biel_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 
@@ -722,15 +723,17 @@ fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = "Dissimilarity") +
   geom_hline(yintercept = df_brienz_resp_div$Med, lty = 2) +
-  geom_line()
-# lims(y = c(rmin_p, rmax_p))
+  geom_line() 
+  #coord_cartesian(ylim=c(0,6))
 
 fig_c
 
 fig_d <- ggplot(data = df_brienz_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1))
+
 
 fig_d
 
@@ -773,7 +776,7 @@ fig_b
 
 fig_c <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_bw(base_size = 14) +
-  labs(x = NULL, y = "Dissimilarity") +
+  labs(x = NULL, y = NULL) +
   geom_hline(yintercept = df_constance_resp_div$Med, lty = 2) +
   geom_line()
 # lims(y = c(rmin_p, rmax_p))
@@ -783,7 +786,8 @@ fig_c
 fig_d <- ggplot(data = df_constance_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 
@@ -823,7 +827,7 @@ fig_b
 
 fig_c <- ggplot(data = df_geneva_resp_div, mapping = aes(x = temp, y = rdiv)) +
   theme_bw(base_size = 14) +
-  labs(x = NULL, y = "Dissimilarity") +
+  labs(x = NULL, y = NULL) +
   geom_hline(yintercept = df_geneva_resp_div$Med, lty = 2) +
   geom_line()
 # lims(y = c(rmin_p, rmax_p))
@@ -832,14 +836,15 @@ fig_c
 
 fig_d <- ggplot(data = df_geneva_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
-  labs(x = NULL, y = "Sign") +
-  geom_line()
+  labs(x = NULL, y = NULL) +
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 
 ```
 
-#### Joux 
+#### Joux
 
 ```{r}
 df_joux_pred <- readRDS("Subset/df_predictions/df_pred_Joux.rds")
@@ -883,7 +888,9 @@ fig_c
 fig_d <- ggplot(data = df_joux_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
+
 
 fig_d
 ```
@@ -932,7 +939,8 @@ fig_c
 fig_d <- ggplot(data = df_lucerne_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -981,7 +989,8 @@ fig_c
 fig_d <- ggplot(data = df_lugano_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1030,7 +1039,9 @@ fig_c
 fig_d <- ggplot(data = df_maggiore_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
+
 
 fig_d
 ```
@@ -1079,7 +1090,8 @@ fig_c
 fig_d <- ggplot(data = df_morat_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1128,7 +1140,8 @@ fig_c
 fig_d <- ggplot(data = df_neuchatel_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1177,7 +1190,9 @@ fig_c
 fig_d <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
+
 
 fig_d
 ```
@@ -1226,7 +1241,8 @@ fig_c
 fig_d <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1275,7 +1291,8 @@ fig_c
 fig_d <- ggplot(data = df_thun_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1324,7 +1341,8 @@ fig_c
 fig_d <- ggplot(data = df_walen_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
@@ -1373,7 +1391,9 @@ fig_c
 fig_d <- ggplot(data = df_zug_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
+  
 
 fig_d
 ```
@@ -1422,7 +1442,8 @@ fig_c
 fig_d <- ggplot(data = df_zurich_resp_div, mapping = aes(x = temp, y = sign)) +
   theme_bw(base_size = 14) +
   labs(x = NULL, y = NULL) +
-  geom_line()
+  geom_line() +
+  coord_cartesian(ylim=c(0,1))
 
 fig_d
 ```
