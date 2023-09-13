@@ -1448,7 +1448,7 @@ fig_d <- ggplot(data = df_zurich_resp_div, mapping = aes(x = temp, y = sign)) +
 fig_d
 ```
 
-## 2. Subset depth 
+## 2. Subset depth
 
 ```{r}
 #| eval: false
@@ -2135,6 +2135,61 @@ fig_d
 
 ```
 
+##### Morat
+
+```{r}
+df_morat_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Morat.rds")
+df_morat_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Morat.rds")
+df_morat_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Morat.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_morat_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_morat_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_morat_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_morat_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
 ##### Neuchatel
 
 ```{r}
@@ -2190,10 +2245,332 @@ fig_d
 
 ```
 
-Poschiavo
+##### Poschiavo
 
-Sarnen
+```{r}
+df_poschiavo_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Poschiavo.rds")
+df_poschiavo_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Poschiavo.rds")
+df_poschiavo_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Poschiavo.rds")
 
-Thun
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_poschiavo_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
 
-Walen
+fig_a
+
+fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_poschiavo_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_poschiavo_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
+##### Sarnen
+
+```{r}
+df_sarnen_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Sarnen.rds")
+df_sarnen_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Sarnen.rds")
+df_sarnen_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Sarnen.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_sarnen_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_sarnen_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_sarnen_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
+##### Thun
+
+```{r}
+df_thun_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Thun.rds")
+df_thun_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Thun.rds")
+df_thun_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Thun.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_thun_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_thun_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_thun_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_thun_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
+##### Walen
+
+```{r}
+df_walen_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Walen.rds")
+df_walen_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Walen.rds")
+df_walen_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Walen.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_walen_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_walen_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_walen_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
+##### Zug
+
+```{r}
+df_zug_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Zug.rds")
+df_zug_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Zug.rds")
+df_zug_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Zug.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zug_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_zug_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_zug_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_zug_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
+
+##### Zurich
+
+```{r}
+df_zurich_pred <- readRDS("Subset_depth/df_predictions_abundance/df_pred_Zurich.rds")
+df_zurich_deriv <- readRDS("Subset_depth/df_derivatives_abundance/df_deriv_Zurich.rds")
+df_zurich_resp_div <- readRDS("Subset_depth/df_response_diversity_abundance/df_resp_div_Zurich.rds")
+
+fig_a <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zurich_pred, mapping = aes(x = depth, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(ymin_p, ymax_p))
+
+fig_a
+
+fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
+  theme_classic(base_size = 14) +
+  labs(x = "Depth", y = "Derivative") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(show.legend = FALSE) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  scale_x_reverse()
+# lims(y = c(dmin, dmax))
+
+
+fig_b
+
+fig_c <- ggplot(data = df_zurich_resp_div, mapping = aes(x = depth, y = rdiv)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = "Dissimilarity") +
+  geom_hline(yintercept = df_zurich_resp_div$Med, lty = 2) +
+  geom_line() +
+  scale_x_reverse()
+
+
+fig_c
+
+fig_d <- ggplot(data = df_zurich_resp_div, mapping = aes(x = depth, y = sign)) +
+  theme_bw(base_size = 14) +
+  labs(x = NULL, y = NULL) +
+  geom_line() + 
+  coord_cartesian(ylim=c(0,1)) +
+  scale_x_reverse()
+
+fig_d
+
+```
