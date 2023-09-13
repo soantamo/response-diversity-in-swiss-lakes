@@ -846,7 +846,7 @@ df_brienz_resp_div_pres <- readRDS("Depth/df_respdiv_presence/df_resp_div_Brienz
 
 ##plotting test brienz
 fig_a <- ggplot() +
-  theme_classic(base_size = 14) +
+  theme_bw(base_size = 14) +
   labs(x = "Depth", y = "Abundance", tag = "a)") +
   geom_hline(
     yintercept = 0,
@@ -855,10 +855,10 @@ fig_a <- ggplot() +
   scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(ymin_p, ymax_p))
 
-# fig_a
+fig_a
 
 fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = depth, y = derivative, color = Species)) +
-  theme_classic(base_size = 14) +
+  theme_bw(base_size = 14) +
   labs(x = "Depth", y = "Derivative", tag = "b)") +
   geom_hline(
     yintercept = 0,
@@ -867,6 +867,7 @@ fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = depth, y = derivative,
   scale_colour_manual(values = lakeColors, guide = NULL)
 # lims(y = c(dmin, dmax))
 
+fig_b
 
 fig_c <- ggplot(data = df_brienz_resp_div, mapping = aes(x = depth, y = rdiv)) +
   theme_classic(base_size = 14) +
@@ -920,7 +921,7 @@ plot_lake_brienz <- fig_a + fig_b + fig_c + fig_d + fig_e + fig_f + fig_g + fig_
 
 plot_lake_brienz
 
-ggsave(filename = "plot_depth_lake_brienz.pdf", plot = plot_lake_brienz, width = 7, height = 7)
+#ggsave(filename = "plot_depth_lake_brienz.pdf", plot = plot_lake_brienz, width = 7, height = 7)
 ```
 
 #### Constance
@@ -2185,5 +2186,59 @@ constance_subset <- abu_nets_df_final |>
   filter(Lake %in% "Constance") |> 
   filter(!Species %in% c("Barbus_barbus", "Coregonus_arenicolus", "Esox_lucius", "Gobio_obtusirostris", "Oncorhynchus_mykiss", "Salvelinus_profundus"))
 
+geneva_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Geneva") |>
+  filter(!Species %in% c("Gasterosteus_gymnurus", "Salaria_fluviatilis_French"))
 
+joux_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Joux") |> 
+  filter(Species %in% c("Coregonus_sp", "Leuciscus_leuciscus",  "Perca_fluviatilis"))
+  
+lucerne_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Lucerne") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Profundal_Lucerne", "Gymnocephalus_cernua", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Lucerne_Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Tinca_tinca"))
+
+lugano_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Lugano") |> 
+  filter(Species %in% c("Alburnu_arborella", "Coregonus_helveticus", "Lota_lota", "Micropterus_salmoides", "Perca_fluviatilis", "Rutilus_rutilus", "Sander_lucioperca", "Scardinius_hesperidicus", "Squalius_squalus"))
+  
+maggiore_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Maggiore") |> 
+  filter(Species %in% c("Alburnus_arborella", "Alosa_agone", "Ameiurus_melas", "Coregonus_sarnensis", "Coregonus_sp", "Cottus_sp_Po_profundal", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Lota_lota", "Micropterus_salmoides", "Perca_fluviatilis", "Rutilus_aula", "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca", "Scardinius_hesperidicus", "Squalius_squalus", "Telestes_muticellus"))
+
+morat_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Morat") |> 
+  filter(Species %in% c("Abramis_brama", "Alburnus_alburnus", "Leuciscus_leuciscus", "Perca_fluviatilis", "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca", "Scardinius_erythrophthalmus", "Squalius_cephalus", "Tinca_tinca"))
+
+neuchatel_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Neuchatel") |> 
+  filter(Species %in% c("Barbatula_sp_Lineage_I", "Cobitis_bilineata", "Coregonus_candidus", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erytrhophthalmus", "Scardinius_hesperidicus", "Squalius_cephalus", "Tinca_tinca"))
+
+poschiavo_subset <- abu_nets_df_final |> 
+  filter(Lake %in% "Poschiavo") |> 
+  filter(Species %in% c("Phoxinus_sp", "Salmo_sp_Blackspot", "Salmo_trutta", "Salvelinus_umbla"))
+
+sarnen_subset  <- abu_nets_df_final |> 
+  filter(Lake %in% "Sarnen") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Barbus_barbus", "Coregonus_litoralis", "Coregonus_sarnensis", "Cottus_gobio_unknownlineage", "Gymnocephalus_cernua", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
+
+thun_subset  <- abu_nets_df_final |> 
+  filter(Lake %in% "Thun") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Barbus_barbus", "Coregonus_acrinasus", "Coregonus_albellus", "Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_profundus", "Cottus_gobio_Profundal_Thun", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Phoxinus_csikii", "Rutilus_rutilus", "Salvelinus_sp_Limnetic_Thun", "Salvelinus_umbla", "Squalius_cephalus"))
+
+walen_subset  <- abu_nets_df_final |> 
+  filter(Lake %in% "Walen") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Cottus_gobio_Profundal_Walen", "Esox_lucius", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_Walen_I", "Salvelinus_umbla", "Squalius_cephalus"))
+
+zug_subset  <- abu_nets_df_final |> 
+  filter(Lake %in% "Zug") |> 
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cyprinus_carpio", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus", "Tinca_tinca"))
+
+zurich_subset  <- abu_nets_df_final |> 
+  filter(Lake %in% "Zurich") |> 
+  filter(Species %in% c("Abramis_brama", "Alburnus_alburnus", "Coregonus_duplex", "Coregonus_heglingus", "Coregonus_sp", "Coregonus_zuerichensis", "Esox_lucius", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_umbla", "Scardinius_erythrophthalmus", "Squalius_cephalus" ))
+
+df_subset_depth <- bind_rows(biel_subset, brienz_subset, constance_subset, geneva_subset, joux_subset, lucerne_subset, lugano_subset, maggiore_subset, morat_subset, neuchatel_subset, poschiavo_subset, sarnen_subset, thun_subset, walen_subset, zug_subset, zurich_subset)
+  
+  
 ```
