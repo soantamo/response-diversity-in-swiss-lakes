@@ -1,74 +1,64 @@
 library(tidyverse)
 library(patchwork)
 library(ggtext)
-library(mgcv)
+# library(mgcv)
 library(gratia)
 library(here)
 library(readr)
 library(glue)
 library(TITAN2)
 
-install.packages("santoku")
-library(santoku)
+# 
+# library(santoku)
 
 # load final dataset
 df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
 
-df_final <- df_final_no_electro |> 
-  drop
 max(df_final_no_electro$Depth_sample, na.rm = TRUE)
 
-test <- df_final_no_electro |> 
-  mutate(Depth_category = cut(Depth_sample, breaks = 305, labels=paste0(1:305)))
 
-df_sites <- test |> 
-  mutate(Site_id = glue("{Lake}_{Depth_category}"))
-
-test_cat <- df_final_no_electro |> 
-  mutate(Depth_category = chop_width(Depth_sample, 305, labels = lbl_dash("-")))
-mutate(Depth_category = cut(Depth_sample, breaks = 305, labels = paste0(1:305))) |> 
-mutate(Site_id = glue("{Lake}_{Depth_category}")) |> 
-group_by(Site_id, Species) |> 
-summarise(Abundance = sum(Abundance), temp = mean(mean_last_7days))
-
+df_sites <- df_final_no_electro |> 
+  mutate(Depth_category = cut(Depth_sample, breaks = 305, labels = paste0(1:305))) |>
+  mutate(Site_id = glue("{Lake}_{Depth_category}")) |> 
+  group_by(Site_id, Species) |> 
+  summarise(Abundance = sum(Abundance), temp = mean(mean_last_7days))
 
 df_sites_wide <- df_sites |> 
-select(-temp) |> 
-pivot_wider(names_from = Species, values_from = Abundance, values_fill = 0)
+  select(-temp) |> 
+  pivot_wider(names_from = Species, values_from = Abundance, values_fill = 0)
 
 site_temp <- df_sites |> 
-select(Site_id, temp) |> 
-distinct(Site_id, .keep_all = TRUE) |> 
-drop_na()
+  select(Site_id, temp) |> 
+  distinct(Site_id, .keep_all = TRUE) |> 
+  drop_na()
 
 taxa_titan_temp <- df_sites_wide %>% 
-right_join(site_temp)
+  right_join(site_temp)
 
-taxa_titan_temp |> skimr::skim()
 
 taxa_remove<- taxa_titan_temp %>%
-dplyr::select(-temp) %>% 
-pivot_longer(2:93,names_to = "Species", values_to = "Abundance") %>%
-filter(Abundance > 0) %>%
-count(Site_id,Species) |> 
-group_by(Species) %>%
-dplyr::summarize(frequency= sum(n,na.rm = TRUE)) %>%
-filter(frequency > 4) %>%
-pull(Species)
+  dplyr::select(-temp) %>% 
+  pivot_longer(2:93,names_to = "Species", values_to = "Abundance") %>%
+  filter(Abundance > 0) %>%
+  count(Site_id,Species) |> 
+  group_by(Species) %>%
+  dplyr::summarize(frequency= sum(n,na.rm = TRUE)) %>%
+  filter(frequency > 4) %>%
+  pull(Species)
 
 taxa_titan_temp <- taxa_titan_temp %>%
-dplyr::select(Site_id, temp,!!taxa_remove)
+  dplyr::select(Site_id, temp,!!taxa_remove)
 
 
 #prep data for TITAN analysis
 #environmental gradient
 
 titan_temp <- taxa_titan_temp %>% 
-dplyr::select(Site_id, temp)
+  dplyr::select(Site_id, temp)
 
 #taxa
 titan_fish_temp <- taxa_titan_temp %>% 
-dplyr::select(-temp)
+  dplyr::select(-temp)
 
 #prepare data matrix for TITAN
 
