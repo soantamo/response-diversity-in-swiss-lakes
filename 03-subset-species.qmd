@@ -29,6 +29,7 @@ source(here("species_colors.R"))
 
 # load final dataset
 df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+
 ```
 
 all new for subset of species with biel only
