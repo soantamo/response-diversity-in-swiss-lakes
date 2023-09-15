@@ -480,7 +480,7 @@ walen_subset <- abu_nets_df_final |>
 
 zug_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Zug") |> 
-  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cyprinus_carpio", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leucsicus", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_umbla", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cyprinus_carpio", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leuciscus", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_umbla", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
 
 zurich_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Zurich") |> 
