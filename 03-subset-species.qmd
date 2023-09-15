@@ -64,7 +64,7 @@ joux_subset <- abu_nets_df_final |>
 
 lucerne_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Lucerne") |> 
-  filter(Species %in% c("Alburnus_alburnus", "Coregonus_intermundia", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Aare_littoral", "Gymnocephalus_cernua", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Lucerne_Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Sander_lucioperca"))
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_intermundia", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Aare_littoral", "Gymnocephalus_cernua", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Sander_lucioperca"))
 
 lugano_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Lugano") |> 
@@ -72,7 +72,7 @@ lugano_subset <- abu_nets_df_final |>
 
 maggiore_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Maggiore") |> 
-  filter(Species %in% c("Alburnus_alburnus", "Alosa_agone", "Ameiurus_melas", "Coregonus_sarnensis", "Coregonus_sp", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca", "Scardinius_hesperidicus"))
+  filter(Species %in% c("Alburnus_arborella", "Alosa_agone", "Ameiurus_melas", "Coregonus_sarnensis", "Coregonus_sp", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca", "Scardinius_hesperidicus"))
 
 morat_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Morat") |> 
@@ -80,7 +80,7 @@ morat_subset <- abu_nets_df_final |>
 
 neuchatel_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Neuchatel") |> 
-  filter(Species %in% c("Alburnu_alburnus", "Cobitis_bilineata", "Coregonus_candida", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
+  filter(Species %in% c("Alburnus_alburnus", "Cobitis_bilineata", "Coregonus_candidus", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Squalius_cephalus"))
 
 poschiavo_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Poschiavo") |> 
@@ -97,7 +97,7 @@ thun_subset <- abu_nets_df_final |>
 
 walen_subset <- abu_nets_df_final |>
   filter(Lake %in% "Walen") |> 
-  filter(Species %in% c("Alburnus_alburnus"," Coregonus_sp", "Cottus_gobio_Aare_littoral", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_Walen_I", "Salvelinus_umbla", "Squalius_cephalus")) #double checked
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_Walen_I", "Salvelinus_umbla", "Squalius_cephalus")) #double checked
 
 zug_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Zug") |> 
@@ -109,13 +109,19 @@ zurich_subset <- abu_nets_df_final |>
 
 df_subset <- bind_rows(biel_subset, brienz_subset, constance_subset, geneva_subset, joux_subset, lucerne_subset, lugano_subset, maggiore_subset, morat_subset, neuchatel_subset, poschiavo_subset, sarnen_subset, thun_subset, walen_subset, zug_subset, zurich_subset) #works with bind_rows, make all subsets separately and then new df from this -> can be used for the loop 
 
-#checking if number of species is correct, WIP
+#checking if number of species is correct, Konstanz, Lucerne, Maggiore, Neuchatel, Walen something wrong
 
-# test <- df_subset |> 
-#   filter(Parameter == "Abundance") |> 
-#   filter(value > 0) |> 
-#   group_by(Lake, Species) |> 
-#   tally()
+df_subset |> 
+  group_by(Lake) |> 
+  distinct(Species) |> 
+  count()
+
+#total species
+abu_nets_df_final |> 
+  group_by(Lake) |> 
+  distinct(Species) |> 
+  count()
+
 
 sub_lakes <- df_subset|>
   distinct(Lake) |>
@@ -1137,11 +1143,11 @@ joux_subset <- abu_nets_df_final |>
   
 lucerne_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Lucerne") |> 
-  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Profundal_Lucerne", "Gymnocephalus_cernua", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Lucerne_Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Tinca_tinca"))
+  filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Coregonus_zugensis", "Cottus_gobio_Profundal_Lucerne", "Gymnocephalus_cernua", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_sp_Profundal_dwarf_VWS", "Salvelinus_umbla", "Tinca_tinca"))
 
 lugano_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Lugano") |> 
-  filter(Species %in% c("Alburnu_arborella", "Coregonus_helveticus", "Lota_lota", "Micropterus_salmoides", "Perca_fluviatilis", "Rutilus_rutilus", "Sander_lucioperca", "Scardinius_hesperidicus", "Squalius_squalus"))
+  filter(Species %in% c("Alburnus_arborella", "Coregonus_helveticus", "Lota_lota", "Micropterus_salmoides", "Perca_fluviatilis", "Rutilus_rutilus", "Sander_lucioperca", "Scardinius_hesperidicus", "Squalius_squalus"))
   
 maggiore_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Maggiore") |> 
@@ -1153,7 +1159,7 @@ morat_subset <- abu_nets_df_final |>
 
 neuchatel_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Neuchatel") |> 
-  filter(Species %in% c("Barbatula_sp_Lineage_I", "Cobitis_bilineata", "Coregonus_candidus", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erytrhophthalmus", "Scardinius_hesperidicus", "Squalius_cephalus", "Tinca_tinca"))
+  filter(Species %in% c("Barbatula_sp_Lineage_I", "Cobitis_bilineata", "Coregonus_candidus", "Coregonus_palaea", "Coregonus_sp", "Cottus_gobio_Aare_littoral", "Esox_lucius", "Gobio_gobio", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Scardinius_erythrophthalmus", "Scardinius_hesperidicus", "Squalius_cephalus", "Tinca_tinca"))
 
 poschiavo_subset <- abu_nets_df_final |> 
   filter(Lake %in% "Poschiavo") |> 
@@ -1180,6 +1186,27 @@ zurich_subset  <- abu_nets_df_final |>
   filter(Species %in% c("Abramis_brama", "Alburnus_alburnus", "Coregonus_duplex", "Coregonus_heglingus", "Coregonus_sp", "Coregonus_zuerichensis", "Esox_lucius", "Gobio_gobio", "Gymnocephalus_cernua", "Lepomis_gibbosus", "Leuciscus_leuciscus", "Lota_lota", "Perca_fluviatilis", "Rutilus_rutilus", "Salvelinus_umbla", "Scardinius_erythrophthalmus", "Squalius_cephalus" ))
 
 df_subset_depth <- bind_rows(biel_subset, brienz_subset, constance_subset, geneva_subset, joux_subset, lucerne_subset, lugano_subset, maggiore_subset, morat_subset, neuchatel_subset, poschiavo_subset, sarnen_subset, thun_subset, walen_subset, zug_subset, zurich_subset)
+
+#check if subset is correct, correct! if correct from .txt
+
+df_subset_depth |>
+  group_by(Lake) |>
+  distinct(Species) |>
+  count()
+
+# df_subset_depth |>
+#   filter(Lake %in% "Neuchatel") |>
+#   distinct(Species)
+# 
+# 
+# abu_nets_df_final |>
+#   filter(Lake %in% "Neuchatel") |>
+#   distinct(Species)
+# 
+# abu_nets_df_final |>
+#   group_by(Lake) |>
+#   distinct(Species) |> 
+#   count()
 ```
 
 ```{r}
