@@ -79,17 +79,46 @@ maes.taxa.titan.sub <- titan(titan_temp, titan_fish_temp, minSplt = 5, numPerm =
 maes.taxa.titan.sub$sumz.cp
 
 
-tiff("Optimum_TITAN_Substrate_Genera_BMI_Final_Revised.tiff", units="in", width=20, height=20, res=600, bg="white", pointsize=20)
+tiff("Optimum_TITAN_Temperature_Species_Fish.tiff", units="in", width=20, height=20, res=600, bg="white", pointsize=20)
 
 
-plot_taxa(maes.taxa.titan.sub, xlabel = "Median Substrate diameter [cm]",leg.x = 2,leg.y=2,cex.taxa = 1,legend = FALSE)
+plot_taxa(maes.taxa.titan.sub, xlabel = "Temperature [°C]", leg.x = 2, leg.y = 2, cex.taxa = 1,legend = FALSE)
 
 
 dev.off()
 
 
-plot_taxa_ridges(maes.taxa.titan.sub,xlabel = "Median Substrate diameter [cm]",axis.text.x = 15,axis.text.y = 15,axis.title.x = 15,axis.title.y = 15)
+plot_taxa_ridges(maes.taxa.titan.sub,xlabel = "Temperature [°C]", axis.text.x = 15, axis.text.y = 15, axis.title.x = 15, axis.title.y = 15)
 
 
-ggsave("TITAN_Ridgeplot_Sub_Genus_Final_Revised.tiff", dpi = 600,height = 25,width = 25,units = "cm")
+ggsave("TITAN_Temperature.tiff", dpi = 600,height = 25,width = 25)
 
+
+plot_sumz_density(maes.taxa.titan.sub,xlabel = "Temperature [°C]",axis.text.x = 15,axis.text.y = 15,axis.title.x = 15,axis.title.y = 15)
+
+ggsave("TITAN_Sumz_Density_Community_Temp.tiff", dpi = 600,height = 25,width = 25)
+
+#percentage of positive and negative responders
+
+sub_resp <- maes.taxa.titan.sub$sppmax %>% 
+  as.data.frame() %>% 
+  rownames_to_column() %>% 
+  as_tibble() %>% 
+  rename(Genus= rowname,
+         z_response = filter) %>% 
+  select(Genus,z_response)
+
+#total 61
+
+# non-significatn ones, 16 species
+
+sub_resp %>% 
+  filter(z_response == 0)
+
+# significant 45 species
+sub_resp %>% 
+  filter(z_response > 0)
+
+45/61*100
+
+# 73.77049 % significant
