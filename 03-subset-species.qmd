@@ -148,9 +148,10 @@ for (i in sub_lakes){
     # sink("subset_check.txt", append = TRUE) #double-check if gams are well fitted
     # print(summary)
     # sink()
-    model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS
+    model_prediction[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$fit #saving model predictions in RDS, add
     model_bind <- cbind(model_prediction[[j]], temp_gradient)
     saveRDS(model_bind, paste0("Subset/predictions_abundance/predictions_",i,"_",j,".rds"))
+    # confidence_intervall[[j]] <- predict.gam(gam_output[[j]], temp_gradient, type = "response", se.fit = TRUE)$se, need to look at predict functions of gams
     derivatives[[j]] <- derivatives(gam_output[[j]]) #making derivatives and saving them in a RDS
     saveRDS(derivatives[[j]], paste0("Subset/derivatives_abundance/derivatives_",i,"_",j,".rds"))
   }
@@ -287,6 +288,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_biel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_biel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -340,6 +353,19 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_brienz_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 
 fig_b <- ggplot(data = df_brienz_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_bw(base_size = 14) +
@@ -396,6 +422,19 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_constance_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
+
 fig_b <- ggplot(data = df_constance_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -446,6 +485,18 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_geneva_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
 
 fig_b <- ggplot(data = df_geneva_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
@@ -498,6 +549,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_joux_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_joux_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -549,6 +612,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lucerne_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_lucerne_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -599,6 +674,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_lugano_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_lugano_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -648,6 +735,18 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_maggiore_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
 
 fig_b <- ggplot(data = df_maggiore_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
@@ -700,6 +799,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_morat_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_morat_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -750,6 +861,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_neuchatel_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_neuchatel_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -799,6 +922,18 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_poschiavo_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
 
 fig_b <- ggplot(data = df_poschiavo_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
@@ -851,6 +986,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_sarnen_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_sarnen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -900,6 +1047,19 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_thun_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 
 fig_b <- ggplot(data = df_thun_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_bw(base_size = 14) +
@@ -951,6 +1111,18 @@ fig_a <- ggplot() +
 
 fig_a
 
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_walen_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
+
 fig_b <- ggplot(data = df_walen_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_classic(base_size = 14) +
   labs(x = "Temperature", y = "Derivative") +
@@ -1000,6 +1172,18 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zug_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
 
 fig_b <- ggplot(data = df_zug_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_bw(base_size = 14) +
@@ -1051,6 +1235,18 @@ fig_a <- ggplot() +
 # lims(y = c(ymin_p, ymax_p))
 
 fig_a
+
+fig_wrap <- ggplot() +
+  theme_classic(base_size = 14) +
+  labs(x = "Temperature", y = "Abundance") +
+  geom_hline(
+    yintercept = 0,
+    lty = 2) +
+  geom_line(data = df_zurich_pred, mapping = aes(x = temp, y = model_prediction, color = Species)) +
+  scale_colour_manual(values = lakeColors, guide = NULL) +
+  facet_wrap(vars(Species))
+
+fig_wrap
 
 fig_b <- ggplot(data = df_zurich_deriv, mapping = aes(x = temp, y = derivative, color = Species)) +
   theme_bw(base_size = 14) +
