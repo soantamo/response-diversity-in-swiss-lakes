@@ -3,6 +3,7 @@ library(patchwork)
 library(ggtext)
 library(mgcv)
 library(gratia)
+library(gamm4)
 #library(hypervolume)
 library(here)
 library(readr)
@@ -30,6 +31,22 @@ nets_df_final <- df_final_no_electro |>
 abu_nets_df_final <- nets_df_final |> 
   filter(Parameter == "Abundance")
 
+
+##testing GAMM
+
+df_biel_perch <- abu_nets_df_final |> 
+  filter(Lake  == "Biel") |> 
+  filter(Species == "Perca_fluviatilis")
+
+b <- gamm(data = df_biel_perch, value ~ s(mean_last_7days, k = 3, bs = "cs"),
+                   family = negbin(1), method = "REML")
+
+plot(b$gam, pages = 1)
+summary(b$lme)
+summary(b$gam)
+anova(b$gam)
+gam.check(b$gam)
+
 #first use subset of lakes
 df_small <- abu_nets_df_final |> 
   filter(Lake %in% c("Biel", "Brienz", "Walen"))
@@ -53,12 +70,12 @@ for (i in species_small) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
-  gam_output[[i]] <- gam(data = data, value ~ s(mean_last_7days, k = 3, bs = "cs"), family = negbin(1), method = "REML")
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
+  gam_output[[i]] <- gamm(data = data, value ~ s(mean_last_7days, k = 3, bs = "re"), family = negbin(1), method = "REML")
+  model_prediction[[i]] <- predict.gamm(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
   model_bind <- cbind(model_prediction[[i]], temp_gradient)
   saveRDS(model_bind, paste0("test_all/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("test_all/derivatives_", i, ".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("test_all/derivatives_", i, ".rds"))
 }
 
 #we need response diversity calculation and GAMM
