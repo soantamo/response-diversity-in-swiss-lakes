@@ -22,7 +22,7 @@ corr_column <- deriv_species |>
   cor(method = "pearson", use = "pairwise.complete.obs") |> 
   # `[<-`(lower.tri(., TRUE), NA) |> 
   as_tibble(rownames = "species1") |> 
-  pivot_longer(cols=-1, names_to="species2", values_to="cor", values_drop_na=TRUE)
+  pivot_longer(cols=-1, names_to="species2", values_to="cor", values_drop_na = TRUE)
 
 
 corr_column$composition <- paste(corr_column$species1, corr_column$species2, sep="-")
@@ -41,8 +41,15 @@ corr_matrix <- deriv_species |>
   as.matrix() |> 
   cor(method = "pearson", use = "pairwise.complete.obs")
 
+
 levelplot(corr_matrix)
+
+COL2(diverging = c("RdBu", "BrBG", "PiYG", "PRGn", "PuOr", "RdYlBu"), n = 200)
+
+corrplot(corr = cor(deriv_species, method = "pearson", use = "pairwise.complete.obs"),
+         method = "color",  na.label = ".", tl.cex = 0.5, tl.col = "black",
+         col = COL2("RdYlBu"))
 
 #or 
 #how did Radinger et al. do it?
-
+#how does my data need to look like?
