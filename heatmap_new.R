@@ -28,10 +28,13 @@ corr_column <- deriv_species |>
 corr_column$composition <- paste(corr_column$species1, corr_column$species2, sep="-")
 
 #following visualization of leary and petchey. still way too much information
+
 corr_column |> 
-  filter(species1 == "Alburnus_alburnus") |> 
+  filter(species1 == "Alburnus_alburnus") |>
   ggplot(aes(x = composition, y = cor, fill = species2)) +
-  geom_col()
+  geom_col() +
+  scale_fill_viridis_d(option = "turbo")
+  # facet_wrap("species1")
 
 #trying a levelplot
 #works either with two continous variables + correlation coefficient or with 
@@ -53,3 +56,42 @@ corrplot(corr = cor(deriv_species, method = "pearson", use = "pairwise.complete.
 #or 
 #how did Radinger et al. do it?
 #how does my data need to look like?
+
+
+#new idea, correlation per lake
+# df_biel <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
+# 
+# test <- df_biel |> 
+#   select(Species, temp, derivative) |> 
+#   pivot_wider(names_from = "Species", values_from = "derivative") |> 
+#   select(-temp)
+# 
+# cor_test <- cor(test)
+
+
+#no idea what I am doing
+# df_heatmap_subset |> 
+#   select(-lake_derivative) |> 
+#   ggplot(aes(x = Lake, y = Species, fill = derivative)) + 
+#   geom_tile() +
+#   scale_fill_viridis_c(option = "turbo")
+# 
+# 
+# df_biel_temp <- readRDS("df_derivatives/df_deriv_Biel.rds")
+# df_biel_depth <- readRDS("Depth/df_derivatives_abundance/df_deriv_Biel.rds")
+# 
+# df_biel_temp <- df_biel_temp |> 
+#   select(Species, temp, derivative) |> 
+#   rename(deriv = derivative)
+# 
+# df_biel_depth <- df_biel_depth |> 
+#   select(Species, depth, derivative) |> 
+#   select(-Species)
+# 
+# df <- bind_cols(df_biel_temp, df_biel_depth)
+# 
+# df |> 
+#   ggplot(aes(x = temp, y = deriv)) +
+#   geom_point()
+# 
+# levelplot(deriv ~ temp*depth, data = df)
