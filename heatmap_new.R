@@ -34,5 +34,15 @@ corr_column |>
   geom_col()
 
 #trying a levelplot
+#works either with two continous variables + correlation coefficient or with 
+#correlation matrix
 
+corr_matrix <- deriv_species |> 
+  as.matrix() |> 
+  cor(method = "pearson", use = "pairwise.complete.obs")
+
+levelplot(corr_matrix)
+
+#or 
+#how did Radinger et al. do it?
 
