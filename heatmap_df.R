@@ -10,19 +10,20 @@ library(viridis)
 
 #subset!!!
 
-df_biel <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
-test <- df_biel |> 
-  pivot_wider(names_from = Species, values_from = derivative) |> 
-  select(!smooth:upper)
-
-corr_mat <- round(cor(test, method = "pearson", use = "pairwise.complete.obs"),2) 
-head(corr_mat)
-
-# reduce the size of correlation matrix
-melted_corr_mat <- melt(corr_mat)
+# df_biel <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
+# test <- df_biel |> 
+#   pivot_wider(names_from = Species, values_from = derivative) |> 
+#   select(!smooth:upper)
+# 
+# corr_mat <- round(cor(test, method = "pearson", use = "pairwise.complete.obs"),2) 
+# head(corr_mat)
+# 
+# # reduce the size of correlation matrix
+# melted_corr_mat <- melt(corr_mat)
 
 
 #mean derivative per species
+df_biel <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
 
 lake_mean <- df_biel |> 
   mutate(lake_derivative = mean(derivative)) |> 
