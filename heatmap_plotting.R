@@ -6,48 +6,39 @@ library(viridis)
 library(corrmorant)
 library(reshape2)
 library(corrplot)
+library(lattice)
+
 
 #df with mean values of derivatives per species and lake
 
 df_heatmap_subset <- readRDS("df_heatmap_subset")
 df_heatmap <- readRDS("df_heatmap")
 
+df <- read_csv("data_ross/all_comm_data.csv")
 
 
-
-#make dataframe wide for correlation, 4 biggest lakes
 
 deriv_species <- df_heatmap_subset |>
-  filter(Lake %in% c("Geneva", "Neuchatel", "Constance", "Lucerne")) |>
+  # filter(Lake %in% c("Geneva", "Neuchatel", "Constance", "Lucerne")) |>
   # filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Perca_fluviatilis", "Rutilus_rutilus")) |> 
   pivot_wider(names_from = "Species", values_from = "derivative") |> 
   select(-Lake, -lake_derivative)
-#   mutate(Geneva = 2.034901) |> 
-#   mutate(Neuchatel = 1.234619) |> 
-#   mutate(Lucerne = 0.05487739) |> 
-#   mutate(Constance = 0.8363541)
-# # 
-# deriv_lakes <-  df_heatmap_subset |>
-#   filter(Lake %in% c("Geneva", "Neuchatel", "Constance", "Lucerne")) |>
-#   pivot_wider(names_from = "Lake", values_from = "lake_derivative") |>
-#   select(-derivative, -Species)
-
 
 head(deriv_species)
+
+correlation <- cor(deriv_species, method = "pearson", use = "pairwise.complete.obs")
+
+levelplot(correlation)
 
 #if two data points per species are only there -> can only be -1 or 1
 #with pairwise.complete.obs the problem of missing values is solved
 #the problem is that I dont need species vs species, but species vs lakes
-
-cor(deriv_species, method = "pearson", use = "pairwise.complete.obs")
 
 COL2(diverging = c("RdBu", "BrBG", "PiYG", "PRGn", "PuOr", "RdYlBu"), n = 200)
 
 corrplot(corr = cor(deriv_species, method = "pearson", use = "pairwise.complete.obs"),
          method = "color",  na.label = ".", tl.cex = 0.5, tl.col = "black",
          col = COL2("RdYlBu"))
-
-# type = "lower",
 
 #based on internet
 
@@ -99,3 +90,17 @@ suitability_corplot
 #   ggplot(aes(Lake, Species, fill = derivative)) +
 #   geom_tile() +
 #   scale_fill_viridis(option="turbo")
+
+#testing to do boxplots based on leary and petchey of correlation between species per lake
+
+biel <- df_heatmap_subset |>
+  filter(Lake %in% c("Biel")) |>
+  # filter(Species %in% c("Alburnus_alburnus", "Coregonus_sp", "Perca_fluviatilis", "Rutilus_rutilus")) |> 
+  pivot_wider(names_from = "Species", values_from = "derivative") |> 
+  select(-Lake, -lake_derivative)
+
+corr_mat <- round(cor(biel, method = "pearson", use = "pairwise.complete.obs"),2) 
+head(corr_mat)
+
+# reduce the size of correlation matrix
+melted_corr_mat <- melt(corr_mat)
