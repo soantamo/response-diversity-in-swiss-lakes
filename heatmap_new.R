@@ -29,12 +29,37 @@ corr_column$composition <- paste(corr_column$species1, corr_column$species2, sep
 
 #following visualization of leary and petchey. still way too much information
 
-corr_column |> 
-  filter(species1 == "Alburnus_alburnus") |>
-  ggplot(aes(x = composition, y = cor, fill = species2)) +
+alb <- corr_column |> 
+  # filter(species1 == "Abramis_brama") |>
+  ggplot(aes(x = species2, y = cor, fill = species2)) +
   geom_col() +
-  scale_fill_viridis_d(option = "turbo")
-  # facet_wrap("species1")
+  scale_fill_viridis_d(option = "turbo") +
+  facet_wrap(~species1, scales = "fixed") +
+  guides(x = "none") +
+  labs(x = "Species 2", y = "Pearson correlation", title = "Pearson correlation between all species")
+  
+
+alb
+
+
+#trying to make correlation between species and lake derivative
+
+deriv_lake <- df_heatmap_subset |>
+  pivot_wider(names_from = "Species", values_from = "derivative") |> 
+  select(-Lake, -lake_derivative)
+
+df_heatmap_subset$species_lake <- paste(df_heatmap_subset$Species, df_heatmap_subset$Lake, sep="-")
+
+
+correlation <- cor(df_heatmap_subset$derivative, df_heatmap_subset$lake_derivative)
+print(correlation)
+
+head(df_heatmap_subset)
+df <- df_heatmap_subset |> 
+  select(-Lake, -Species) 
+
+
+#not working at all
 
 #trying a levelplot
 #works either with two continous variables + correlation coefficient or with 
@@ -95,3 +120,4 @@ corrplot(corr = cor(deriv_species, method = "pearson", use = "pairwise.complete.
 #   geom_point()
 # 
 # levelplot(deriv ~ temp*depth, data = df)
+
