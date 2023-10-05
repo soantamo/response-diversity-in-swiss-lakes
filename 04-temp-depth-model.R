@@ -8,6 +8,11 @@ library(here)
 library(readr)
 library(lattice)
 
+
+##very complex to do because see 
+# https://stats.stackexchange.com/questions/495775/first-derivative-of-fitted-gam-changes-according-to-specified-model-distribution
+#derivatives can only calculate derivative for one of the smooting functions
+
 # function from Ross et al. and species colors are now seperate
 source(here("functions.R"))
 source(here("species_colors.R"))
