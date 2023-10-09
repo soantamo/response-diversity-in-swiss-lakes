@@ -6,6 +6,7 @@ library(corrmorant)
 library(reshape2)
 library(corrplot)
 library(lattice)
+library(ggpubr)
 
 #What do I want to show?
 #Lets try getting the correlation values in a column 
@@ -43,6 +44,7 @@ alb
 
 
 #trying to make correlation between species and lake derivative
+#useless
 
 deriv_lake <- df_heatmap_subset |>
   pivot_wider(names_from = "Species", values_from = "derivative") |> 
@@ -69,7 +71,6 @@ corr_matrix <- deriv_species |>
   as.matrix() |> 
   cor(method = "pearson", use = "pairwise.complete.obs")
 
-
 levelplot(corr_matrix)
 
 COL2(diverging = c("RdBu", "BrBG", "PiYG", "PRGn", "PuOr", "RdYlBu"), n = 200)
@@ -77,6 +78,12 @@ COL2(diverging = c("RdBu", "BrBG", "PiYG", "PRGn", "PuOr", "RdYlBu"), n = 200)
 corrplot(corr = cor(deriv_species, method = "pearson", use = "pairwise.complete.obs"),
          method = "color",  na.label = ".", tl.cex = 0.5, tl.col = "black",
          col = COL2("RdYlBu"))
+
+
+sub <- df_heatmap_subset |>
+  filter(Lake %in% c("Biel", "Brienz", "Neuchatel")) |> 
+  pivot_wider(names_from = "Species", values_from = "derivative") |> 
+  select(-Lake, -lake_derivative)
 
 #or 
 #how did Radinger et al. do it?
