@@ -8,8 +8,6 @@ library(gamm4)
 library(here)
 library(readr)
 # function from Ross et al. and species colors are now seperate
-source(here("functions.R"))
-source(here("species_colors.R"))
 
 # load final dataset
 df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
