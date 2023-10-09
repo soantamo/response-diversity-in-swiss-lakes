@@ -24,6 +24,7 @@ library(viridis)
 
 #mean derivative per species
 df_biel <- readRDS("Subset/df_derivatives/df_deriv_Biel.rds")
+df <- readRDS("Subset/df_response_diversity/df_resp_div_Biel.rds")
 
 lake_mean <- df_biel |> 
   mutate(lake_derivative = mean(derivative)) |> 
