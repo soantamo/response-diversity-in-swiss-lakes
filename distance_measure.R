@@ -23,10 +23,16 @@ rownames(shared) <- shared$Lake
 shared <- shared[, -1] #remove Species column
 shared <- as.matrix(shared)
 
-dist <- vegdist(shared, method = "bray", na.rm = TRUE)
+test <- dist(shared)
+
+as.data.frame(test)
+
+vegdist(shared, method = "bray", na.rm = TRUE)
 
 test <- dist |> 
   as_tibble()
+
+
 
 metaMDS(dist)
 
