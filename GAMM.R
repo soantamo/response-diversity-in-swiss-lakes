@@ -36,7 +36,7 @@ plot(y = 1:nrow(df_final_no_electro),
 
 #differences in sampling effort?
 
-df_final_no_electro$Lake <- as.factor(df_final_no_electro$Lake)
+# df_final_no_electro$Lake <- as.factor(df_final_no_electro$Lake)
 
 
 df_final_no_electro |> 
@@ -53,10 +53,12 @@ df_final_no_electro |>
 df_perch <-  df_final_no_electro |> 
   filter(Species == "Perca_fluviatilis")
 
-M1 <- gam(data = df_perch, Abundance ~ s(mean_last_7days),
+M1 <- gam(data = df_perch, Abundance ~ s(mean_last_7days), method = "REML",
          family = poisson)
 
 summary(M1)
+
+plot(M1)
 
 E1 <- resid(M1, type = "pearson")
 sum(E1^2)/M1$df.residual #overdispersion with a factor 3.331914
@@ -80,7 +82,7 @@ gam.check(M1)
 #negbin testing
 
 M3 <- gam(data = df_perch, Abundance ~ s(mean_last_7days),
-          family = negbin(1))
+          family = negbin(1), method = "REML")
 
 summary(M3)
 
@@ -88,77 +90,67 @@ E3 <- resid(M3, type = "pearson")
 sum(E3^2)/M1$df.residual #overdispersion with a factor 2.032133
 
 
-AIC(M1, M2, M3)
+AIC(M1, M3)
 
 #gamm: observations are not independent
 
 df_perch$fLake <- as.factor(df_perch$Lake)
 
 M4 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days),
-           random =~(1 | fLake), family = poisson)
+           random =~(1 | fLake), family = poisson, method = "REML")
 
-#overdispersion calculation
+summary(M4$gam)
 
+E4 <- resid(M4$gam, type = "pearson")
+sum(E4^2)/M1$df.residual 
+
+#overdispersion calculation: 4.018671 (with k = 10), k = 4 a little bit lower
 
 #how many percent of abundance data are 0?
 
 table(df_perch$Abundance)
+length(df_perch$Abundance)
+#percent of zeros: 59.32324 %
+100 /26627 * 15796
 
 #is it overdispersion due to the many zeros? or is it because there is such a big
 #variation in the data ? (page 160), biological choice
+#probably many zeros -> zero-inflated model
+#see https://stats.stackexchange.com/questions/295998/gamm-with-zero-inflated-data
+#gam first
 
+M5 <- gam(data = df_perch, Abundance ~ s(mean_last_7days),
+          family = ziP())
 
+summary(M5)
 
+#gamm negbin
 
+M6 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days),
+            random =~(1 | fLake), family = negbin(1), method = "REML")
+
+summary(M6$gam)
+
+E6 <- resid(M6$gam, type = "pearson")
+sum(E6^2)/M1$df.residual 
+
+#now gamm with zero-inflation
+
+M7 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days),
+            family = ziP(), random =~(1 | fLake))
+
+summary(M7)
 
 #this is not necessary, just take abundance column
-nets_df_final <- df_final_no_electro |> 
-  pivot_longer(
-    cols = c("Abundance", "Presence"), 
-    names_to = "Parameter", 
-    values_to = "value"
-  )
-
-abu_nets_df_final <- nets_df_final |> 
-  filter(Parameter == "Abundance")
-
-#testing gam and gamm for one species across all lakes
-#gam for perch across all lakes
-
-df_perch <- abu_nets_df_final |> 
-  filter(Species == "Perca_fluviatilis")
-
-b <- gam(data = df_perch, value ~ s(mean_last_7days, k = 3),
-          family = negbin(1), method = "REML")
-gam.check(b)
-summary(b)
-
-temp_gradient <- data.frame(mean_last_7days = seq(from = min(df_perch$mean_last_7days, na.rm = TRUE), to = max(df_perch$mean_last_7days, na.rm = TRUE), by = 0.02))
-
-# model_prediction<- predict.gam(b, temp_gradient, type = "response", se.fit = TRUE)$fit
-
-derivatives <- derivatives(b)
-
-
-#gamm
-
-m <- gamm(data = df_perch, value ~ s(mean_last_7days, k = 3),
-         family = negbin(1), method = "REML")
-
-#parameters not checked. which distribution, value for k and also random effects
-plot(m$gam, pages = 1)
-summary(m$lme)
-summary(m$gam)
-anova(m$gam)
-gam.check(m$gam)
-
-temp_gradient <- data.frame(mean_last_7days = seq(from = min(df_perch$mean_last_7days, na.rm = TRUE), to = max(df_perch$mean_last_7days, na.rm = TRUE), by = 0.02))
-prediction <- predict.gam(m$gam, temp_gradient, type = "response", se.fit = TRUE)$fit
-df_prediction_perch <- cbind(prediction, temp_gradient)
-
-deriv <- derivatives(m)
-
-
+# nets_df_final <- df_final_no_electro |> 
+#   pivot_longer(
+#     cols = c("Abundance", "Presence"), 
+#     names_to = "Parameter", 
+#     values_to = "value"
+#   )
+# 
+# abu_nets_df_final <- nets_df_final |> 
+#   filter(Parameter == "Abundance")
 
 #prepare loop
 #species subset
