@@ -7,7 +7,8 @@ library(readr)
 library(viridis)
 library(gamm4)
 library(lattice)
-#data
+
+#reading in data
 df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
 
 names(df_final_no_electro)
@@ -99,6 +100,36 @@ sum(E2^2)/M2$gam$df.residual #less overdispersion: 2.600412
 
 AIC(M1$lme, M2$lme) #model 2 seems to be better
 
-#zero-inflated model
-M3 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
-           random = list(fLake =~ 1), family = ziP())
+#zero-inflated model, not working with gamm() or gamm4()
+#error
+# You can't use these extended families outside of gam() or bam() from the mgcv package.
+# With gamm4 you're stuck with the families that lmer() and glmer() 
+# from the lme4 package supports.
+# Options would be to use the gamlss package for ZIP models 
+# as I don't think it has a Tweedie family, or use the glmmTMB package 
+# which has lots of options, including tw() for a Tweedie family, however 
+# I don't believe it understands smooths so you'd need to convert your 
+# model into a form that can be fitted as a mixed effects model.
+# # Another option, which is likely to be inefficient but which you 
+# can use to get started with immediately is to use the "re" basis spline 
+# with gam() or bam() and create a factor or name nested in party to use
+# as the random effect, or even just s(name, party, bs = 're') might do it, 
+# assuming both are factors, but do the help for this basis to make sure 
+# I'm interpreting what you intend for the random effect.
+#https://stats.stackexchange.com/questions/400444/using-gamm4-on-zero-inflated-count-data-with-tweedie-or-zero-inflated-poisson-di
+
+#With gamm4::gamm4() you are limited to the families supported by lme4::glmer()
+#https://stats.stackexchange.com/questions/550849/gamm-with-betarlink-logit
+
+# M3 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days), random =~ (1 | fLake), 
+#             family = ziP())
+
+library(gamlss) #probably not useful because GAM only, but lots of distributions
+library(glmmTMB) #not installed yet
+
+#textbook done with MCMC
+
+##should random effects look like this in code?
+#k-value?
+#method for smoothing
+#spline?
