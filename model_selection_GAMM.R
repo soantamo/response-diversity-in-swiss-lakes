@@ -52,6 +52,7 @@ b <- test |>
 
 #joux, morat and neuchatel strange. poschiavo and zug also strange 
 
+
 ########################## models, one species across all lakes
 
 df_perch <-  df_final |> 
@@ -111,7 +112,7 @@ length(df_perch$Abundance)
 #is it overdispersion due to the many zeros? or is it because there is such a big
 #variation in the data ? (page 160), biological choice
 
-M2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
+M2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), 
            random = list(fLake =~ 1), family = negbin(1))
 
 plot(M2$gam)
@@ -158,6 +159,8 @@ anova(M0$lme, M1$lme, M2$lme)
 #With gamm4::gamm4() you are limited to the families supported by lme4::glmer()
 #https://stats.stackexchange.com/questions/550849/gamm-with-betarlink-logit
 
+#dropping zero-inflated ones
+
 # M3 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days), random =~ (1 | fLake), 
 #             family = ziP())
 
@@ -171,6 +174,52 @@ anova(M0$lme, M1$lme, M2$lme)
 #method for smoothing
 #spline?
 
+#a lot of zeros, zero-inflated model not possible with frequentist approach
+#lets use negbin
+
+######################################## negbin party
+N1 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
+           random = list(fLake =~ 1), family = negbin(1))
+
+plot(N1$gam)
+summary(N1$gam) #R² can be used as model selection (as AIC): 0.00527 
+anova(N1$gam)
+summary(N1$lme)
+
+###model validation
+#from online https://statistique.cuso.ch/fileadmin/statistique/part-3.pdf
+# and https://www.maths.ed.ac.uk/~swood34/mgcv/check-select.pdf
+#double check
+#how can I interpret these residuals?
+#Residuals should be plotted against
+# 1. fitted values.
+# 2. predictor variables (those included and those dropped).
+# 3. time, if the data are temporal.
+gam.check(N1$gam) #not precise, care required
+
+rsd <- residuals(N1$gam)
+fit <- 
+
+qq.gam(N1$gam,rep=100); plot(fitted(N1$lme),rsd)
+
+#lower k
+N2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), 
+           random = list(fLake =~ 1), family = negbin(1))
+
+b <- gam(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), family = ziP())
+gam.check(b)
+anova(b)
+E1 <- residuals(b)
+F1 <- fitted(b)
+plot(x = F1, y = E1)
+hist(E1)
+ggnorm(E1)
+
+#comparing models
+AIC(N1$lme, N2$lme, b)
+anova(N1$lme, N2$lme)
+
+
 ######################################### poisson party
 
 #fitting model, poisson first, Lakes as random effect
@@ -183,6 +232,7 @@ anova(P1$gam)
 summary(P1$lme)
 
 gam.check(P1$gam)
+
 
 ##model validation following  Zuur A beginners guide to GAMs p.22 and GAMMs p. 52
 
@@ -254,3 +304,4 @@ par(op_p2)
 
 
 #also try gamm4()
+
