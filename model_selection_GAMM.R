@@ -9,18 +9,18 @@ library(gamm4)
 library(lattice)
 
 #reading in data
-df_final_no_electro <- read_rds("/home/sophie/Dokumente/Master Thesis R/Master Thesis Analysis/df_final_ne.rds")
+df_final <- read_rds("df_final.rds")
 
-names(df_final_no_electro)
-str(df_final_no_electro)
+names(df_final)
+str(df_final)
 
 #only species present in lake get lakepresence 1
-min(df_final_no_electro$LakePresence)
+min(df_final$LakePresence)
 
 #look for outliers
 par(mar=c(5,5,2,2), cex.lab = 1.5)
-plot(y = 1:nrow(df_final_no_electro), 
-     x = df_final_no_electro$Abundance, 
+plot(y = 1:nrow(df_final), 
+     x = df_final$Abundance, 
      xlab = "Values of the data",
      ylab = "Order of the data",
      pch = 16, 
@@ -29,24 +29,38 @@ plot(y = 1:nrow(df_final_no_electro),
 #joux morat and neuchatel, check fishing date etc. 
 
 #differences in sampling effort?
+#takes long
 
-# df_final_no_electro$Lake <- as.factor(df_final_no_electro$Lake)
-
-df_final_no_electro |> 
-  filter(Lake %in% c("Biel", "Brienz", "Walen")) |> 
-  ggplot(aes(x = mean_last_7days, y = Abundance)) +
-  geom_point() +
-  facet_wrap(~Lake)
+# df_final |> 
+#   filter(Lake %in% c("Biel", "Brienz", "Walen")) |> 
+#   ggplot(aes(x = mean_last_7days, y = Abundance)) +
+#   geom_point() +
+#   facet_wrap(~Lake)
 
 #joux, morat and neuchatel strange. poschiavo and zug also strange 
 
 ########################## models, one species across all lakes
 
-df_perch <-  df_final_no_electro |> 
+df_perch <-  df_final |> 
   filter(Species == "Perca_fluviatilis")
 
-#add lake as factor
+#adding column with lake as factor
 df_perch$fLake <- as.factor(df_perch$Lake)
+
+#fitting gamm with gaussian
+M0 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
+           random = list(fLake =~ 1), family = gaussian)
+
+plot(M0$gam)
+summary(M0$gam) #R² can be used as model selection (as AIC), 0.00462 
+anova(M0$gam)
+summary(M0$lme)
+
+#overdispersion
+E0 <- resid(M0$gam, type = "pearson")
+sum(E0^2)/M0$gam$df.residual 
+
+#2.1 overdispersion
 
 #fitting model, poisson first, Lakes as random effect
 #k is 10, method is default ML
@@ -69,7 +83,8 @@ par(op)
 E1 <- resid(M1$gam, type = "pearson")
 sum(E1^2)/M1$gam$df.residual 
 #overdispersion: 4.013684
-
+AIC(M0$lme, M1$lme)
+#M0 is better
 #how many percent of abundance data are 0?
 
 table(df_perch$Abundance)
@@ -89,6 +104,7 @@ summary(M2$gam) #R² can be used as model selection (as AIC): 0.00527
 anova(M2$gam)
 summary(M2$lme)
 
+#gamm help from R
 fv <- exp(fitted(M2$lme)) ## predicted values (including re)
 rsd <- (M2$gam$y - fv)/sqrt(fv) ## Pearson residuals (Poisson case)
 op <- par(mfrow=c(1,2))
@@ -98,7 +114,8 @@ par(op)
 E2 <- resid(M2$gam, type = "pearson")
 sum(E2^2)/M2$gam$df.residual #less overdispersion: 2.600412
 
-AIC(M1$lme, M2$lme) #model 2 seems to be better
+AIC(M0$lme, M1$lme, M2$lme) #model 0 seems to be best based on AIC
+#probably different for other species?
 
 #zero-inflated model, not working with gamm() or gamm4()
 #error
@@ -124,10 +141,10 @@ AIC(M1$lme, M2$lme) #model 2 seems to be better
 # M3 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days), random =~ (1 | fLake), 
 #             family = ziP())
 
-library(gamlss) #probably not useful because GAM only, but lots of distributions
-library(glmmTMB) #not installed yet
+# library(gamlss) #probably not useful because GAM only, but lots of distributions
+# library(glmmTMB) #GLMM only 
 
-#textbook done with MCMC
+#textbook uses MCMC
 
 ##should random effects look like this in code?
 #k-value?
