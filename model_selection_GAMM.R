@@ -301,7 +301,10 @@ sum(E1^2)/M2$gam$df.residual
 
 #lower compared to poisson
 
+
+
 #also try gamm4() for negbin
+
 #idee: either do negbin GAMM and find good model or try gam with ziP()
 ###############################################################################
 #zero-inflated model, not working with gamm() or gamm4()
