@@ -8,6 +8,12 @@ library(viridis)
 library(gamm4)
 library(lattice)
 
+#do not forget
+##should random effects look like this in code?
+#k-value?
+#method for smoothing
+#spline?
+
 #reading in data
 df_final <- read_rds("df_final.rds")
 
@@ -77,7 +83,7 @@ names(df_perch)
 M0 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days),
            random = list(fLake =~ 1), family = gaussian)
 
-plot(M0$gam) #wiggly af, k must be lower
+plot(M0$gam) #wiggly af, k must be lower than 10
 summary(M0$gam) #R² can be used as model selection (as AIC), 0.00462
 anova(M0$gam)
 summary(M0$lme)
@@ -137,88 +143,81 @@ abline(h = 1, lwd = 2, lty = 2)
 E1 <- resid(M0$gam, type = "pearson")
 sum(E1^2)/M0$gam$df.residual 
 
-#this is not a good model
+#this is not a good model! next poisson
 
-#model validation 
-# Residuals should be plotted against
-# 1. fitted values.
-# 2. predictor variables (those included and those dropped)
+###########################################################################
+M1 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
+           random = list(fLake =~ 1), family = poisson)
 
-# The key assumptions are: https://statistique.cuso.ch/fileadmin/statistique/part-3.pdf
-# 1. The assumed mean variance relationship is correct, so that
-# scaled residuals have constant variance.
-# 2. The response data are independent, so that the residuals
-# appear approximately so.
+plot(M1$gam) 
+summary(M1$gam) 
+anova(M1$gam)
+summary(M1$lme)
+gam.check(M1$gam)
 
-#1. homogeneity of residuals: plot residuals vs. fitted values, based on gamm book
-fv <- fitted(M0$lme, type = "n") ##predicted values
-rsd <- resid(M0$lme) ##residuals
+anova(M0$lme, M1$lme)
+AIC(M0$lme, M1$lme) #better AIC for model one, but residuals look bad there
+
+
+#MODEL VALIDATION#
+#Synthesis of pdf, GAMM book and GAM book
+#1.verifiy homogeneity: rsd vs fitted
+fv <- fitted(M1$lme, type = "n") ##predicted values
+rsd <- resid(M1$lme) ##residuals
 plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
 
-#2 
-plot(x = df_perch$mean_last_7days, y = rsd, xlab = "Temp", ylab = "Residuals")
-plot(x = df_perch$fLake, y = rsd, xlab = "Lake", ylab = "Residuals")
-boxplot(rsd ~ fLake, data = df_perch)
+#no
 
-#distribution checking
-rsd <- residuals(M0$lme)
-qq.gam(M0$gam,rep=100); plot(fitted(M0$lme),rsd)
-plot(df_perch$mean_last_7days,rsd); plot(df_perch$mean_last_7days,rsd)
-
-#code from GAMM book
+#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
 par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
-E1 <- resid(M0$lme, type ="n")
-F1 <- fitted(M0$lme)
+E1 <- resid(M1$lme, type ="n")
+F1 <- fitted(M1$lme)
 plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
 abline(h=0, lty=2)
 
 plot(x=df_perch$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
 abline(h=0, lty=2)
 
-plot(x=df_perch$fLake, y = E1, xlab = "Lake", ylab = "Residuals")
+plot(x=df_perch$fProtocol, y = E1, xlab = "Protocol", ylab = "Residuals")
 abline(h=0, lty=2)
 
-boxplot(E1 ~ fLake, data = df_perch)
+plot(x=df_perch$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
+abline(h=0, lty=2)
 
+#looks a bit better
 
+#3. verifiy independence when multiple measurements were taken over time: auto-correlation
+#not the case here
 
+#4.verifiy normality: histogram of residuals
 
+par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
+hist(E1, main = "", xlab = "Residuals")
+qqnorm(E1, main = "")
+qqline(E1)
 
-###########################################################################
+#no
 
+#5. check for influental observations: cook distance values
+par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
+plot(cooks.distance(M1$gam), xlim = c(0,10000), 
+     ylim = c(0,1), xlab = "Observations", 
+     ylab = " Cooks distance values")
+abline(h = 1, lwd = 2, lty = 2)
 
+#not working!
 
-############################################
+#6.if repeated measurements taken from the same site, check for patterns
+#not the case
 
-#2.1 overdispersion
+# #overdispersion
 
-#fitting model, poisson first, Lakes as random effect
-#k is 10, method is default ML
-M1 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, bs = "re"), 
-           random = list(fLake =~ 1), family = poisson)
-
-plot(M1$gam)
-summary(M1$gam) #R² can be used as model selection (as AIC), 0.00462 
-anova(M1$gam)
-summary(M1$lme)
-
-gam.check(M1$gam)
-
-fv <- exp(fitted(M1$lme)) ## predicted values (including re)
-rsd <- (M1$gam$y - fv)/sqrt(fv) ## Pearson residuals (Poisson case)
-op <- par(mfrow=c(1,2))
-qqnorm(rsd);plot(fv^.5,rsd)
-par(op) 
-#MISSING! validaiton following p. 52
-
-#overdispersion
 E1 <- resid(M1$gam, type = "pearson")
 sum(E1^2)/M1$gam$df.residual 
-#overdispersion: 4.013684
-AIC(M0$lme, M1$lme)
-#M0 is better
-#how many percent of abundance data are 0?
 
+#higher compared to gaussian
+
+#how many percent of abundance data are 0?
 table(df_perch$Abundance)
 length(df_perch$Abundance)
 #percent of zeros: 59.32324 %
@@ -228,32 +227,83 @@ length(df_perch$Abundance)
 #is it overdispersion due to the many zeros? or is it because there is such a big
 #variation in the data ? (page 160), biological choice
 
+############################################
+
+#try negbin with GAMM, theta?
+
 M2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), 
            random = list(fLake =~ 1), family = negbin(1))
 
 plot(M2$gam)
-summary(M2$gam) #R² can be used as model selection (as AIC): 0.00527 
+summary(M2$gam) 
 anova(M2$gam)
 summary(M2$lme)
 
-#gamm help from R
-fv <- exp(fitted(M2$lme)) ## predicted values (including re)
-rsd <- (M2$gam$y - fv)/sqrt(fv) ## Pearson residuals (Poisson case)
-op <- par(mfrow=c(1,2))
-qqnorm(rsd);plot(fv^.5,rsd)
-par(op) 
-
-rsd <- residuals(M2$gam)
-qq.gam(M2$gam,rep=100); plot(fitted(M2$lme),rsd)
-
-E2 <- resid(M2$gam, type = "pearson")
-sum(E2^2)/M2$gam$df.residual #less overdispersion: 2.600412
-
-AIC(M0$lme, M1$lme, M2$lme) #model 0 seems to be best based on AIC
-#probably different for other species?
-
 anova(M0$lme, M1$lme, M2$lme)
+AIC(M0$lme, M1$lme, M2$lme) #AIC at least better than model 1, still worse than M0
 
+
+#MODEL VALIDATION#
+#Synthesis of pdf, GAMM book and GAM book
+#1.verifiy homogeneity: rsd vs fitted
+fv <- fitted(M2$lme, type = "n") ##predicted values
+rsd <- resid(M2$lme) ##residuals
+plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
+
+#no
+
+#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
+par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
+E1 <- resid(M2$lme, type ="n")
+F1 <- fitted(M2$lme)
+plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$fProtocol, y = E1, xlab = "Protocol", ylab = "Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
+abline(h=0, lty=2)
+
+#looks a bit better
+
+#3. verifiy independence when multiple measurements were taken over time: auto-correlation
+#not the case here
+
+#4.verifiy normality: histogram of residuals
+
+par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
+hist(E1, main = "", xlab = "Residuals", ylim = c(0,30))
+qqnorm(E1, main = "")
+qqline(E1)
+
+#no
+
+#5. check for influental observations: cook distance values
+par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
+plot(cooks.distance(M2$gam), xlim = c(0,10000), 
+     ylim = c(0,1), xlab = "Observations", 
+     ylab = " Cooks distance values")
+abline(h = 1, lwd = 2, lty = 2)
+
+#not working!
+
+#6.if repeated measurements taken from the same site, check for patterns
+#not the case
+
+# #overdispersion
+
+E1 <- resid(M2$gam, type = "pearson")
+sum(E1^2)/M2$gam$df.residual 
+
+#lower compared to poisson
+
+#also try gamm4() for negbin
+#idee: either do negbin GAMM and find good model or try gam with ziP()
+###############################################################################
 #zero-inflated model, not working with gamm() or gamm4()
 #error
 # You can't use these extended families outside of gam() or bam() from the mgcv package.
@@ -271,153 +321,83 @@ anova(M0$lme, M1$lme, M2$lme)
 # assuming both are factors, but do the help for this basis to make sure 
 # I'm interpreting what you intend for the random effect.
 #https://stats.stackexchange.com/questions/400444/using-gamm4-on-zero-inflated-count-data-with-tweedie-or-zero-inflated-poisson-di
-
 #With gamm4::gamm4() you are limited to the families supported by lme4::glmer()
 #https://stats.stackexchange.com/questions/550849/gamm-with-betarlink-logit
-
-#dropping zero-inflated ones
-
-# M3 <- gamm4(data = df_perch, Abundance ~ s(mean_last_7days), random =~ (1 | fLake), 
-#             family = ziP())
-
 # library(gamlss) #probably not useful because GAM only, but lots of distributions
 # library(glmmTMB) #GLMM only 
-
 #textbook uses MCMC
 
-##should random effects look like this in code?
-#k-value?
-#method for smoothing
-#spline?
+#option to do GAM and use fLake as second smoothing factor with "re"
+#negbin zero-inflated would also be possible here
 
-#a lot of zeros, zero-inflated model not possible with frequentist approach
-#lets use negbin
+M3 <- gam(Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
+          family = ziP(), data = df_perch)
 
-######################################## negbin party
-N1 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
-           random = list(fLake =~ 1), family = negbin(1))
+plot(M3)
+summary(M3) 
+anova(M3)
 
-plot(N1$gam)
-summary(N1$gam) #R² can be used as model selection (as AIC): 0.00527 
-anova(N1$gam)
-summary(N1$lme)
-
-###model validation
-#from online https://statistique.cuso.ch/fileadmin/statistique/part-3.pdf
-# and https://www.maths.ed.ac.uk/~swood34/mgcv/check-select.pdf
-#double check
-#how can I interpret these residuals?
-#Residuals should be plotted against
-# 1. fitted values.
-# 2. predictor variables (those included and those dropped).
-# 3. time, if the data are temporal.
-gam.check(N1$gam) #not precise, care required
-
-rsd <- residuals(N1$gam)
-fit <- 
-
-qq.gam(N1$gam,rep=100); plot(fitted(N1$lme),rsd)
-
-#lower k
-N2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), 
-           random = list(fLake =~ 1), family = negbin(1))
-
-b <- gam(data = df_perch, Abundance ~ s(mean_last_7days, k = 3), family = ziP())
-gam.check(b)
-anova(b)
-E1 <- residuals(b)
-F1 <- fitted(b)
-plot(x = F1, y = E1)
-hist(E1)
-ggnorm(E1)
-
-#comparing models
-AIC(N1$lme, N2$lme, b)
-anova(N1$lme, N2$lme)
+anova(M0$lme, M1$lme, M2$lme, M3)
+AIC(M0$lme, M1$lme, M2$lme, M3) #M3 lowest
 
 
-######################################### poisson party
+#MODEL VALIDATION#
+#Synthesis of pdf, GAMM book and GAM book
+#1.verifiy homogeneity: rsd vs fitted
+fv <- fitted(M3) ##predicted values
+rsd <- resid(M3) ##residuals
+plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
 
-#fitting model, poisson first, Lakes as random effect
-P1 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
-           random = list(fLake =~ 1), family = poisson)
+#naja
 
-plot(P1$gam)
-summary(P1$gam) #R² can be used as model selection (as AIC), 0.00462 
-anova(P1$gam)
-summary(P1$lme)
+#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
+par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
+E1 <- resid(M3)
+F1 <- fitted(M3)
+plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
+abline(h=0, lty=2)
 
-gam.check(P1$gam)
+plot(x=df_perch$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
+abline(h=0, lty=2)
 
+plot(x=df_perch$fProtocol, y = E1, xlab = "Protocol", ylab = "Residuals")
+abline(h=0, lty=2)
 
-##model validation following  Zuur A beginners guide to GAMs p.22 and GAMMs p. 52
+plot(x=df_perch$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
+abline(h=0, lty=2)
 
-E1 <- resid(P1$lme, type ="n")
-F1 <- fitted(P1$lme)
+#not bad I guess
 
-plot(x = F1, y = E1, xlab = "fitted values", ylab = "residuals")
-abline(h = 0)
+#3. verifiy independence when multiple measurements were taken over time: auto-correlation
+#not the case here
 
-hist(E1)
+#4.verifiy normality: histogram of residuals
 
-# fv <- exp(fitted(P1$lme)) ## predicted values (including re)
-# rsd <- (P1$gam$y - fv)/sqrt(fv) ## Pearson residuals (Poisson case)
-# op <- par(mfrow=c(1,2))
-# qqnorm(rsd);plot(fv^.5,rsd)
-# par(op) 
-# #MISSING! validaiton following p. 52
-# 
-# # par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
-# E1 <- resid(P1$lme, type ="n")
-# F1 <- fitted(P1$lme)
-# plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
-# abline(h=0, lty=2)
-# 
-# plot(x=df_perch$mean_last_7days, y = E1, xlab = "Year", ylab = "Residuals")
-# abline(h=0, lty=2)
-# 
-# plot(x=PB$DayInYear, y = E1, xlab = "Day in Year", ylab = "Residuals")
-# abline(h=0, lty=2)
-# 
-# boxplot(E1 ~ Season, data = PB)
+par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
+hist(E1, main = "", xlab = "Residuals", ylim = c(0,20))
+qqnorm(E1, main = "")
+qqline(E1)
 
+#looks better
 
-#from online https://statistique.cuso.ch/fileadmin/statistique/part-3.pdf
-#double check
-#how can I interpret these residuals?
-#Residuals should be plotted against
-# 1. fitted values.
-# 2. predictor variables (those included and those dropped).
-# 3. time, if the data are temporal.
+#5. check for influental observations: cook distance values
 
-rsd <- residuals(P1$gam)
-qq.gam(P1$gam,rep=100); plot(fitted(P1$lme),rsd)
-plot(df_perch$mean_last_7days,rsd)
+# par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
+# plot(cooks.distance(M3), xlim = c(0,10000), 
+#      ylim = c(0,1), xlab = "Observations", 
+#      ylab = " Cooks distance values")
+# abline(h = 1, lwd = 2, lty = 2)
 
-#overdispersion
-E1 <- resid(M1$gam, type = "pearson")
-sum(E1^2)/M1$gam$df.residual 
+#not working!
 
+#6.if repeated measurements taken from the same site, check for patterns
+#not the case
 
-#Second model for poisson with bs = "re", as suggested by gamm()
-P2 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days, bs = "re"), 
-           random = list(fLake =~ 1), family = poisson)
+# #overdispersion
 
-plot(P2$gam)
-summary(P2$gam) #R² can be used as model selection (as AIC), 0.00462 
-anova(P2$gam)
-summary(P2$lme)
+E1 <- resid(M3, type = "pearson")
+sum(E1^2)/M3$df.residual
 
-gam.check(P2$gam)
+#lowest! 1.06
 
-fv_p2 <- exp(fitted(P2$lme)) ## predicted values (including re)
-rsd_p2 <- (P2$gam$y - fv)/sqrt(fv_p2) ## Pearson residuals (Poisson case)
-op_p2 <- par(mfrow=c(1,2))
-qqnorm(rsd_p2);plot(fv_p2^.5,rsd_p2)
-par(op_p2)
-
-
-
-
-#also try gamm4()
 
