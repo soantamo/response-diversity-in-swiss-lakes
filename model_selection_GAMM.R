@@ -336,6 +336,13 @@ sum(E1^2)/M2$gam$df.residual
 M3 <- gam(Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
           family = ziP(), data = df_perch)
 
+
+#https://stats.stackexchange.com/questions/495775/first-derivative-of-fitted-gam-changes-according-to-specified-model-distribution
+
+plot.gam(M3)
+
+derivatives <- derivatives(M3) #derivatives works!!
+
 plot(M3)
 summary(M3) 
 anova(M3)
@@ -402,5 +409,31 @@ E1 <- resid(M3, type = "pearson")
 sum(E1^2)/M3$df.residual
 
 #lowest! 1.06
+
+#derivatives work -> use M3 as basis for the model
+
+#single occurrences is a problem though
+
+single_occurrences <- df_final |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(Lakes == 1)
+
+one_fish_one_lake <- df_final %>%
+  group_by(Lake, Species) %>%
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1)
+
+species <- df_final |> 
+  distinct(Species)
+
+#how many species do only have binary data?
+
+test <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |>
+  count()
+
+#this will get complicated, yey
 
 
