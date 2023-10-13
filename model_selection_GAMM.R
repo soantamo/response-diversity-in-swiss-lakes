@@ -17,6 +17,7 @@ str(df_final)
 #only species present in lake get lakepresence 1
 min(df_final$LakePresence)
 
+##############################################################################
 #look for outliers
 par(mar=c(5,5,2,2), cex.lab = 1.5)
 plot(y = 1:nrow(df_final), 
@@ -52,27 +53,142 @@ b <- test |>
 
 #joux, morat and neuchatel strange. poschiavo and zug also strange 
 
-
 ########################## models, one species across all lakes
 
 df_perch <-  df_final |> 
-  filter(Species == "Perca_fluviatilis")
+  filter(Species == "Perca_fluviatilis") |> 
+  drop_na(mean_last_7days) #dropping those NAs
+
+#missing values in df, thats why plotting response vs. residuals is not working
 
 #adding column with lake as factor
 df_perch$fLake <- as.factor(df_perch$Lake)
+df_perch$fProtocol <- as.factor(df_perch$Protocol)
+
+#which are our potential explanatory variables?
+names(df_perch)
+#Abundance: continous response
+#mean_last_7days: covariate/explanatory continous
+#Protocol: categorical covariate
+#Lake: categorical covariate
+#Depth_sample: continous covariate
 
 #fitting gamm with gaussian
-# M0 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days), 
-#            random = list(fLake =~ 1), family = gaussian)
-# 
-# plot(M0$gam)
-# summary(M0$gam) #R² can be used as model selection (as AIC), 0.00462 
-# anova(M0$gam)
-# summary(M0$lme)
-# 
+M0 <- gamm(data = df_perch, Abundance ~ s(mean_last_7days),
+           random = list(fLake =~ 1), family = gaussian)
+
+plot(M0$gam) #wiggly af, k must be lower
+summary(M0$gam) #R² can be used as model selection (as AIC), 0.00462
+anova(M0$gam)
+summary(M0$lme)
+gam.check(M0$gam) #not precise enough for GAMMs
+
+#MODEL VALIDATION#
+#Synthesis of pdf, GAMM book and GAM book
+#1.verifiy homogeneity: rsd vs fitted
+fv <- fitted(M0$lme, type = "n") ##predicted values
+rsd <- resid(M0$lme) ##residuals
+plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
+
+#no
+
+#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
+par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
+E1 <- resid(M0$lme, type ="n")
+F1 <- fitted(M0$lme)
+plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$fProtocol, y = E1, xlab = "Protocol", ylab = "Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
+abline(h=0, lty=2)
+
+#3. verifiy independence when multiple measurements were taken over time: auto-correlation
+#not the case here
+
+#4.verifiy normality: histogram of residuals
+
+par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
+hist(E1, main = "", xlab = "Residuals")
+qqnorm(E1, main = "")
+qqline(E1)
+
+#no
+
+#5. check for influental observations: cook distance values
+par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
+plot(cooks.distance(M0$gam), xlim = c(0,10000), 
+     ylim = c(0,1), xlab = "Observations", 
+     ylab = " Cooks distance values")
+abline(h = 1, lwd = 2, lty = 2)
+
+#not working!
+
+#6.if repeated measurements taken from the same site, check for patterns
+#not the case
+
 # #overdispersion
-# E0 <- resid(M0$gam, type = "pearson")
-# sum(E0^2)/M0$gam$df.residual 
+
+E1 <- resid(M0$gam, type = "pearson")
+sum(E1^2)/M0$gam$df.residual 
+
+#this is not a good model
+
+#model validation 
+# Residuals should be plotted against
+# 1. fitted values.
+# 2. predictor variables (those included and those dropped)
+
+# The key assumptions are: https://statistique.cuso.ch/fileadmin/statistique/part-3.pdf
+# 1. The assumed mean variance relationship is correct, so that
+# scaled residuals have constant variance.
+# 2. The response data are independent, so that the residuals
+# appear approximately so.
+
+#1. homogeneity of residuals: plot residuals vs. fitted values, based on gamm book
+fv <- fitted(M0$lme, type = "n") ##predicted values
+rsd <- resid(M0$lme) ##residuals
+plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
+
+#2 
+plot(x = df_perch$mean_last_7days, y = rsd, xlab = "Temp", ylab = "Residuals")
+plot(x = df_perch$fLake, y = rsd, xlab = "Lake", ylab = "Residuals")
+boxplot(rsd ~ fLake, data = df_perch)
+
+#distribution checking
+rsd <- residuals(M0$lme)
+qq.gam(M0$gam,rep=100); plot(fitted(M0$lme),rsd)
+plot(df_perch$mean_last_7days,rsd); plot(df_perch$mean_last_7days,rsd)
+
+#code from GAMM book
+par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
+E1 <- resid(M0$lme, type ="n")
+F1 <- fitted(M0$lme)
+plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
+abline(h=0, lty=2)
+
+plot(x=df_perch$fLake, y = E1, xlab = "Lake", ylab = "Residuals")
+abline(h=0, lty=2)
+
+boxplot(E1 ~ fLake, data = df_perch)
+
+
+
+
+
+###########################################################################
+
+
+
+############################################
 
 #2.1 overdispersion
 
