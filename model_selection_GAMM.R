@@ -414,26 +414,213 @@ sum(E1^2)/M3$df.residual
 
 #single occurrences is a problem though
 
-single_occurrences <- df_final |> 
+one_occurence <- df_final |> 
   group_by(Species) |> 
   summarize(Lakes = n_distinct(Lake)) |> 
-  filter(Lakes == 1)
+  filter(Lakes == 1) |> 
+  pull(Species)
 
-one_fish_one_lake <- df_final %>%
+#new df for species that occur only in one lake, no random effects for those
+df_single <- df_final |> 
+  filter(Species %in% one_occurence)
+
+
+#fish that only occur once in one lake, cant be included in loop 
+
+one_fish_in_lake <- df_final %>%
   group_by(Lake, Species) %>%
   summarize(TotalAbundance = sum(Abundance)) |> 
   filter(TotalAbundance == 1)
 
 species <- df_final |> 
-  distinct(Species)
+  distinct(Species) |> 
+  pull(Species)
 
 #how many species do only have binary data?
+#these have abundance data, but some of those occur only in one lake
+
+
+non_binary_species <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |>
+  count() |> 
+  pull(Species)
+
+df_abundance <- df_final |> 
+  filter(Species %in% non_binary_species)
+
+#combination of several occurences and abundance data, gam with random effects with zip
+#15 species
+
+abundance_several_lakes <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+
+#occur only in one lake
+#46
+
+
+#binary data species with one occurence per lake
 
 test <- df_final |> 
   filter(Abundance > 1) |> 
-  group_by(Species) |>
-  count()
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+binary_species <- df_final |> 
+  filter(!Species %in% non_binary_species) |> 
+  distinct(Species) |> 
+  pull(Species)
+
 
 #this will get complicated, yey
 
+###OVERVIEW
+#three problems: 
+#1. species that dont have any catch > 1 -> 0 and 1 only -> binomial data
+#prepare subsets of df with those species in it
+#2. species that occur only in one lake
+#3. species that occur only once in a lake
 
+
+
+#1. binomial vs. abundance data
+
+non_binomial_species <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |>
+  count() |> 
+  pull(Species)
+
+binomial_species <- df_final |> 
+  filter(!Species %in% non_binary_species) |> 
+  distinct(Species) |> 
+  pull(Species)
+
+# + 2. binomial vs. abundance species occuring only in one lake
+
+bi_one_occurence <- df_final |> 
+  filter(Species %in% binomial_species) |>
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(Lakes == 1) |> 
+  pull(Species)
+
+abu_one_occurence <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(Lakes == 1) |> 
+  pull(Species)
+
+#binomial vs. abundance species occuring in several lakes -> differnet families,
+
+
+bi_multi_occurence <- df_final |> 
+  filter(Species %in% binomial_species) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+
+abu_multi_occurence <- df_final |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+# 3. species that occur only once in one of the lakes
+
+one_fish_in_lake <- df_final |> 
+  group_by(Lake, Species) |> 
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1) |> 
+  distinct(Species)
+
+#28 species
+#are some of those only occuring in one Lake?
+
+exclude <- df_final |> 
+  group_by(Lake, Species) |> 
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1) |> 
+  filter(Species %in% one_occurence) |> 
+  distinct(Species) |> 
+  pull(Species)
+
+#these 10 species can be excluded from the whole analysis -> 82 total species
+df_models <- df_final |> 
+  filter(!Species %in% exclude)
+
+###OVERVIEW
+#three problems: 
+#0. species that occurin only once in one lake are excluded
+#1. species that dont have any catch > 1 -> 0 and 1 only -> binomial data
+#prepare subsets of df with those species in it
+#2. species that occur only in one lake
+#3. species that occur only once in a lake
+
+
+#1. binomial vs. abundance data
+
+non_binomial_species <- df_models |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |>
+  count() |> 
+  pull(Species)
+
+binomial_species <- df_models |> 
+  filter(!Species %in% non_binary_species) |> 
+  distinct(Species) |> 
+  pull(Species)
+
+# + 2. binomial vs. abundance species occuring only in one lake
+
+bi_one_occurence <- df_models |> 
+  filter(Species %in% binomial_species) |>
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(Lakes == 1) |> 
+  pull(Species)
+
+abu_one_occurence <- df_models |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(Lakes == 1) |> 
+  pull(Species)
+
+#binomial vs. abundance species occuring in several lakes -> differnet families,
+
+
+bi_multi_occurence <- df_models |> 
+  filter(Species %in% binomial_species) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+
+abu_multi_occurence <- df_models |> 
+  filter(Abundance > 1) |> 
+  group_by(Species) |> 
+  summarize(Lakes = n_distinct(Lake)) |> 
+  filter(!Lakes == 1) |> 
+  pull(Species)
+
+#What about the ones with only one occurence in one of the lakes?
+#3. 
+one_fish_in_lake <- df_models |> 
+  group_by(Lake, Species) |> 
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1) |>
+  pull(Species)
+o
