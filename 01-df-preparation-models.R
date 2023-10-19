@@ -7,6 +7,12 @@ library(viridis)
 library(gamm4)
 library(lattice)
 
+
+df_final <- readRDS("df_final.rds")
+
+str(df_final)
+head(df_final)
+
 ###OVERVIEW
 #three problems: 
 #1. species that dont have any catch > 1 -> 0 and 1 only -> binomial data
@@ -35,6 +41,16 @@ exclude <- df_final |>
   distinct(Species) |> 
   pull(Species)
 
+
+#double-check
+
+double_check <- df_final |> 
+  filter(Species %in% "Salaria_fluviatilis_Italian")
+
+table(double_check$Abundance)
+
+#true
+
 #these 10 species can be excluded from the whole analysis -> 82 total species
 df_models <- df_final |> 
   filter(!Species %in% exclude)
@@ -57,7 +73,7 @@ non_binomial_species <- df_models |>
   pull(Species)
 
 binomial_species <- df_models |> 
-  filter(!Species %in% non_binary_species) |> 
+  filter(!Species %in% non_binomial_species) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -71,6 +87,13 @@ bi_one_occurence <- df_models |>
   filter(Lakes == 1) |> 
   pull(Species)
 
+#prepare df
+
+df_binomial_gam <- df_models |> 
+  filter(Species %in% bi_one_occurence)
+
+saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
+
 #gam without re -> zip probably
 abu_one_occurence <- df_models |> 
   filter(Abundance > 1) |> 
@@ -78,6 +101,12 @@ abu_one_occurence <- df_models |>
   summarize(Lakes = n_distinct(Lake)) |> 
   filter(Lakes == 1) |> 
   pull(Species)
+
+df_abundance_gam <- df_models |> 
+  filter(Species %in% abu_one_occurence)
+
+saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
+  
 
 #binomial vs. abundance species occuring in several lakes
 
@@ -89,6 +118,11 @@ bi_multi_occurence <- df_models |>
   filter(!Lakes == 1) |> 
   pull(Species)
 
+df_binomial_re <- df_models |> 
+  filter(Species %in% bi_multi_occurence)
+
+saveRDS(df_binomial_re, "data_frame_models/df_binomial_re")
+
 #gam with re, zip
 abu_multi_occurence <- df_models |> 
   filter(Abundance > 1) |> 
@@ -96,6 +130,11 @@ abu_multi_occurence <- df_models |>
   summarize(Lakes = n_distinct(Lake)) |> 
   filter(!Lakes == 1) |> 
   pull(Species)
+
+df_abundance_re <- df_models |> 
+  filter(Species %in% abu_multi_occurence)
+
+saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
 #What about the ones with only one occurence in one of the lakes?
 #3. 
@@ -106,5 +145,27 @@ one_fish_in_lake <- df_models |>
   distinct(Species) |> 
   pull(Species)
 
+
 #18 species
+#look at the lakes and species
+
+lakes_one_fish <- df_models |> 
+  group_by(Lake, Species) |> 
+  summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
+  filter(TotalAbundance == 1) |> 
+  pivot_wider(names_from = Species, values_from = TotalAbundance)
+
 #what should I do with those? remove those lakes? i dont know
+#testing what happens for one of those fish: Tinca_tinca
+#no problem with this
+
+
+df_tinca <- df_models |> 
+  filter(Species %in% "Tinca_tinca")
+
+df_tinca$fLake <- as.factor(df_tinca$Lake)
+
+M3 <- gam(Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
+          family = ziP(), data = df_tinca)
+plot(M3)
+
