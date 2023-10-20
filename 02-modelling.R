@@ -256,54 +256,52 @@ c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
   
 # 10 Species can be included
 
-#2. calculate response diversity only for species that stay
+#2. example response diversity calculation. Is not necessary or possible because
+#this needs to be done between all species/ inside one lake, still leaving it here
+#to use the code later
 
-response_diversity_list <- df_binomial_gam |> 
-  filter(Species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
-                        "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", 
-                        "Coregonus_litoralis", "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
-  distinct(Species) |> 
-  pull(Species)
+# response_diversity_list <- df_binomial_gam |> 
+#   filter(Species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
+#                         "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", 
+#                         "Coregonus_litoralis", "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
+#   distinct(Species) |> 
+#   pull(Species)
 
 
-path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/model_1/derivatives"
+# path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/model_1/derivatives"
 
-# deriv_list <-list.files(path_deriv)
 
-# deriv_lakes <- list()
+# deriv <- list()
 
-deriv <- list()
-# model_prediction <- list()
-# derivatives <- list()
+# for (i in response_diversity_list){
+#   deriv[[i]] <- readRDS(paste0(path_deriv, "/derivatives_", i, ".rds"))
+#   df_deriv <- deriv |>
+#     mutate(Species = factor(i)) |> 
+#     rename(temp = data)
+#   df_resp_div <- df_deriv |> 
+#     select(Species, temp, derivative) |> 
+#     pivot_wider(
+#       names_from = Species,
+#       values_from = derivative)
+#   df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+#   df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+#   df_resp_div$Med <- median(df_resp_div$rdiv)
+#   saveRDS(df_resp_div, paste0("model_1/response_diversity/df_resp_div_", i, ".rds"))
+#   
+# }
+# 
+# deriv <- readRDS("model_1/derivatives/derivatives_Coregonus_confusus.rds")
+# df_deriv <- deriv |>
+#   mutate(Species = factor("Coregonus_confusus")) |> 
+#   rename(temp = data) 
+# df_resp_div <- df_deriv |> 
+#   select(Species, temp, derivative) |> 
+#   pivot_wider(
+#     names_from = Species,
+#     values_from = derivative)
+# df_resp_div$rdiv <- apply(df_resp_div[, 2], 1, resp_div, sign_sens = F)
+# df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+# df_resp_div$Med <- median(df_resp_div$rdiv)
 
-for (i in response_diversity_list){
-  deriv[[i]] <- readRDS(paste0(path_deriv, "/derivatives_", i, ".rds"))
-  df_deriv <- deriv |>
-    mutate(Species = factor(i)) |> 
-    rename(temp = data)
-  df_resp_div <- df_deriv |> 
-    select(Species, temp, derivative) |> 
-    pivot_wider(
-      names_from = Species,
-      values_from = derivative)
-  df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
-  df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
-  df_resp_div$Med <- median(df_resp_div$rdiv)
-  saveRDS(df_resp_div, paste0("model_1/response_diversity/df_resp_div_", i, ".rds"))
-  
-}
 
-deriv <- readRDS("model_1/derivatives/derivatives_Coregonus_confusus.rds")
-df_deriv <- deriv |>
-  mutate(Species = factor("Coregonus_confusus")) |> 
-  rename(temp = data) 
-df_resp_div <- df_deriv |> 
-  select(Species, temp, derivative) |> 
-  pivot_wider(
-    names_from = Species,
-    values_from = derivative)
-df_resp_div$rdiv <- apply(df_resp_div, 2, resp_div)
-#solve this problem, compare with ross code
-df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
-df_resp_div$Med <- median(df_resp_div$rdiv)
 
