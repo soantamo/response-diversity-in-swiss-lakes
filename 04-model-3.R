@@ -8,7 +8,7 @@ library(gamm4)
 library(lattice)
 library(broom)
 
-
+#####continue with df_one prediction
 #this model for species with binomial data and random effects
 
 df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
@@ -102,7 +102,13 @@ qqline(E1)
 E1 <- resid(M1, type = "pearson")
 sum(E1^2)/M1$df.residual
 
-#####Loop Model 3 ######
+#prediction
+
+temp_gradient <- data.frame(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
+))
+  
 
 species_list <- df_binomial_re |> 
   distinct(Species) |> 
@@ -114,7 +120,10 @@ gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
 
+df_binomial_re$Lake <- as.factor(df_binomial_re$Lake)
+
 #make new loop 
+###predict.gam needs something else
 
 for (i in species_list) {
   data <- df_binomial_re |> 
@@ -123,7 +132,8 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Lake, bs = 're'),
+                         family = binomial)
   # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
   # print(summary(gam_output[[i]]))
   # gam.check(gam_output[[i]])
@@ -177,7 +187,7 @@ total_model_3_pred |>
   geom_line() +
   facet_wrap(~species)
 
-#checking those models
+#checking those models, well I forgot to add re, haha
 "Ameiurus_melas" #include
 "Carassius_gibelio" #include
 "Cobitis_bilineata" #include
