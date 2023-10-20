@@ -69,8 +69,9 @@ df_models <- df_final |>
 non_binomial_species <- df_models |> 
   filter(Abundance > 1) |> 
   group_by(Species) |>
-  count() |> 
+  distinct(Species) |> 
   pull(Species)
+
 
 binomial_species <- df_models |> 
   filter(!Species %in% non_binomial_species) |> 
@@ -82,31 +83,29 @@ binomial_species <- df_models |>
 #gam without random effects, binomial
 bi_one_occurence <- df_models |> 
   filter(Species %in% binomial_species) |>
-  group_by(Species) |> 
-  summarize(Lakes = n_distinct(Lake)) |> 
-  filter(Lakes == 1) |> 
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  filter(n_lake == 1) |>
   pull(Species)
 
-#prepare df
-
-df_binomial_gam <- df_models |> 
+df_abundance_gam <- df_models |> 
   filter(Species %in% bi_one_occurence)
 
 saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
 #gam without re -> zip probably
 abu_one_occurence <- df_models |> 
-  filter(Abundance > 1) |> 
+  filter(Species %in% non_binomial_species) |> 
   group_by(Species) |> 
-  summarize(Lakes = n_distinct(Lake)) |> 
-  filter(Lakes == 1) |> 
+  summarize(n_lake = n_distinct(Lake)) |>
+  filter(n_lake == 1) |>
   pull(Species)
+
 
 df_abundance_gam <- df_models |> 
   filter(Species %in% abu_one_occurence)
 
 saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
-  
 
 #binomial vs. abundance species occuring in several lakes
 
@@ -125,7 +124,7 @@ saveRDS(df_binomial_re, "data_frame_models/df_binomial_re")
 
 #gam with re, zip
 abu_multi_occurence <- df_models |> 
-  filter(Abundance > 1) |> 
+  filter(Species %in% non_binomial_species) |> 
   group_by(Species) |> 
   summarize(Lakes = n_distinct(Lake)) |> 
   filter(!Lakes == 1) |> 
