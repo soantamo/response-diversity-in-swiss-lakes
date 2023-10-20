@@ -8,6 +8,8 @@ library(gamm4)
 library(lattice)
 library(broom)
 
+#second model for species with abundance data which only occur in one lake
+
 #read df
 df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
 
