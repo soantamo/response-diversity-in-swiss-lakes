@@ -41,11 +41,14 @@ df_blackspot <- df_binomial_gam |>
 M1 <- gam(Abundance ~ s(mean_last_7days, k = 3), family = binomial,
           data = df_blackspot)
 
-
+summary.gam(M1)
+gam.check(M1)
 #MODEL VALIDATION# M1
 #Synthesis of pdf, GAMM book and GAM book
 
 plot(M1)
+tidy(M1)
+glance(M1)
 #1.verifiy homogeneity: rsd vs fitted
 fv <- fitted(M1) ##predicted values
 rsd <- resid(M1) ##residuals
@@ -144,16 +147,18 @@ for (i in species_list) {
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
-  sink("gam_binomial_check.txt", append = TRUE) #double-check if gams are well fitted
+  sink("summary_gam_check_model_1.txt", append = TRUE) #double-check if gams are well fitted
   print(summary(gam_output[[i]]))
   print(gam.check(gam_output[[i]]))
   sink()
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
-  model_bind <- cbind(model_prediction[[i]], temp_gradient) |> 
-    mutate(species = factor(i))
-  saveRDS(model_bind, paste0("model_1/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_1/derivatives_", i, ".rds"))
+  # print(tidy(gam_output[[i]]))
+  # print(glance(gam_output[[i]]))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
+  # model_bind <- cbind(model_prediction[[i]], temp_gradient) |> 
+  #   mutate(species = factor(i))
+  # saveRDS(model_bind, paste0("model_1/predictions_",i,".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_1/derivatives_", i, ".rds"))
 }
 
 # Warnmeldungen:
@@ -207,13 +212,27 @@ total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s1
 total_model_1_pred |> 
   ggplot(aes(temp, prediction)) +
   geom_line() +
-  facet_wrap(~Species)
+  facet_wrap(~species)
 
 #some look very strange :I
 #I can for sure exclude some of the species
-#looking strange and not significant: 
-#2,
+#looking strange and not significant:
 
-#Alosa_fallax, Chondrostomas_nasus, Chondrostomas_soetta, Coregonus_aernicolus
-#1. exclude species that look too strange (Visually and gam.check)
+#1. exclude species that look too strange (Visually, tidy, glance, summary, and gam.check)
+#species that stay
+"Alosa_fallax"
+"Chrondrostoma_soetta" #visually bizzeli strange and high AIC
+"Coregonus_arenicolus" #high AIC
+#7 and 8 are not significant but clos and do not look too bad
+"Coregnous_litoralis"
+#14 is significant in summary and gam.check. p value = 0 in tidy and looks bad
+"Salaria_fluviatilis_French" #rather high AIC
+#20 is significant but honestly wtf, looks bad
+25
+"Salvelinus_sp_Profundal_dwarf"
+#26 close to significant
+"Salvelinus_sp_Profundal_Walen_I"
+
+# 7 Species can be included
+
 #2. calculate response diversity only for species that stay
