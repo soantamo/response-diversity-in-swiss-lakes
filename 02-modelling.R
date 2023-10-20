@@ -9,8 +9,8 @@ library(lattice)
 library(broom)
 
 # function from Ross et al. and species colors are now seperate
-source(here("functions.R"))
-source(here("species_colors.R"))
+# source(here("functions.R"))
+# source(here("species_colors.R"))
 
 #loading subsets of dfs 
 #rename, names too long
@@ -137,6 +137,7 @@ species_list <- df_binomial_gam |>
   distinct(Species) |> 
   pull(Species)
 
+species_list <- sort(species_list)
 
 gam_output <- list()
 model_prediction <- list()
@@ -178,37 +179,34 @@ for (i in species_list) {
 # checking out all plots
 #one big data frame and using facet_wrap
 
-df_binomial_gam |> 
-  distinct(Species) |> 
-  pull(Species)
 
-s1 <- readRDS("model_1/predictions_Alosa_fallax.rds")
-s2 <- readRDS("model_1/predictions_Chondrostoma_nasus.rds")
-s3 <- readRDS("model_1/predictions_Chondrostoma_soetta.rds")
-s4 <- readRDS("model_1/predictions_Coregonus_arenicolus.rds")
-s5 <- readRDS("model_1/predictions_Coregonus_candidus.rds")
-s6 <- readRDS("model_1/predictions_Coregonus_confusus.rds")
-s7 <- readRDS("model_1/predictions_Coregonus_heglingus.rds")
-s8 <- readRDS("model_1/predictions_Coregonus_helveticus.rds")
-s9 <- readRDS("model_1/predictions_Coregonus_intermundia.rds")
-s10 <- readRDS("model_1/predictions_Coregonus_litoralis.rds")
-s11 <- readRDS("model_1/predictions_Coregonus_macrophthalmus.rds")
-s12 <- readRDS("model_1/predictions_Coregonus_wartmanni.rds")
-s13 <- readRDS("model_1/predictions_Coregonus_zuerichensis.rds")
-s14 <- readRDS("model_1/predictions_Cottus_gobio_Profundal_Walen.rds")
-s15 <- readRDS("model_1/predictions_Gasterosteus_gymnurus.rds")
-s16 <- readRDS("model_1/predictions_Rutilus_aula.rds")
-s17 <- readRDS("model_1/predictions_Salaria_fluviatilis_French.rds")
-s18 <- readRDS("model_1/predictions_Salmo_labrax.rds")
-s19 <- readRDS("model_1/predictions_Salmo_sp_Blackspot.rds")
-s20 <- readRDS("model_1/predictions_Salmo_sp.rds")
-s21 <- readRDS("model_1/predictions_Salvelinus_namaycush.rds")
-s22 <- readRDS("model_1/predictions_Salvelinus_profundus.rds")
-s23 <- readRDS("model_1/predictions_Salvelinus_sp_Limnetic_Thun.rds")
-s24 <- readRDS("model_1/predictions_Salvelinus_sp_Profundal_dwarf_Thun.rds")
-s25 <- readRDS("model_1/predictions_Salvelinus_sp_Profundal_dwarf_VWS.rds")
-s26 <- readRDS("model_1/predictions_Salvelinus_sp_Profundal_extreme_Thun.rds")
-s27 <- readRDS("model_1/predictions_Salvelinus_sp_Profundal_Walen_I.rds")
+s1 <- readRDS("model_1/predictions/predictions_Alosa_fallax.rds")
+s2 <- readRDS("model_1/predictions/predictions_Chondrostoma_nasus.rds")
+s3 <- readRDS("model_1/predictions/predictions_Chondrostoma_soetta.rds")
+s4 <- readRDS("model_1/predictions/predictions_Coregonus_arenicolus.rds")
+s5 <- readRDS("model_1/predictions/predictions_Coregonus_candidus.rds")
+s6 <- readRDS("model_1/predictions/predictions_Coregonus_confusus.rds")
+s7 <- readRDS("model_1/predictions/predictions_Coregonus_heglingus.rds")
+s8 <- readRDS("model_1/predictions/predictions_Coregonus_helveticus.rds")
+s9 <- readRDS("model_1/predictions/predictions_Coregonus_intermundia.rds")
+s10 <- readRDS("model_1/predictions/predictions_Coregonus_litoralis.rds")
+s11 <- readRDS("model_1/predictions/predictions_Coregonus_macrophthalmus.rds")
+s12 <- readRDS("model_1/predictions/predictions_Coregonus_wartmanni.rds")
+s13 <- readRDS("model_1/predictions/predictions_Coregonus_zuerichensis.rds")
+s14 <- readRDS("model_1/predictions/predictions_Cottus_gobio_Profundal_Walen.rds")
+s15 <- readRDS("model_1/predictions/predictions_Gasterosteus_gymnurus.rds")
+s16 <- readRDS("model_1/predictions/predictions_Rutilus_aula.rds")
+s17 <- readRDS("model_1/predictions/predictions_Salaria_fluviatilis_French.rds")
+s18 <- readRDS("model_1/predictions/predictions_Salmo_labrax.rds")
+s19 <- readRDS("model_1/predictions/predictions_Salmo_sp_Blackspot.rds")
+s20 <- readRDS("model_1/predictions/predictions_Salmo_sp.rds")
+s21 <- readRDS("model_1/predictions/predictions_Salvelinus_namaycush.rds")
+s22 <- readRDS("model_1/predictions/predictions_Salvelinus_profundus.rds")
+s23 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Limnetic_Thun.rds")
+s24 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_Thun.rds")
+s25 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_VWS.rds")
+s26 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_extreme_Thun.rds")
+s27 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_Walen_I.rds")
 
 total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
                                 s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
@@ -253,8 +251,16 @@ c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
   "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
   "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")
   
+
+total_model_1_pred |> 
+  filter(species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
+                        "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
+                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
+  ggplot(aes(temp, prediction)) +
+  geom_line() +
+  facet_wrap(~species)
   
-# 10 Species can be included
+# 9 Species can be included
 
 #2. example response diversity calculation. Is not necessary or possible because
 #this needs to be done between all species/ inside one lake, still leaving it here
