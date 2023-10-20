@@ -8,6 +8,10 @@ library(gamm4)
 library(lattice)
 library(broom)
 
+# function from Ross et al. and species colors are now seperate
+source(here("functions.R"))
+source(here("species_colors.R"))
+
 #loading subsets of dfs 
 #rename, names too long
 
@@ -33,16 +37,17 @@ df_binomial_gam |>
 
 #correct
 
-#testing with blackspot salmo
+#model testing for one species
 
-df_blackspot <- df_binomial_gam |> 
-  filter(Species == "Salmo_sp_Blackspot")
+df_one <- df_binomial_gam |> 
+  filter(Species == "Coregonus_intermundia")
 
 M1 <- gam(Abundance ~ s(mean_last_7days, k = 3), family = binomial,
-          data = df_blackspot)
+          data = df_one)
 
 summary.gam(M1)
 gam.check(M1)
+tidy(M1)
 #MODEL VALIDATION# M1
 #Synthesis of pdf, GAMM book and GAM book
 
@@ -63,13 +68,13 @@ F1 <- fitted(M1)
 plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
 abline(h=0, lty=2)
 
-plot(x=df_blackspot$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
+plot(x=df_one$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
 abline(h=0, lty=2)
 
-plot(x=df_blackspot$Protocol, y = E1, xlab = "Protocol", ylab = "Residuals")
+plot(x=df_one$Protocol, y = E1, xlab = "Protocol", ylab = "Residuals")
 abline(h=0, lty=2)
 
-plot(x=df_perch$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
+plot(x=df_one$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
 abline(h=0, lty=2)
 
 #not bad I guess
@@ -111,19 +116,19 @@ gam.check(M1)
 summary(M1)
 
 #predictions
-
-temp_gradient <- data.frame(mean_last_7days = seq(
-  from = min(df_blackspot$mean_last_7days, na.rm = TRUE),
-  to = max(df_blackspot$mean_last_7days, na.rm = TRUE), by = 0.02
-))
-
-predictions_blackspot <- predict.gam(M1, temp_gradient, type = "response", se.fit = TRUE)$fit
-
-pred_bind <- cbind(predictions_blackspot, temp_gradient)
-
-pred_bind |> 
-  ggplot(aes(mean_last_7days, predictions_blackspot)) +
-  geom_line()
+# 
+# temp_gradient <- data.frame(mean_last_7days = seq(
+#   from = min(df_one$mean_last_7days, na.rm = TRUE),
+#   to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
+# ))
+# 
+# predictions_one <- predict.gam(M1, temp_gradient, type = "response", se.fit = TRUE)$fit
+# 
+# pred_bind <- cbind(predictions_one, temp_gradient)
+# 
+# pred_bind |> 
+#   ggplot(aes(mean_last_7days, predictions_one)) +
+#   geom_line()
 
 
 #####Loop Model 1 ######
@@ -147,18 +152,20 @@ for (i in species_list) {
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
-  sink("summary_gam_check_model_1.txt", append = TRUE) #double-check if gams are well fitted
-  print(summary(gam_output[[i]]))
+  # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
+  # print(summary(gam_output[[i]]))
+  # gam.check(gam_output[[i]])
+  # sink()
   print(gam.check(gam_output[[i]]))
-  sink()
-  # print(tidy(gam_output[[i]]))
-  # print(glance(gam_output[[i]]))
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
-  # model_bind <- cbind(model_prediction[[i]], temp_gradient) |> 
-  #   mutate(species = factor(i))
-  # saveRDS(model_bind, paste0("model_1/predictions_",i,".rds"))
-  # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_1/derivatives_", i, ".rds"))
+  print(summary(gam_output[[i]]))
+  print(tidy(gam_output[[i]]))
+  print(glance(gam_output[[i]]))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
+  model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
+    mutate(species = factor(i))
+  saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
+  derivatives[[i]] <- derivatives(gam_output[[i]])
+  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
 # Warnmeldungen:
@@ -220,19 +227,83 @@ total_model_1_pred |>
 
 #1. exclude species that look too strange (Visually, tidy, glance, summary, and gam.check)
 #species that stay
-"Alosa_fallax"
-"Chrondrostoma_soetta" #visually bizzeli strange and high AIC
-"Coregonus_arenicolus" #high AIC
-#7 and 8 are not significant but clos and do not look too bad
-"Coregnous_litoralis"
-#14 is significant in summary and gam.check. p value = 0 in tidy and looks bad
-"Salaria_fluviatilis_French" #rather high AIC
-#20 is significant but honestly wtf, looks bad
-25
-"Salvelinus_sp_Profundal_dwarf"
-#26 close to significant
-"Salvelinus_sp_Profundal_Walen_I"
+#species_list shows the numbers, check again now
 
-# 7 Species can be included
+
+# "Coregonus_confusus" #included
+# "Coregonus_macrophthalmus" #grenzwertig, included
+# "Coregonus_wartmanni" #included
+# "Coregonus_intermundia" #knapp ns, model looks okay
+# "Coregonus_helveticus"#included
+# "Salmo_sp_Blackspot" #included
+# "Coregonus_litoralis" #included
+# "Salvelinus_sp_Profundal_Walen_I" #included
+# "Coregonus_zuerichensis" #included
+
+#grenzfälle
+
+# "Coregonus_heglingus" #not goood enough
+# "Coregonus_candidus" #check separately, because tidy looks strange, AIC incredibly high
+#included, looks too strange
+#coregonus_intermundia separately modelled -> looks okay
+
+
+#final list
+c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
+  "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
+  "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")
+  
+  
+# 10 Species can be included
 
 #2. calculate response diversity only for species that stay
+
+response_diversity_list <- df_binomial_gam |> 
+  filter(Species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
+                        "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", 
+                        "Coregonus_litoralis", "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
+  distinct(Species) |> 
+  pull(Species)
+
+
+path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/model_1/derivatives"
+
+# deriv_list <-list.files(path_deriv)
+
+# deriv_lakes <- list()
+
+deriv <- list()
+# model_prediction <- list()
+# derivatives <- list()
+
+for (i in response_diversity_list){
+  deriv[[i]] <- readRDS(paste0(path_deriv, "/derivatives_", i, ".rds"))
+  df_deriv <- deriv |>
+    mutate(Species = factor(i)) |> 
+    rename(temp = data)
+  df_resp_div <- df_deriv |> 
+    select(Species, temp, derivative) |> 
+    pivot_wider(
+      names_from = Species,
+      values_from = derivative)
+  df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("model_1/response_diversity/df_resp_div_", i, ".rds"))
+  
+}
+
+deriv <- readRDS("model_1/derivatives/derivatives_Coregonus_confusus.rds")
+df_deriv <- deriv |>
+  mutate(Species = factor("Coregonus_confusus")) |> 
+  rename(temp = data) 
+df_resp_div <- df_deriv |> 
+  select(Species, temp, derivative) |> 
+  pivot_wider(
+    names_from = Species,
+    values_from = derivative)
+df_resp_div$rdiv <- apply(df_resp_div, 2, resp_div)
+#solve this problem, compare with ross code
+df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
+df_resp_div$Med <- median(df_resp_div$rdiv)
+
