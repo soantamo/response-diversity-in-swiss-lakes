@@ -27,7 +27,7 @@ df_binomial_re |>
 #model testing for one species
 
 df_one <- df_binomial_re |> 
-  filter(Species == "Squalius_squalus")
+  filter(Species == "Esox_lucius")
 
 df_one$fLake <- as.factor(df_one$Lake)
 str(df_one)
@@ -105,7 +105,7 @@ qqline(E1)
 E1 <- resid(M1, type = "pearson")
 sum(E1^2)/M1$df.residual
 
-##################################prediction
+##################################prediction#######################################3
 #problem: we want one pseudo lake in our predictions
 #lme4 or jtools with predict.merMod or predict_mer.Mod using re.form = NA
 
@@ -146,6 +146,7 @@ grid <- expand.grid(mean_last_7days = seq(
   to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
 ), fLake = levels(df_one$fLake))
 
+levels(grid$fLake)
 table(grid$fLake)
 
 x0_preds <- predict.gam(M1, newdata = grid, type = "response", se.fit = TRUE)
@@ -184,20 +185,8 @@ predictions_marginaleffects |>
   geom_line()
 
 
-
-
 ##########################################################################3
 
-
-#preparing df for plotting
-model_bind <- cbind(prediction, new_data) |>
-  mutate(species = factor("Squalius"))
-
-#ggplot, facet_wrap needed. Otherwise, looking very strange
-model_bind |> 
-  ggplot(aes(mean_last_7days, prediction, fill = species)) +
-  geom_line()
-  # facet_wrap(~fLake)
 
 #derivative calculation and plotting works
 
@@ -209,83 +198,55 @@ deriv |>
 
 
 ####LOOOP#######################################################################
-#exclude data points where we only have 1 fih in a lake
 
-lakes_one_fish <- df_binomial_re|> 
-  group_by(Lake, Species) |> 
-  summarize(TotalAbundance = sum(Abundance)) |> 
-  filter(TotalAbundance == 1) |>
-  select(-TotalAbundance)
-  
-df_excluded <- df_binomial_re |> 
-  anti_join(lakes_one_fish, by = c("Lake", "Species"))
+#adding the manual margin effect calculation
 
-#check if all species occur in multiple lakes, 2 occur only in one lake, remove
-
-species_list <- df_excluded |> 
-  group_by(Species) |>
-  summarize(n_lake = n_distinct(Lake)) |>
-  filter(n_lake != 1) |>
+species_list <- df_binomial_re |> 
   distinct(Species) |> 
   pull(Species)
-
-#added to 01-df-preparation-models
-
 
 species_list <- sort(species_list)
 
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
-new_data <- list()
-percentages <- list()
+grid <- list()
+pred_df <- list()
+unique_lakes <- list()
 
-df_excluded$fLake <- as.factor(df_excluded$Lake)
+
+df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
+
 
 #make new loop 
 ###predict.gam needs something else
 
 for (i in species_list) {
-  data <- df_excluded |> 
+  data <- df_binomial_re |> 
     filter(Species == i)
-  percentages[[i]] <- table(data$fLake) / length(data$fLake)
-  new_data <- data.frame(mean_last_7days = seq(
+  unique_lakes <- distinct(data, fLake)
+  grid <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), length.out = 850
-  ), fLake = sample(levels(data$fLake), size = 850, replace = TRUE, prob = percentages[[i]]
-  ))
+    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
+  ), fLake = unique_lakes$fLake)
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
                          family = binomial)
-  # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
+  # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
-  # gam.check(gam_output[[i]])
-  # sink()
-  print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
-  print(tidy(gam_output[[i]]))
-  print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], new_data, type = "response", se.fit = TRUE)$fit
-  model_bind <- cbind(model_prediction[[i]], new_data) |>
+  # print(tidy(gam_output[[i]]))
+  # print(glance(gam_output[[i]]))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  pred_df <- model_bind |> 
+    group_by(mean_last_7days) |> 
+    mutate(fit = mean(fit)) |> 
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
     mutate(species = factor(i))
-  saveRDS(model_bind, paste0("model_3/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
+  saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
 }
-
-#what about those species that have a lake with one occurence only??
-
-# 1] "Barbus_barbus"           "Cobitis_bilineata"      
-# [3] "Squalius_squalus"        "Salvelinus_umbla"       
-# [5] "Squalius_cephalus"       "Alosa_agone"            
-# [7] "Carassius_gibelio"       "Cyprinus_carpio"        
-# [9] "Cottus_sp_Po"            "Salmo_marmoratus"       
-# [11] "Tinca_tinca"             "Gobio_gobio"            
-# [13] "Lepomis_gibbosus"        "Phoxinus_csikii"        
-# [15] "Salmo_trutta"            "Scardinius_hesperidicus"
-# [17] "Coregonus_duplex"        "Barbatula_sp_Lineage_I" 
-
-#exclude those lakes?
-
 #how can I check all the models easily??? some do not look good
 # checking out all plots
 #one big data frame and using facet_wrap
@@ -297,7 +258,7 @@ s3 <- readRDS("model_3/predictions/predictions_Carassius_gibelio.rds")
 s4 <- readRDS("model_3/predictions/predictions_Cobitis_bilineata.rds")
 s5 <- readRDS("model_3/predictions/predictions_Coregonus_alpinus.rds")
 s6 <- readRDS("model_3/predictions/predictions_Coregonus_brienzii.rds")
-s7 <- readRDS("model_3/predictions/predictions_Coregonus_duplex.rds")
+
 s8 <- readRDS("model_3/predictions/predictions_Coregonus_palaea.rds")
 s9 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Aare_littoral.rds")
 s10 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Rhine.rds")
@@ -305,7 +266,7 @@ s11 <- readRDS("model_3/predictions/predictions_Cottus_gobio_unknownlineage.rds"
 s12 <- readRDS("model_3/predictions/predictions_Esox_cisalpinus.rds")
 s13 <- readRDS("model_3/predictions/predictions_Esox_lucius.rds")
 s14 <- readRDS("model_3/predictions/predictions_Micropterus_salmoides.rds")
-s15 <- readRDS("model_3/predictions/predictions_Salmo_marmoratus.rds")
+
 s16 <- readRDS("model_3/predictions/predictions_Salvelinus_umbla.rds")
 s17 <- readRDS("model_3/predictions/predictions_Silurus_glanis.rds")
 s18 <- readRDS("model_3/predictions/predictions_Squalius_cephalus.rds")
@@ -313,23 +274,26 @@ s19 <- readRDS("model_3/predictions/predictions_Squalius_squalus.rds")
 s20 <- readRDS("model_3/predictions/predictions_Thymallus_thymallus.rds")
 
 
-total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
-                                s13, s14, s15, s16, s17, s18, s19, s20) |> 
-  rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
+total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s8, s9, s10, s11, s12,
+                                s13, s14, s16, s17, s18, s19, s20) |> 
+  rename(temp = mean_last_7days)
+
+
+ggplot(.,aes(mean_last_7days, fit)) + geom_line() + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) 
 
 
 total_model_3_pred |> 
-  ggplot(aes(temp, prediction)) +
-  geom_line() +
-  facet_wrap(vars(species, fLake))
-  # facet_wrap(~species)
+  ggplot(aes(temp, fit)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
+  facet_wrap(~species)
 
-total_model_3_pred |>
-  filter(species == "Barbus_barbus") |> 
-  filter(!fLake %in% c("Biel", "Constance")) |> 
-  ggplot(aes(temp, prediction)) +
-  geom_line() +
-  facet_wrap(~fLake)
+
+total_model_3_pred |> 
+  ggplot(aes(temp, fit, fill = species)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5)
+  # facet_wrap(~species)
 
 #checking those models, include
 "Ameiurus_melas"
