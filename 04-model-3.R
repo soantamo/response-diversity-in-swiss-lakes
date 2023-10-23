@@ -4,9 +4,11 @@ library(gratia)
 library(here)
 library(readr)
 library(viridis)
-library(gamm4)
+# library(gamm4)
 library(lattice)
 library(broom)
+# library(lme4)
+# library(jtools)
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
@@ -23,6 +25,7 @@ df_binomial_re |>
 
 
 #model testing for one species
+
 df_one <- df_binomial_re |> 
   filter(Species == "Squalius_squalus")
 
@@ -102,7 +105,9 @@ qqline(E1)
 E1 <- resid(M1, type = "pearson")
 sum(E1^2)/M1$df.residual
 
-#prediction
+##################################prediction
+#problem: we want one pseudo lake in our predictions
+#lme4 or jtools with predict.merMod or predict_mer.Mod using re.form = NA
 
 #calculating percentages of every lake in df
 percentages <- table(df_one$fLake) / length(df_one$fLake)
@@ -124,7 +129,65 @@ table(new_data$fLake) / length(new_data$fLake) #prob_new_data
 table(df_one$fLake) / length(df_one$fLake) #prob_df_one
 
 #prediction with new_data
-prediction <- predict.gam(M1, new_data, type = "response")
+#adding that marginal to zero
+# https://stackoverflow.com/questions/67098467/on-the-predict-mermod-function-arguments
+
+prediction <- prediction(M1, new_data, type = "response")
+
+# https://github.com/strengejacke/ggeffects/issues/97
+### manually  
+
+## Create a grid of `x0` values at the average value of x1 and x2 at each level of the categorical variable.  
+
+## Make predictions on this and average over the categorical variable `fac` to get the mean prediction and the associated interval   
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
+), fLake = levels(df_one$fLake))
+
+table(grid$fLake)
+
+x0_preds <- predict.gam(M1, newdata = grid, type = "response", se.fit = TRUE)
+pred_df <- cbind(grid, as.data.frame(x0_preds))
+
+pred_df %>%
+  group_by(mean_last_7days) %>%
+  mutate(species = factor("Squalius_squalus")) |> 
+  mutate(fit = mean(fit)) |> 
+  mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) %>%
+  summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) %>% ## by grouping x0, average over the levels of fac
+  ggplot(.,aes(mean_last_7days, fit)) + geom_line() + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) 
+
+########################################################
+#new idea:
+#package marginaleffects
+# https://marginaleffects.com/
+
+library(marginaleffects)
+
+prediction <- predictions(M1, new_data)
+
+plot_predictions(M1, new_data)
+
+plot_predictions(M1, condition = c("mean_last_7days"))
+plot_predictions(M1, condition = "mean_last_7days") +
+  facet_wrap(~fLake)
+
+test <- slopes(M1)
+  # select(estimate, mean_last_7days, fLake)
+
+plot_predictions(prediction)
+
+predictions_marginaleffects |> 
+  ggplot(aes(mean_last_7days, estimate)) +
+  geom_line()
+
+
+
+
+##########################################################################3
+
 
 #preparing df for plotting
 model_bind <- cbind(prediction, new_data) |>
@@ -133,8 +196,8 @@ model_bind <- cbind(prediction, new_data) |>
 #ggplot, facet_wrap needed. Otherwise, looking very strange
 model_bind |> 
   ggplot(aes(mean_last_7days, prediction, fill = species)) +
-  geom_line() +
-  facet_wrap(~fLake)
+  geom_line()
+  # facet_wrap(~fLake)
 
 #derivative calculation and plotting works
 
@@ -151,22 +214,23 @@ deriv |>
 lakes_one_fish <- df_binomial_re|> 
   group_by(Lake, Species) |> 
   summarize(TotalAbundance = sum(Abundance)) |> 
-  filter(TotalAbundance == 1)
+  filter(TotalAbundance == 1) |>
+  select(-TotalAbundance)
+  
+df_excluded <- df_binomial_re |> 
+  anti_join(lakes_one_fish, by = c("Lake", "Species"))
 
-#how can I efficiently exclude those? mühsam aber egal
-test <- df_binomial_re |> 
-  filter(Species != "Salvelinus_umbla" & !Lake %in% c("Brienz", "Lugano", "Sarnen", "Zurich")) |> 
-  filter(Species != "Barbus_barbus" & !Lake %in% c("Biel", "Constance"))
+#check if all species occur in multiple lakes, 2 occur only in one lake, remove
 
-
-  group_by(Lake, Species) |> 
-  summarize(TotalAbundance = sum(Abundance))
-
-
-
-species_list <- df_binomial_re |> 
+species_list <- df_excluded |> 
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  filter(n_lake != 1) |>
   distinct(Species) |> 
   pull(Species)
+
+#added to 01-df-preparation-models
+
 
 species_list <- sort(species_list)
 
@@ -176,13 +240,13 @@ derivatives <- list()
 new_data <- list()
 percentages <- list()
 
-df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
+df_excluded$fLake <- as.factor(df_excluded$Lake)
 
 #make new loop 
 ###predict.gam needs something else
 
 for (i in species_list) {
-  data <- df_binomial_re |> 
+  data <- df_excluded |> 
     filter(Species == i)
   percentages[[i]] <- table(data$fLake) / length(data$fLake)
   new_data <- data.frame(mean_last_7days = seq(
