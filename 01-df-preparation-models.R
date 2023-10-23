@@ -88,8 +88,12 @@ bi_one_occurence <- df_models |>
   filter(n_lake == 1) |>
   pull(Species)
 
-df_abundance_gam <- df_models |> 
+df_binomial_gam <- df_models |> 
   filter(Species %in% bi_one_occurence)
+
+df_binomial_gam |> 
+  distinct(Species) |> 
+  pull(Species)
 
 saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
@@ -105,7 +109,7 @@ abu_one_occurence <- df_models |>
 df_abundance_gam <- df_models |> 
   filter(Species %in% abu_one_occurence)
 
-saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
+# saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
 
 #binomial vs. abundance species occuring in several lakes
 
@@ -120,7 +124,7 @@ bi_multi_occurence <- df_models |>
 df_binomial_re <- df_models |> 
   filter(Species %in% bi_multi_occurence)
 
-saveRDS(df_binomial_re, "data_frame_models/df_binomial_re")
+# saveRDS(df_binomial_re, "data_frame_models/df_binomial_re")
 
 #gam with re, zip
 abu_multi_occurence <- df_models |> 
@@ -133,7 +137,7 @@ abu_multi_occurence <- df_models |>
 df_abundance_re <- df_models |> 
   filter(Species %in% abu_multi_occurence)
 
-saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
+# saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
 #What about the ones with only one occurence in one of the lakes?
 #3. 
@@ -142,29 +146,56 @@ one_fish_in_lake <- df_models |>
   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
   filter(TotalAbundance == 1) |> 
   distinct(Species) |> 
-  pull(Species)
+  pull(Species) 
 
 
 #18 species
-#look at the lakes and species
+#what should I do with those? remove!!
+#for model 3 
 
-lakes_one_fish <- df_models |> 
+lakes_one_fish <- df_binomial_re|> 
   group_by(Lake, Species) |> 
-  summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
-  filter(TotalAbundance == 1) |> 
-  pivot_wider(names_from = Species, values_from = TotalAbundance)
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1) |>
+  select(-TotalAbundance)
 
-#what should I do with those? remove those lakes? i dont know
-#testing what happens for one of those fish: Tinca_tinca
-#no problem with this
+df_binomial_re_excluded <- df_binomial_re |> 
+  anti_join(lakes_one_fish, by = c("Lake", "Species"))
+
+saveRDS(df_binomial_re_excluded, "data_frame_models/df_binomial_re")
+
+#check if all species occur in multiple lakes, 2 occur only in one lake, remove
+
+species_mod_1<- df_binomial_re_excluded |> 
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  filter(n_lake == 1) |>
+  distinct(Species) |> 
+  pull(Species)
+
+#Coregonus_duplex and Salmo_marmormatus need to be added to model 1
+
+#model 4
+
+lakes_one_fish_4 <- df_abundance_re|> 
+  group_by(Lake, Species) |> 
+  summarize(TotalAbundance = sum(Abundance)) |> 
+  filter(TotalAbundance == 1) |>
+  select(-TotalAbundance)
 
 
-df_tinca <- df_models |> 
-  filter(Species %in% "Tinca_tinca")
+df_abundance_re_excluded <- df_abundance_re |> 
+  anti_join(lakes_one_fish_4, by = c("Lake", "Species"))
 
-df_tinca$fLake <- as.factor(df_tinca$Lake)
+saveRDS(df_abundance_re_excluded, "data_frame_models/df_abundance_re")
 
-M3 <- gam(Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
-          family = ziP(), data = df_tinca)
-plot(M3)
+species_mod_2 <- df_abundance_re_excluded |> 
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  filter(n_lake == 1) |>
+  distinct(Species) |> 
+  pull(Species)
 
+#Alosa_agone and  "Cottus_sp_Po" need to go to model 2
+
+###solve this problem next, include the 2 species each and newly safe those rds for model 1 and 2
