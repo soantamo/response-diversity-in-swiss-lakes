@@ -94,8 +94,8 @@ df_binomial_gam <- df_models |>
 df_binomial_gam |> 
   distinct(Species) |> 
   pull(Species)
-
-saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
+# 
+# saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
 #gam without re -> zip probably
 abu_one_occurence <- df_models |> 
@@ -159,43 +159,59 @@ lakes_one_fish <- df_binomial_re|>
   filter(TotalAbundance == 1) |>
   select(-TotalAbundance)
 
-df_binomial_re_excluded <- df_binomial_re |> 
+model_3 <- df_binomial_re |> 
   anti_join(lakes_one_fish, by = c("Lake", "Species"))
-
-saveRDS(df_binomial_re_excluded, "data_frame_models/df_binomial_re")
 
 #check if all species occur in multiple lakes, 2 occur only in one lake, remove
 
-species_mod_1<- df_binomial_re_excluded |> 
+species_mod_2 <- model_3 |> 
   group_by(Species) |>
   summarize(n_lake = n_distinct(Lake)) |>
-  filter(n_lake == 1) |>
+  filter(n_lake == 1) |> 
+  distinct(Species) |>
+  pull(Species)
+
+#Coregonus_duplex and Salmo_marmormatus need to be added to model 1 and removed from 3
+
+df_binomial_re_excluded <- model_3 |> 
+  filter(!Species %in% c("Coregonus_duplex", "Salmo_marmoratus"))
+
+df_binomial_re_excluded |> 
   distinct(Species) |> 
   pull(Species)
 
-#Coregonus_duplex and Salmo_marmormatus need to be added to model 1
+saveRDS(df_binomial_re_excluded, "data_frame_models/df_binomial_re")
 
-#model 4
+#model 4, repeat
 
-lakes_one_fish_4 <- df_abundance_re|> 
+lakes_one_fish_4 <- df_abundance_re |> 
   group_by(Lake, Species) |> 
   summarize(TotalAbundance = sum(Abundance)) |> 
   filter(TotalAbundance == 1) |>
   select(-TotalAbundance)
 
-
-df_abundance_re_excluded <- df_abundance_re |> 
+model_4 <- df_abundance_re |> 
   anti_join(lakes_one_fish_4, by = c("Lake", "Species"))
 
-saveRDS(df_abundance_re_excluded, "data_frame_models/df_abundance_re")
-
-species_mod_2 <- df_abundance_re_excluded |> 
+species_mod_2 <- model_4 |> 
   group_by(Species) |>
   summarize(n_lake = n_distinct(Lake)) |>
-  filter(n_lake == 1) |>
+  filter(n_lake == 1) |> 
+  distinct(Species) |>
+  pull(Species)
+
+
+df_abundance_re_excluded <- model_4 |> 
+  filter(!Species %in% c("Cottus_sp_Po", "Alosa_agone"))
+
+df_abundance_re_excluded |> 
   distinct(Species) |> 
   pull(Species)
 
+
+saveRDS(df_abundance_re_excluded, "data_frame_models/df_abundance_re")
+
 #Alosa_agone and  "Cottus_sp_Po" need to go to model 2
+
 
 ###solve this problem next, include the 2 species each and newly safe those rds for model 1 and 2
