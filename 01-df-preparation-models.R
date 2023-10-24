@@ -78,9 +78,11 @@ binomial_species <- df_models |>
   distinct(Species) |> 
   pull(Species)
 
+
 #2. binomial vs. abundance species occuring only in one lake
 
 #gam without random effects, binomial
+
 bi_one_occurence <- df_models |> 
   filter(Species %in% binomial_species) |>
   group_by(Species) |>
@@ -88,14 +90,21 @@ bi_one_occurence <- df_models |>
   filter(n_lake == 1) |>
   pull(Species)
 
-df_binomial_gam <- df_models |> 
+df_bi <- df_models |> 
   filter(Species %in% bi_one_occurence)
+
+#add  #Coregonus_duplex and Salmo_marmormatus
+
+model_1 <- df_models |> 
+  filter(Species %in% c("Coregonus_duplex", "Salmo_marmoratus"))
+
+df_binomial_gam <- bind_rows(df_bi, model_1)
 
 df_binomial_gam |> 
   distinct(Species) |> 
   pull(Species)
-# 
-# saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
+
+#saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
 #gam without re -> zip probably
 abu_one_occurence <- df_models |> 
@@ -106,10 +115,21 @@ abu_one_occurence <- df_models |>
   pull(Species)
 
 
-df_abundance_gam <- df_models |> 
+df_abu <- df_models |> 
   filter(Species %in% abu_one_occurence)
 
-# saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
+#Alosa_agone and  "Cottus_sp_Po" need to go to model 2
+
+model_2 <- df_models |> 
+  filter(Species %in% c("Alosa_agone", "Cottus_sp_Po"))
+
+df_abundance_gam <- bind_rows(df_abu, model_2)
+
+df_abundance_gam |> 
+  distinct(Species) |> 
+  pull(Species)
+
+#saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
 
 #binomial vs. abundance species occuring in several lakes
 
