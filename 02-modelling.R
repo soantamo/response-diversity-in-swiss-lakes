@@ -8,21 +8,10 @@ library(gamm4)
 library(lattice)
 library(broom)
 
-# function from Ross et al. and species colors are now seperate
-# source(here("functions.R"))
-# source(here("species_colors.R"))
-
-#loading subsets of dfs 
-#rename, names too long
+#loading subset of df for model 1
+#added two species, need to be checked! Coregonus and Salmo
 
 df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
-
-df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
-
-df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
-
-df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
-
 
 ### model 1: GAM with binomial distribution, test with one species first, then loop
 #double-check if all data is 1 or 0
@@ -161,12 +150,12 @@ for (i in species_list) {
   print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
-  model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
-    mutate(species = factor(i))
-  saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
+  # model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
+  #   mutate(species = factor(i))
+  # saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
 # Warnmeldungen:
@@ -207,10 +196,12 @@ s24 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_Th
 s25 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_VWS.rds")
 s26 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_extreme_Thun.rds")
 s27 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_Walen_I.rds")
+s28 <- readRDS("model_1/predictions/predictions_Coregonus_duplex.rds")
+s29 <- readRDS("model_1/predictions/predictions_Salmo_marmoratus.rds")
 
 total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
                                 s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
-                                s24, s25, s26, s27) |> 
+                                s24, s25, s26, s27, s28, s29) |> 
   rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
 
 
@@ -227,87 +218,46 @@ total_model_1_pred |>
 #species that stay
 #species_list shows the numbers, check again now
 
+#new 24.10.
+#include
+"Salvelinus_sp_Profundal_Walen_I"
+"Salmo_sp_Blackspot" 
+"Coregonus_zuerichensis" 
+"Coregonus_wartmanni" 
+"Coregonus_macrophthalmus" 
+"Coregonus_litoralis"
+"Coregonus_intermundia" #grenzfall, 0.06
+"Coregonus_helveticus" #pvalue is minus
+"Coregonus_heglingus" #grenzfall 0.07, not included before
+"Coregonus_confusus" 
 
-# "Coregonus_confusus" #included
-# "Coregonus_macrophthalmus" #grenzwertig, included
-# "Coregonus_wartmanni" #included
-# "Coregonus_intermundia" #knapp ns, model looks okay
-# "Coregonus_helveticus"#included
-# "Salmo_sp_Blackspot" #included
-# "Coregonus_litoralis" #included
-# "Salvelinus_sp_Profundal_Walen_I" #included
-# "Coregonus_zuerichensis" #included
-
-#grenzfälle
-
-# "Coregonus_heglingus" #not goood enough
-# "Coregonus_candidus" #check separately, because tidy looks strange, AIC incredibly high
-#included, looks too strange
-#coregonus_intermundia separately modelled -> looks okay
-
-
-#final list
-c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
-  "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
-  "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")
-  
+#not include
+# "Salvelinus_sp_Profundal_extreme_Thun"
+# [26] "Salvelinus_sp_Profundal_dwarf_Thun"  
+# [27] "Salvelinus_sp_Profundal_dwarf_VWS"
+# [24] "Salvelinus_profundus"                
+# [25] "Salvelinus_sp_Limnetic_Thun"  
+#[23] "Salvelinus_namaycush" 
+# [20] "Salmo_marmoratus"                    
+# [21] "Salmo_sp"   
+# [19] "Salmo_labrax" 
+# [18] "Salaria_fluviatilis_French" 
+# [16] "Gasterosteus_gymnurus"               
+# [17] "Rutilus_aula" 
+# [15] "Cottus_gobio_Profundal_Walen" 
+# [7] "Coregonus_duplex"   
+# "Coregonus_candidus"
+# "Alosa_fallax"
+# "Chondrostoma_nasus" 
+# "Chondrostoma_soetta" 
+# "Coregonus_arenicolus"
 
 total_model_1_pred |> 
   filter(species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
                         "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
-                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
+                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis", "Coregonus_heglingus")) |> 
   ggplot(aes(temp, prediction)) +
   geom_line() +
   facet_wrap(~species)
   
-# 9 Species can be included
-
-#2. example response diversity calculation. Is not necessary or possible because
-#this needs to be done between all species/ inside one lake, still leaving it here
-#to use the code later
-
-# response_diversity_list <- df_binomial_gam |> 
-#   filter(Species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
-#                         "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", 
-#                         "Coregonus_litoralis", "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis")) |> 
-#   distinct(Species) |> 
-#   pull(Species)
-
-
-# path_deriv <- "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/model_1/derivatives"
-
-
-# deriv <- list()
-
-# for (i in response_diversity_list){
-#   deriv[[i]] <- readRDS(paste0(path_deriv, "/derivatives_", i, ".rds"))
-#   df_deriv <- deriv |>
-#     mutate(Species = factor(i)) |> 
-#     rename(temp = data)
-#   df_resp_div <- df_deriv |> 
-#     select(Species, temp, derivative) |> 
-#     pivot_wider(
-#       names_from = Species,
-#       values_from = derivative)
-#   df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
-#   df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
-#   df_resp_div$Med <- median(df_resp_div$rdiv)
-#   saveRDS(df_resp_div, paste0("model_1/response_diversity/df_resp_div_", i, ".rds"))
-#   
-# }
-# 
-# deriv <- readRDS("model_1/derivatives/derivatives_Coregonus_confusus.rds")
-# df_deriv <- deriv |>
-#   mutate(Species = factor("Coregonus_confusus")) |> 
-#   rename(temp = data) 
-# df_resp_div <- df_deriv |> 
-#   select(Species, temp, derivative) |> 
-#   pivot_wider(
-#     names_from = Species,
-#     values_from = derivative)
-# df_resp_div$rdiv <- apply(df_resp_div[, 2], 1, resp_div, sign_sens = F)
-# df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
-# df_resp_div$Med <- median(df_resp_div$rdiv)
-
-
-
+# 10 species can be included
