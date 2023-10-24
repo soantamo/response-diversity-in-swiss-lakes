@@ -111,7 +111,7 @@ gam.check(M1)
 summary(M1)
 
 
-#####Loop Model 1 ######
+#####Loop Model 2 ######
 
 species_list <- df_abundance_gam |>
   distinct(Species) |> 
@@ -184,9 +184,24 @@ total_model_2_pred |>
 # visually: Barbatula sp lineage II, all cottus and phoxinus look bad
 #5 in total
 #gam.check, summary and broom
-# "Coregonus_acrinasus" #include(AIC very high though and gam.check bad)
-#cottus_gobio_profundal lucerne looks summary wise good but impossible graph
-#all other sometime okay gam.check summary and broom but look impossible
+#include
+"Alosa_agone"
+# "Barbatula_sp_Lineage_II" #visually too strange and tidy 0
+"Coregonus_acrinasus"
+# "Coregonus_profundus" #tidy 0
+# "Coregonus_zugensis" #tidy 0
+#"Cottus_gobio_Profundal_Lucerne" #visually impossible
+#"Cottus_gobio_Profundal_Thun" #not include
+"Cottus_sp_Po"
+# "Cottus_sp_Po_profundal" #visually impossible
+#"Phoxinus_sp" #visually impossible
+# "Telestes_muticellus" #not nice
+
+
+total_model_2_pred |> 
+  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po")) |> 
+  ggplot(aes(temp, prediction)) +
+  geom_line(aes(colour = species))
 
 #try other families
 #ZIP
@@ -198,6 +213,18 @@ total_model_2_pred |>
 # Coregonus_acrinasus could be included, but negbin maybe better
 # Coregonus_zugensis looking good!
 #Cottus_gobio_profundal_Thun also okay
+#include
+"Alosa_agone"
+# "Barbatula_sp_Lineage_II" no
+"Coregonus_acrinasus"
+# "Coregonus_profundus" no
+#"Coregonus_zugensis"  no
+#"Cottus_gobio_Profundal_Lucerne" no
+"Cottus_gobio_Profundal_Thun" 
+"Cottus_sp_Po"
+# "Cottus_sp_Po_profundal" no
+# "Phoxinus_sp" no
+#Telestes muticellus no
 
 #should I fit every model separately?
 #checking if sum is > 10, yes
@@ -207,4 +234,7 @@ df_abundance_gam |>
   filter(TotalAbundance > 10) |> 
   distinct(Species) |> 
   pull(Species)
+
+
+#negbin makes more sense!!
 
