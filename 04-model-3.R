@@ -4,11 +4,8 @@ library(gratia)
 library(here)
 library(readr)
 library(viridis)
-# library(gamm4)
 library(lattice)
 library(broom)
-# library(lme4)
-# library(jtools)
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
@@ -164,12 +161,19 @@ pred_df %>%
 #new idea:
 #package marginaleffects
 # https://marginaleffects.com/
+#not working, interesting package though
 
 library(marginaleffects)
 
-prediction <- predictions(M1, new_data)
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
+), fLake = levels(df_one$fLake))
 
-plot_predictions(M1, new_data)
+
+prediction <- predictions(M1, by = "fLake")
+
+plot_predictions(M1, grid)
 
 plot_predictions(M1, condition = c("mean_last_7days"))
 plot_predictions(M1, condition = "mean_last_7days") +
@@ -231,10 +235,10 @@ for (i in species_list) {
   ), fLake = unique_lakes$fLake)
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
                          family = binomial)
-  # print(gam.check(gam_output[[i]]))
-  # print(summary(gam_output[[i]]))
-  # print(tidy(gam_output[[i]]))
-  # print(glance(gam_output[[i]]))
+  print(gam.check(gam_output[[i]]))
+  print(summary(gam_output[[i]]))
+  print(tidy(gam_output[[i]]))
+  print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
   model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
   pred_df <- model_bind |> 
@@ -244,9 +248,10 @@ for (i in species_list) {
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
-  # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
+  derivatives[[i]] <- derivatives(gam_output[[i]])
+  saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
 }
+
 #how can I check all the models easily??? some do not look good
 # checking out all plots
 #one big data frame and using facet_wrap
@@ -279,11 +284,9 @@ total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s8, s9, s10, s11, s12,
   rename(temp = mean_last_7days)
 
 
-ggplot(.,aes(mean_last_7days, fit)) + geom_line() + geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) 
-
 
 total_model_3_pred |> 
-  ggplot(aes(temp, fit)) +
+  ggplot(aes(temp, fit, fill = species)) +
   geom_line() + 
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
   facet_wrap(~species)
@@ -295,34 +298,40 @@ total_model_3_pred |>
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5)
   # facet_wrap(~species)
 
+#not included 
+# "Carassius_gibelio" #really ns
+#coregonus_alpinus
+#coregonus_palaea
+#cottus_gobio_unknownlineage
+#esox_cisalpinus
+#"Micropterus_salmoides" 
+#thymallus_thymallus
+# Salvelinus_umbla" tidy has a 0 for flake and temp
+# "Squalius_cephalus" tidy has 0 for flake and temp
+
 #checking those models, include
 "Ameiurus_melas"
-"Barbus_barbus"
-"Carassius_gibelio"
 "Cobitis_bilineata"
+"Cottus_gobio_Aare_littoral"
+"Esox_lucius" 
 
-"Coregonus_brienzii" #include
-# Coregonus_palae (tidy has 0 as p-value)
-"Cottus_gobio_Aare_littoral" #include
-"Cottus_gobio_Rhine" #include
-"Esox_lucius" #include
-# Salvelinus_umbla" tidy has a 0
-"Silurus_glanis" #include
-# "Squalius_cephalus" tidy has 0
-"Squalius_squalus" #include
-
-c("Ameiurus_melas", "Carassius_gibelio", "Cobitis_bilineata", "Coregonus_brienzii",
-  "Cottus_gobio_Aare_littoral", "Cottus_gobio_Rhine", "Esox_lucius", "Silurus_glanis",
-  "Squalius_squalus")
+# unsure
+"Barbus_barbus" #temp not significant, but 0.07
+"Coregonus_brienzii" #fLake ns, is this relevant?
+"Cottus_gobio_Rhine" #fLake ns
+# "Silurus_glanis" #fLake ns, temp 0.06
+# "Squalius_squalus" #temp 0.08
 
 
 total_model_3_pred |> 
-  filter(species %in% c("Ameiurus_melas", "Carassius_gibelio", "Cobitis_bilineata", "Coregonus_brienzii",
-                        "Cottus_gobio_Aare_littoral", "Cottus_gobio_Rhine", "Esox_lucius", "Silurus_glanis",
-                        "Squalius_squalus")) |> 
-  ggplot(aes(temp, prediction)) + 
-  geom_line() +
+  filter(species %in% c("Ameiurus_melas", "Cobitis_bilineata","Cottus_gobio_Aare_littoral",
+                        "Esox_lucius", "Barbus_barbus", "Coregonus_brienzii", "Cottus_gobio_Rhine", 
+                        "Silurus_glanis", "Squalius_squalus")) |> 
+  ggplot(aes(temp, fit, fill = species)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
   facet_wrap(~species)
 
 
-#9 out of 20 :/
+
+#9 out of 18
