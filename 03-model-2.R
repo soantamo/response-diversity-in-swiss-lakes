@@ -9,6 +9,7 @@ library(lattice)
 library(broom)
 
 #second model for species with abundance data which only occur in one lake
+#re-do with two additional species
 
 #read df
 df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
@@ -133,7 +134,7 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = gaussian)
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = negbin(1))
   # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
   # print(summary(gam_output[[i]]))
   # gam.check(gam_output[[i]])
@@ -165,8 +166,10 @@ s6 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Thun.rds")
 s7 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po_profundal.rds")
 s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
 s9 <- readRDS("model_2/predictions/predictions_Telestes_muticellus.rds")
+s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
+s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
 
-total_model_2_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9) |> 
+total_model_2_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11) |> 
   rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
 
 
@@ -176,8 +179,10 @@ total_model_2_pred |>
   geom_line() +
   facet_wrap(~species)
 
+
 #negbin model checking
 # visually: Barbatula sp lineage II, all cottus and phoxinus look bad
+#5 in total
 #gam.check, summary and broom
 # "Coregonus_acrinasus" #include(AIC very high though and gam.check bad)
 #cottus_gobio_profundal lucerne looks summary wise good but impossible graph
@@ -185,12 +190,11 @@ total_model_2_pred |>
 
 #try other families
 #ZIP
-#Barbatula and coregonus_acrinasus work with ZIP, Barbatula looks really bad and 
+#ONLY TWO SPECIES WORK!! Barbatula and coregonus_acrinasus work with ZIP, Barbatula looks really bad and 
 #coregonus definitly is not working either
 
 #gaussian? 
 #visual pattern is better, some very bended
-
 # Coregonus_acrinasus could be included, but negbin maybe better
 # Coregonus_zugensis looking good!
 #Cottus_gobio_profundal_Thun also okay
@@ -203,12 +207,4 @@ df_abundance_gam |>
   filter(TotalAbundance > 10) |> 
   distinct(Species) |> 
   pull(Species)
-
-
-
-
-
-
-
-
 
