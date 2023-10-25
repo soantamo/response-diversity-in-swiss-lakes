@@ -218,46 +218,38 @@ total_model_1_pred |>
 #species that stay
 #species_list shows the numbers, check again now
 
-#new 24.10.
-#include
-"Salvelinus_sp_Profundal_Walen_I"
-"Salmo_sp_Blackspot" 
-"Coregonus_zuerichensis" 
-"Coregonus_wartmanni" 
-"Coregonus_macrophthalmus" 
-"Coregonus_litoralis"
-"Coregonus_intermundia" #grenzfall, 0.06
-"Coregonus_helveticus" #pvalue is minus
-"Coregonus_heglingus" #grenzfall 0.07, not included before
-"Coregonus_confusus" 
+# 25.10
+#include 
+# "Coregonus_confusus"
+# "Coregonus_litoralis"
+# "Coregonus_macrophthalmus"
+# "Coregonus_wartmanni"
+# "Coregonus_zuerichensis"
+# "Salmo_sp_Blackspot"
+# "Salvelinus_sp_Profundal_Walen_I"
+# "Coregonus_candidus" #see below
+# "Coregonus_helveticus" #see below
+# "Coregonus_helveticus" #see below
+# "Coregonus_intermundia" #see below
 
-#not include
-# "Salvelinus_sp_Profundal_extreme_Thun"
-# [26] "Salvelinus_sp_Profundal_dwarf_Thun"  
-# [27] "Salvelinus_sp_Profundal_dwarf_VWS"
-# [24] "Salvelinus_profundus"                
-# [25] "Salvelinus_sp_Limnetic_Thun"  
-#[23] "Salvelinus_namaycush" 
-# [20] "Salmo_marmoratus"                    
-# [21] "Salmo_sp"   
-# [19] "Salmo_labrax" 
-# [18] "Salaria_fluviatilis_French" 
-# [16] "Gasterosteus_gymnurus"               
-# [17] "Rutilus_aula" 
-# [15] "Cottus_gobio_Profundal_Walen" 
-# [7] "Coregonus_duplex"   
-# "Coregonus_candidus"
-# "Alosa_fallax"
-# "Chondrostoma_nasus" 
-# "Chondrostoma_soetta" 
-# "Coregonus_arenicolus"
+# double-check: 5, 8, 9, 10
+#include those too
+# "Coregonus_candidus" #temp 0
+# ***"Coregonus_heglingus" #0.07, auf der kippe
+# "Coregonus_helveticus" #negative p-value?? problem with tidy, summary normal
+# ***"Coregonus_intermundia" #0.06, auf der kippe
+
 
 total_model_1_pred |> 
-  filter(species %in% c("Coregonus_confusus", "Coregonus_wartmanni", "Coregonus_macrophthalmus",
-                        "Coregonus_intermundia", "Coregonus_helveticus", "Salmo_sp_Blackspot", "Coregonus_litoralis", 
-                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_zuerichensis", "Coregonus_heglingus")) |> 
+  filter(species %in% c("Coregonus_confusus", "Coregonus_litoralis",
+                        "Coregonus_macrophthalmus", "Coregonus_wartmanni",
+                        "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
+                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
+                        "Coregonus_helveticus", "Coregonus_helveticus",
+                        "Coregonus_intermundia")) |> 
   ggplot(aes(temp, prediction)) +
   geom_line() +
   facet_wrap(~species)
   
-# 10 species can be included
+# to do
+#can i include almost significant temp species? -> 11 included
