@@ -180,61 +180,27 @@ total_model_2_pred |>
   facet_wrap(~species)
 
 
-#negbin model checking
-# visually: Barbatula sp lineage II, all cottus and phoxinus look bad
-#5 in total
-#gam.check, summary and broom
+#negbin checking 25.10.
 #include
-"Alosa_agone"
-# "Barbatula_sp_Lineage_II" #visually too strange and tidy 0
-"Coregonus_acrinasus"
-# "Coregonus_profundus" #tidy 0
-# "Coregonus_zugensis" #tidy 0
-#"Cottus_gobio_Profundal_Lucerne" #visually impossible
-#"Cottus_gobio_Profundal_Thun" #not include
+"Alosa_agone" 
+"Coregonus_acrinasus" 
 "Cottus_sp_Po"
-# "Cottus_sp_Po_profundal" #visually impossible
-#"Phoxinus_sp" #visually impossible
-# "Telestes_muticellus" #not nice
+"Coregonus_profundus" #tidy 0
+"Coregonus_zugensis" #tidy 0
+
+#exclude
+# "Cottus_gobio_Profundal_Lucerne" definitily exclude looks crazy
+# "Cottus_sp_Po_profundal" definitely exclude looks crazy
+# "Phoxinus_sp" definitely exclude looks crazy
+
 
 
 total_model_2_pred |> 
-  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po")) |> 
+  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po",
+                        "Coregonus_profundus", "Coregonus_zugensis")) |> 
   ggplot(aes(temp, prediction)) +
-  geom_line(aes(colour = species))
-
-#try other families
-#ZIP
-#ONLY TWO SPECIES WORK!! Barbatula and coregonus_acrinasus work with ZIP, Barbatula looks really bad and 
-#coregonus definitly is not working either
-
-#gaussian? 
-#visual pattern is better, some very bended
-# Coregonus_acrinasus could be included, but negbin maybe better
-# Coregonus_zugensis looking good!
-#Cottus_gobio_profundal_Thun also okay
-#include
-"Alosa_agone"
-# "Barbatula_sp_Lineage_II" no
-"Coregonus_acrinasus"
-# "Coregonus_profundus" no
-#"Coregonus_zugensis"  no
-#"Cottus_gobio_Profundal_Lucerne" no
-"Cottus_gobio_Profundal_Thun" 
-"Cottus_sp_Po"
-# "Cottus_sp_Po_profundal" no
-# "Phoxinus_sp" no
-#Telestes muticellus no
-
-#should I fit every model separately?
-#checking if sum is > 10, yes
-
-df_abundance_gam |> 
-  mutate(TotalAbundance = sum(Abundance)) |> 
-  filter(TotalAbundance > 10) |> 
-  distinct(Species) |> 
-  pull(Species)
+  geom_line(aes(colour = species)) 
 
 
-#negbin makes more sense!!
+#done!!!
 
