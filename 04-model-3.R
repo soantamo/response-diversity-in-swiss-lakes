@@ -309,18 +309,28 @@ total_model_3_pred |>
 # Salvelinus_umbla" tidy has a 0 for flake and temp
 # "Squalius_cephalus" tidy has 0 for flake and temp
 
+
 #checking those models, include
 "Ameiurus_melas"
 "Cobitis_bilineata"
 "Cottus_gobio_Aare_littoral"
 "Esox_lucius" 
+"Squalius_cephalus" #both 0, visually ok
+"Salvelinus_umbla" #both 0, visually ok
 
 # unsure
 "Barbus_barbus" #temp not significant, but 0.07
+"Squalius_squalus" #temp 0.08
+
+
+
+#unsure 2 visually okay but fLake ns, all visually okay
+"Cottus_gobio_unknownlineage" #flake ns, temp 0
+"Coregonus_palaea" #flake ns
+"Cottus_gobio_Rhine" #visually ok
 "Coregonus_brienzii" #fLake ns, is this relevant?
-"Cottus_gobio_Rhine" #fLake ns
-# "Silurus_glanis" #fLake ns, temp 0.06
-# "Squalius_squalus" #temp 0.08
+"Silurus_glanis" #fLake ns, temp 0.06
+
 
 
 total_model_3_pred |> 
@@ -333,5 +343,17 @@ total_model_3_pred |>
   facet_wrap(~species)
 
 
+total_model_3_pred |> 
+  filter(species %in% c( "Squalius_squalus" )) |> 
+  ggplot(aes(temp, fit, fill = species)) +
+  geom_line() + 
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
+  facet_wrap(~species)
 
-#9 out of 18
+
+
+
+
+###TO DO########
+#can I include species with ns fLake? What about almost significant ones?
+
