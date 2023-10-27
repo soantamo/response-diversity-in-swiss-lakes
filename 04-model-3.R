@@ -6,6 +6,7 @@ library(readr)
 library(viridis)
 library(lattice)
 library(broom)
+library(mgcViz) #https://cran.r-project.org/web/packages/mgcViz/vignettes/mgcviz.html
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
@@ -24,7 +25,7 @@ df_binomial_re |>
 #model testing for one species
 
 df_one <- df_binomial_re |> 
-  filter(Species == "Esox_lucius")
+  filter(Species == "Ameiurus_melas" )
 
 df_one$fLake <- as.factor(df_one$Lake)
 str(df_one)
@@ -41,6 +42,20 @@ summary.gam(M1)
 gam.check(M1)
 tidy(M1)
 glance(M1)
+
+##################3model checking using mgcViz
+#plotting
+M1 <- getViz(M1) #needs to be in mgcviz class
+print(plot(M1, allTerms = T), pages = 1)
+
+#model checking
+qq(M1, method = "simul1", a.qqpoi = list("shape" = 1), a.ablin = list("linetype" = 2))
+qq(M1, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2))
+check(M1,
+      a.qq = list(method = "tnorm", 
+                  a.cipoly = list(fill = "light blue")), 
+      a.respoi = list(size = 0.5), 
+      a.hist = list(bins = 10))
 
 #MODEL VALIDATION# M1
 #Synthesis of pdf, GAMM book and GAM book
@@ -206,6 +221,10 @@ deriv |>
 #adding the manual margin effect calculation
 
 species_list <- df_binomial_re |> 
+  # filter(Species %in% c("Ameiurus_melas", "Cobitis_bilineata","Cottus_gobio_Aare_littoral"
+  #                       # "Esox_lucius", "Barbus_barbus", "Coregonus_brienzii", "Cottus_gobio_Rhine", 
+  #                       # "Silurus_glanis", "Squalius_squalus"
+  #                       )) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -233,23 +252,33 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ), fLake = unique_lakes$fLake)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
+  gam_output[[i]]  <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
                          family = binomial)
-  print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
+  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # print(plot(viz[[i]], allTerms = T), pages = 1)
+  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  tiff_filename <- paste("model_3/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(check(viz[[i]],
+              a.qq = list(method = "simul1"), 
+              a.respoi = list(size = 0.5),
+              a.hist = list(bins = 10)))
+  dev.off()
+  # print(gam.check(gam_output[[i]]))
+  # print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  pred_df <- model_bind |> 
-    group_by(mean_last_7days) |> 
-    mutate(fit = mean(fit)) |> 
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
-    mutate(species = factor(i))
-  saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  # model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  # pred_df <- model_bind |> 
+  #   group_by(mean_last_7days) |> 
+  #   mutate(fit = mean(fit)) |> 
+  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
+  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
+  #   mutate(species = factor(i))
+  # saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
 }
 
 #how can I check all the models easily??? some do not look good
@@ -263,20 +292,18 @@ s3 <- readRDS("model_3/predictions/predictions_Carassius_gibelio.rds")
 s4 <- readRDS("model_3/predictions/predictions_Cobitis_bilineata.rds")
 s5 <- readRDS("model_3/predictions/predictions_Coregonus_alpinus.rds")
 s6 <- readRDS("model_3/predictions/predictions_Coregonus_brienzii.rds")
-
-s8 <- readRDS("model_3/predictions/predictions_Coregonus_palaea.rds")
-s9 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Aare_littoral.rds")
-s10 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Rhine.rds")
-s11 <- readRDS("model_3/predictions/predictions_Cottus_gobio_unknownlineage.rds")
-s12 <- readRDS("model_3/predictions/predictions_Esox_cisalpinus.rds")
-s13 <- readRDS("model_3/predictions/predictions_Esox_lucius.rds")
-s14 <- readRDS("model_3/predictions/predictions_Micropterus_salmoides.rds")
-
-s16 <- readRDS("model_3/predictions/predictions_Salvelinus_umbla.rds")
-s17 <- readRDS("model_3/predictions/predictions_Silurus_glanis.rds")
-s18 <- readRDS("model_3/predictions/predictions_Squalius_cephalus.rds")
-s19 <- readRDS("model_3/predictions/predictions_Squalius_squalus.rds")
-s20 <- readRDS("model_3/predictions/predictions_Thymallus_thymallus.rds")
+s7 <- readRDS("model_3/predictions/predictions_Coregonus_palaea.rds")
+s8 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Aare_littoral.rds")
+s9 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Rhine.rds")
+s10 <- readRDS("model_3/predictions/predictions_Cottus_gobio_unknownlineage.rds")
+s11 <- readRDS("model_3/predictions/predictions_Esox_cisalpinus.rds")
+s12 <- readRDS("model_3/predictions/predictions_Esox_lucius.rds")
+s13 <- readRDS("model_3/predictions/predictions_Micropterus_salmoides.rds")
+s14 <- readRDS("model_3/predictions/predictions_Salvelinus_umbla.rds")
+s15 <- readRDS("model_3/predictions/predictions_Silurus_glanis.rds")
+s16 <- readRDS("model_3/predictions/predictions_Squalius_cephalus.rds")
+s17 <- readRDS("model_3/predictions/predictions_Squalius_squalus.rds")
+s18 <- readRDS("model_3/predictions/predictions_Thymallus_thymallus.rds")
 
 
 total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s8, s9, s10, s11, s12,
@@ -298,16 +325,6 @@ total_model_3_pred |>
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5)
   # facet_wrap(~species)
 
-#not included 
-# "Carassius_gibelio" #really ns
-#coregonus_alpinus
-#coregonus_palaea
-#cottus_gobio_unknownlineage
-#esox_cisalpinus
-#"Micropterus_salmoides" 
-#thymallus_thymallus
-# Salvelinus_umbla" tidy has a 0 for flake and temp
-# "Squalius_cephalus" tidy has 0 for flake and temp
 
 
 #checking those models, include
@@ -317,43 +334,40 @@ total_model_3_pred |>
 "Esox_lucius" 
 "Squalius_cephalus" #both 0, visually ok
 "Salvelinus_umbla" #both 0, visually ok
+"Cottus_gobio_unknownlineage"
+"Coregonus_palaea" 
+"Cottus_gobio_Rhine"
+"Coregonus_brienzii"
 
-# unsure
-"Barbus_barbus" #temp not significant, but 0.07
-"Squalius_squalus" #temp 0.08
+# knapp ns, but not include. 8 percent is too high
+# "Barbus_barbus" #temp not significant, but 0.07
+# "Squalius_squalus" #temp 0.08
+# "Silurus_glanis" #fLake ns, temp 0.06
 
+#not included 
+# "Carassius_gibelio" #really ns
+#coregonus_alpinus
+#esox_cisalpinus
+#"Micropterus_salmoides" 
+#thymallus_thymallus
 
-
-#unsure 2 visually okay but fLake ns, all visually okay
-"Cottus_gobio_unknownlineage" #flake ns, temp 0
-"Coregonus_palaea" #flake ns
-"Cottus_gobio_Rhine" #visually ok
-"Coregonus_brienzii" #fLake ns, is this relevant?
-"Silurus_glanis" #fLake ns, temp 0.06
 
 
 
 total_model_3_pred |> 
-  filter(species %in% c("Ameiurus_melas", "Cobitis_bilineata","Cottus_gobio_Aare_littoral",
-                        "Esox_lucius", "Barbus_barbus", "Coregonus_brienzii", "Cottus_gobio_Rhine", 
-                        "Silurus_glanis", "Squalius_squalus")) |> 
+  filter(species %in% c( "Ameiurus_melas", "Cobitis_bilineata", "Cottus_gobio_Aare_littoral",
+                         "Esox_lucius", "Squalius_cephalus", "Salvelinus_umbla",
+                         "Cottus_gobio_unknownlineage", "Coregonus_palaea", "Cottus_gobio_Rhine",
+                         "Coregonus_brienzii"
+                        )) |> 
   ggplot(aes(temp, fit, fill = species)) +
   geom_line() + 
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
   facet_wrap(~species)
-
-
-total_model_3_pred |> 
-  filter(species %in% c( "Squalius_squalus" )) |> 
-  ggplot(aes(temp, fit, fill = species)) +
-  geom_line() + 
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
-  facet_wrap(~species)
-
-
-
-
 
 ###TO DO########
 #can I include species with ns fLake? What about almost significant ones?
+#27.10.yes include with ns fLake, ns temp not included 
+
+#looking at residuals, code written. include!
 
