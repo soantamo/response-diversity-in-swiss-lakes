@@ -7,6 +7,7 @@ library(viridis)
 library(gamm4)
 library(lattice)
 library(broom)
+library(mgcViz)
 
 #this model is for species with abundance data and random effects
 
@@ -30,7 +31,8 @@ df_one <- df_abundance_re |>
 df_one$fLake <- as.factor(df_one$Lake)
 
 
-M1 <- gam(Abundance ~ s(mean_last_7days, k = 5) + s(fLake, bs = 're'), 
+M1 <- gam(Abundance ~ s(mean_last_7days, k = 5) + s(fLake, bs = 're'),
+          re.test = FALSE, #nothing is calculated for re, might make calc faster
           family = ziP(), data = df_one)
 
 
@@ -38,83 +40,12 @@ summary.gam(M1)
 gam.check(M1)
 tidy(M1)
 glance(M1)
-#MODEL VALIDATION# M1
-#Synthesis of pdf, GAMM book and GAM book
-
-plot(M1)
-tidy(M1)
-glance(M1)
-#1.verifiy homogeneity: rsd vs fitted
-fv <- fitted(M1) ##predicted values
-rsd <- resid(M1) ##residuals
-plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
-
-#ok?
-
-#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
-par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
-E1 <- resid(M1)
-F1 <- fitted(M1)
-plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$Protocol, y = E1, xlab = "Protocol", ylab = "Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
-abline(h=0, lty=2)
-
-
-
-#3. verifiy independence when multiple measurements were taken over time: auto-correlation
-#not the case here
-
-#4.verifiy normality: histogram of residuals
-
-par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
-hist(E1, main = "", xlab = "Residuals", ylim = c(0,20))
-qqnorm(E1, main = "")
-qqline(E1)
-
-#looks better
-
-#5. check for influental observations: cook distance values
-
-# par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
-# plot(cooks.distance(M3), xlim = c(0,10000), 
-#      ylim = c(0,1), xlab = "Observations", 
-#      ylab = " Cooks distance values")
-# abline(h = 1, lwd = 2, lty = 2)
-
-#not working!
-
-#6.if repeated measurements taken from the same site, check for patterns
-#not the case
-
-# #overdispersion
-
-E1 <- resid(M1, type = "pearson")
-sum(E1^2)/M1$df.residual
-
-#below 1
-
-#general
-gam.check(M1)
-summary(M1)
-
 
 #####Loop Model 4 ######
 # "Lota_lota" not running with k = 3, also not k = 5. use k = 10
 
 species_list <- df_abundance_re |> 
-  # filter(Species %in% c("Perca_fluviatilis", "Phoxinus_csikii", 
-  #                       "Rutilus_rutilus", "Salmo_trutta", "Sander_lucioperca",
-  #                       "Scardinius_erythrophthalmus", "Scardinius_hesperidicus",
-  #                       "Tinca_tinca")) |> 
-  filter(Species == "Lota_lota") |> #with k = 10
+  filter(!Species == "Lota_lota") |> #with k = 10
   distinct(Species) |> 
   pull(Species)
 
@@ -144,21 +75,31 @@ for (i in species_list) {
   ), fLake = unique_lakes$fLake)
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're'),
                          family = ziP())
-  print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
-  print(tidy(gam_output[[i]]))
-  print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  pred_df <- model_bind |> 
-    group_by(mean_last_7days) |> 
-    mutate(fit = mean(fit)) |> 
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
-    mutate(species = factor(i))
-  saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
+  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # print(plot(viz[[i]], allTerms = T), pages = 1)
+  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(check(viz[[i]],
+              a.qq = list(method = "simul1"), 
+              a.respoi = list(size = 0.5),
+              a.hist = list(bins = 10)))
+  dev.off()
+  # print(gam.check(gam_output[[i]]))
+  # print(summary(gam_output[[i]]))
+  # print(tidy(gam_output[[i]]))
+  # print(glance(gam_output[[i]]))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  # model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  # pred_df <- model_bind |> 
+  #   group_by(mean_last_7days) |> 
+  #   mutate(fit = mean(fit)) |> 
+  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
+  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
+  #   mutate(species = factor(i))
+  # saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
 
 
@@ -303,4 +244,5 @@ total_model_4_pred |>
 # facet_wrap(~species)
 
 
-
+#solve lota_lota problem
+#decide which species can go in 
