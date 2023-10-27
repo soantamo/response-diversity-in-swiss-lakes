@@ -182,13 +182,13 @@ total_model_4_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s1
 "Scardinius_erythrophthalmus" #both 0s
 "Scardinius_hesperidicus"
 "Tinca_tinca" 
+"Gobio_gobio" #not 100 sure
 
 #to decide 
-
-#gobio_gobio am ehesten dazu
+# not good
+# lota_lota redo
 # 
 # ***"Blicca_bjoerkna" #looking strange but all significant
-# ***"Gobio_gobio" #both 0s, visually interesting
 # ***"Lepomis_gibbosus" #intercept ns, looks interesting 
 # ***"Phoxinus_csikii" #significant, visuaaly special  
 # ***"Salmo_trutta" #both 0s, looks interesting  
@@ -245,4 +245,5 @@ total_model_4_pred |>
 
 
 #solve lota_lota problem
+#all except gobio gobio out
 #decide which species can go in 
