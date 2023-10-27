@@ -7,6 +7,7 @@ library(viridis)
 library(gamm4)
 library(lattice)
 library(broom)
+library(mgcViz)
 
 #loading subset of df for model 1
 #added two species, need to be checked! Coregonus and Salmo
@@ -142,14 +143,20 @@ for (i in species_list) {
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
-  # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
+  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # print(plot(viz[[i]], allTerms = T), pages = 1)
+  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(check(viz[[i]],
+              a.qq = list(method = "simul1"), 
+              a.respoi = list(size = 0.5),
+              a.hist = list(bins = 10)))
+  dev.off()
+  # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
-  # gam.check(gam_output[[i]])
-  # sink()
-  print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
-  print(tidy(gam_output[[i]]))
-  print(glance(gam_output[[i]]))
+  # print(tidy(gam_output[[i]]))
+  # print(glance(gam_output[[i]]))
   # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
   # model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
   #   mutate(species = factor(i))
@@ -229,8 +236,6 @@ total_model_1_pred |>
 # "Salvelinus_sp_Profundal_Walen_I"
 # "Coregonus_candidus" #see below
 # "Coregonus_helveticus" #see below
-# "Coregonus_helveticus" #see below
-# "Coregonus_intermundia" #see below
 
 # double-check: 5, 8, 9, 10
 #include those too
@@ -245,11 +250,13 @@ total_model_1_pred |>
                         "Coregonus_macrophthalmus", "Coregonus_wartmanni",
                         "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
                         "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
-                        "Coregonus_helveticus", "Coregonus_helveticus",
-                        "Coregonus_intermundia")) |> 
+                        "Coregonus_helveticus"
+                        # "Coregonus_heglingus",
+                        # "Coregonus_intermundia"
+                        )) |> 
   ggplot(aes(temp, prediction)) +
   geom_line() +
   facet_wrap(~species)
   
 # to do
-#can i include almost significant temp species? -> 11 included
+#can i include almost significant temp species? no
