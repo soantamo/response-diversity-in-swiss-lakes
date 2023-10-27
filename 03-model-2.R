@@ -7,6 +7,7 @@ library(viridis)
 library(gamm4)
 library(lattice)
 library(broom)
+library(mgcViz)
 
 #second model for species with abundance data which only occur in one lake
 #re-do with two additional species
@@ -28,14 +29,14 @@ df_abundance_gam |>
 
 
 df_one <- df_abundance_gam |> 
-  filter(Species == "Cottus_gobio_Profundal_Lucerne")
+  filter(Species ==  "Coregonus_profundus")
 
 sum(df_one$Abundance)
 table(df_one$Abundance)
 
 hist(df_one$Abundance)
 
-M1 <- gam(Abundance ~ s(mean_last_7days, k = 3), family = negbin(1),
+M1 <- gam(Abundance ~ s(mean_last_7days, k = 7), family = ziP(),
           data = df_one)
 
 summary.gam(M1)
@@ -113,7 +114,12 @@ summary(M1)
 
 #####Loop Model 2 ######
 
+#ZIP not working in those three species
+#all other species work with ZIP k = 7
+
 species_list <- df_abundance_gam |>
+  filter(!Species %in% c("Coregonus_acrinasus", "Coregonus_profundus",
+                         "Phoxinus_sp")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -134,15 +140,21 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ))
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = negbin(1))
-  # sink("summary.txt", append = TRUE) #double-check if gams are well fitted
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 7), family = ziP())
+  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # print(plot(viz[[i]], allTerms = T), pages = 1)
+  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(check(viz[[i]],
+              a.qq = list(method = "simul1"),
+              a.respoi = list(size = 0.5),
+              a.hist = list(bins = 10)))
+  dev.off()
+  # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
-  # gam.check(gam_output[[i]])
-  # sink()
-  print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
-  print(tidy(gam_output[[i]]))
-  print(glance(gam_output[[i]]))
+  # print(tidy(gam_output[[i]]))
+  # print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
   model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
     mutate(species = factor(i))
@@ -158,18 +170,18 @@ for (i in species_list) {
 
 
 s1 <- readRDS("model_2/predictions/predictions_Barbatula_sp_Lineage_II.rds")
-s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
-s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
+#s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
+#s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
 s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
 s5 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Lucerne.rds")
 s6 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Thun.rds")
 s7 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po_profundal.rds")
-s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
+#s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
 s9 <- readRDS("model_2/predictions/predictions_Telestes_muticellus.rds")
 s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
 s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
 
-total_model_2_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11) |> 
+total_model_2_pred <- bind_rows(s1, s4, s5, s6, s7, s9, s10, s11) |> 
   rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
 
 
@@ -193,6 +205,10 @@ total_model_2_pred |>
 # "Cottus_sp_Po_profundal" definitely exclude looks crazy
 # "Phoxinus_sp" definitely exclude looks crazy
 
+#ZIP checking
+#visual horror
+
+
 
 
 total_model_2_pred |> 
@@ -201,6 +217,5 @@ total_model_2_pred |>
   ggplot(aes(temp, prediction)) +
   geom_line(aes(colour = species)) 
 
-
-#done!!!
-
+#to do
+#work on zip
