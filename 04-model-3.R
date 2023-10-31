@@ -371,3 +371,17 @@ total_model_3_pred |>
 
 #looking at residuals, code written. include!
 
+#final list: 
+#"Ameiurus_melas"
+# "Cobitis_bilineata"
+# "Cottus_gobio_Aare_littoral"
+# "Esox_lucius" 
+# "Squalius_cephalus" 
+# "Salvelinus_umbla"
+# "Cottus_gobio_unknownlineage"
+# "Coregonus_palaea" 
+# "Cottus_gobio_Rhine"
+# "Coregonus_brienzii"
+
+#double.check residuals 
+
