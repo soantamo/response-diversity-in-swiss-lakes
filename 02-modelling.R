@@ -240,9 +240,9 @@ total_model_1_pred |>
 # double-check: 5, 8, 9, 10
 #include those too
 # "Coregonus_candidus" #temp 0
-# ***"Coregonus_heglingus" #0.07, auf der kippe
+# ***"Coregonus_heglingus" #0.07
 # "Coregonus_helveticus" #negative p-value?? problem with tidy, summary normal
-# ***"Coregonus_intermundia" #0.06, auf der kippe
+# ***"Coregonus_intermundia" #0.06
 
 
 total_model_1_pred |> 
@@ -260,3 +260,10 @@ total_model_1_pred |>
   
 # to do
 #can i include almost significant temp species? no
+
+#final list: "Coregonus_confusus", "Coregonus_litoralis",
+# "Coregonus_macrophthalmus", "Coregonus_wartmanni",
+# "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
+# "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
+# "Coregonus_helveticus"
+#double check residuals
