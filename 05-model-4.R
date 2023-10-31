@@ -25,6 +25,16 @@ df_abundance_re |>
 
 ####################3#model testing for one species
 
+#lota_lota: k = 3 not working
+# "Lota_lota" not running with k = 3, also not k = 5
+#k = 10 works
+#k = 9 works
+#k = 8 works
+k = 7 works
+k = 6 works
+k = 5 missing 
+#testing backwards to 5
+
 df_one <- df_abundance_re |>
   filter(Species == "Lota_lota")
 
@@ -42,7 +52,6 @@ tidy(M1)
 glance(M1)
 
 #####Loop Model 4 ######
-# "Lota_lota" not running with k = 3, also not k = 5. use k = 10
 
 species_list <- df_abundance_re |> 
   filter(!Species == "Lota_lota") |> #with k = 10
