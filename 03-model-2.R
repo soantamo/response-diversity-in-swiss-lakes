@@ -29,7 +29,7 @@ df_abundance_gam |>
 
 
 df_one <- df_abundance_gam |> 
-  filter(Species ==  "Coregonus_profundus")
+  filter(Species ==  "Coregonus_zugensis" )
 
 sum(df_one$Abundance)
 table(df_one$Abundance)
@@ -115,11 +115,12 @@ summary(M1)
 #####Loop Model 2 ######
 
 #ZIP not working in those three species
-#all other species work with ZIP k = 7
+#all others work with k = 3
+
 
 species_list <- df_abundance_gam |>
-  filter(!Species %in% c("Coregonus_acrinasus", "Coregonus_profundus",
-                         "Phoxinus_sp")) |>
+  filter(!Species %in% c("Coregonus_profundus",
+                         "Phoxinus_sp", "Coregonus_zugensis")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -130,6 +131,7 @@ species_list <- sort(species_list)
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
+viz <- list()
 
 #make new loop 
 
@@ -138,12 +140,11 @@ for (i in species_list) {
     filter(Species == i)
   temp_gradient <- data.frame(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
-  ))
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 7), family = ziP())
+    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02))
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = ziP())
   viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
-  # print(plot(viz[[i]], allTerms = T), pages = 1)
-  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  print(plot(viz[[i]], allTerms = T), pages = 1)
+  print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
   tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
   tiff(tiff_filename, width = 800, height = 600)
   print(check(viz[[i]],
@@ -153,7 +154,7 @@ for (i in species_list) {
   dev.off()
   # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
-  # print(tidy(gam_output[[i]]))
+  print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
   model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
@@ -170,9 +171,9 @@ for (i in species_list) {
 
 
 s1 <- readRDS("model_2/predictions/predictions_Barbatula_sp_Lineage_II.rds")
-#s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
+s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
 #s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
-s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
+#s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
 s5 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Lucerne.rds")
 s6 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Thun.rds")
 s7 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po_profundal.rds")
@@ -181,7 +182,7 @@ s9 <- readRDS("model_2/predictions/predictions_Telestes_muticellus.rds")
 s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
 s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
 
-total_model_2_pred <- bind_rows(s1, s4, s5, s6, s7, s9, s10, s11) |> 
+total_model_2_pred <- bind_rows(s1, s2, s5, s6, s7, s9, s10, s11) |> 
   rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
 
 
@@ -219,3 +220,40 @@ total_model_2_pred |>
 
 #to do
 #work on zip
+
+#Coregonus_acrinasus  k = 3 works
+#coregonus profundus not working with k = 40, exclude from analysis I guess
+#phoxinus sp not working with k = 20
+
+#all working with k = 3 separately, except the two # ones
+"Alosa_agone"
+"Barbatula_sp_Lineage_II"       
+"Coregonus_acrinasus"
+# "Coregonus_profundus"  #not working           
+"Coregonus_zugensis"
+"Cottus_gobio_Profundal_Lucerne"
+"Cottus_gobio_Profundal_Thun"
+"Cottus_sp_Po"                  
+"Cottus_sp_Po_profundal"
+# "Phoxinus_sp" #not working          
+"Telestes_muticellus"
+
+#testing loop without those two species. stops at c-zugensis, works when excluding
+#c.profundus, phoxinus and c.zugensis
+#c.zugensis works with k = 7 but looks bad -> excldue
+
+
+#significant?
+
+"Alosa_agone" #s, visually ok
+# "Barbatula_sp_Lineage_II" #s, no good
+"Coregonus_acrinasus" #s, visually ok
+# "Cottus_gobio_Profundal_Lucerne" #s 0, no
+# "Cottus_gobio_Profundal_Thun" #ns, no
+"Cottus_sp_Po" #s, ok         
+# "Cottus_sp_Po_profundal"# s, no
+# "Telestes_muticellus" #ns, no
+
+
+#final: "Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po"
+#double-check residuals etc
