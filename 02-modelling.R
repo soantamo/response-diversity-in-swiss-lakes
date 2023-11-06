@@ -132,35 +132,36 @@ species_list <- sort(species_list)
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
-
-#make new loop 
+viz <- list()
+#make new loop
+  
 
 for (i in species_list) {
   data <- df_binomial_gam |> 
     filter(Species == i)
   temp_gradient <- data.frame(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
-  ))
+    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02))
+  
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
-  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
   # print(plot(viz[[i]], allTerms = T), pages = 1)
   # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
-  tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff(tiff_filename, width = 800, height = 600)
-  print(check(viz[[i]],
-              a.qq = list(method = "simul1"), 
-              a.respoi = list(size = 0.5),
-              a.hist = list(bins = 10)))
-  dev.off()
+  # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
+  # tiff(tiff_filename, width = 800, height = 600)
+  # print(check(viz[[i]],
+  #             a.qq = list(method = "simul1"), 
+  #             a.respoi = list(size = 0.5),
+  #             a.hist = list(bins = 10)))
+  # dev.off()
   # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
   # print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
-  # model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
-  #   mutate(species = factor(i))
-  # saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE) #adding se, $fit 
+  model_bind <- cbind(model_prediction[[i]], temp_gradient) |> 
+    mutate(species = factor(i))
+  saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
@@ -206,10 +207,10 @@ s27 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_Walen_I.
 s28 <- readRDS("model_1/predictions/predictions_Coregonus_duplex.rds")
 s29 <- readRDS("model_1/predictions/predictions_Salmo_marmoratus.rds")
 
-total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
-                                s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
-                                s24, s25, s26, s27, s28, s29) |> 
-  rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
+total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s28,  s7, s8, s9, s10, s11, s12,
+                                s13, s14, s15, s16, s17, s18, s29, s20, s19, s21, s22, s23,
+                                s24, s25, s26, s27) |> 
+  rename(prediction = fit, temp = mean_last_7days)
 
 
 total_model_1_pred |> 
@@ -267,3 +268,24 @@ total_model_1_pred |>
 # "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
 # "Coregonus_helveticus"
 #double check residuals
+
+# prepare mean values of se.fit 
+
+mean_se_model_1 <- total_model_1_pred |> 
+  group_by(species) |> 
+  mutate(mean_se = mean(se.fit)) |> 
+  distinct(mean_se)
+
+
+test1 <- df_binomial_gam |> 
+  group_by(Species) |> 
+  count(Abundance) |> 
+  pivot_wider(names_from = Abundance, values_from = n) |> 
+  rename(species = Species, observation_0 = `0`, observation_1 = `1`)
+
+test_bind_1 <- merge(mean_se_model_1, test1)
+
+library(writexl)
+
+print(mean_se_model_1, n = 29)
+write_xlsx(test_bind, "model_1/mean_se_model_1.xlsx")
