@@ -55,9 +55,9 @@ glance(M1)
 #lota_lota needs to run separately
 
 species_list <- df_abundance_re |> 
-  # filter(Species == "Lota_lota") |> #with k = 6
-  filter(Species %in% c("Blicca_bjoerkna", "Gobio_gobio", "Lepomis_gibbosus",
-                        "Phoxinus_csikii", "Salmo_trutta")) |> 
+  filter(!Species == "Lota_lota") |> #with k = 6
+  # filter(Species %in% c("Blicca_bjoerkna", "Gobio_gobio", "Lepomis_gibbosus",
+  #                       "Phoxinus_csikii", "Salmo_trutta")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -105,15 +105,15 @@ for (i in species_list) {
   print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  # model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  # pred_df <- model_bind |>
-  #   group_by(mean_last_7days) |>
-  #   mutate(fit = mean(fit)) |>
-  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |>
-  #   mutate(species = factor(i))
-  # saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  pred_df <- model_bind |>
+    group_by(mean_last_7days) |>
+    mutate(fit = mean(fit)) |>
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
+    mutate(species = factor(i))
+  saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
@@ -126,36 +126,37 @@ for (i in species_list) {
 
 s1 <- readRDS("model_4/predictions/predictions_Abramis_brama.rds")
 s2 <- readRDS("model_4/predictions/predictions_Alburnus_alburnus.rds")
-# s3 <- readRDS("model_4/predictions/predictions_Alburnus_arborella.rds")
+s3 <- readRDS("model_4/predictions/predictions_Alburnus_arborella.rds")
 s4 <- readRDS("model_4/predictions/predictions_Barbatula_sp_Lineage_I.rds")
-# s5 <- readRDS("model_4/predictions/predictions_Blicca_bjoerkna.rds")
+s5 <- readRDS("model_4/predictions/predictions_Blicca_bjoerkna.rds")
 s6 <- readRDS("model_4/predictions/predictions_Coregonus_albellus.rds")
 s7 <- readRDS("model_4/predictions/predictions_Coregonus_fatioi.rds")
 s8 <- readRDS("model_4/predictions/predictions_Coregonus_sarnensis.rds")
 s9 <- readRDS("model_4/predictions/predictions_Coregonus_sp.rds")
-# s10 <- readRDS("model_4/predictions/predictions_Cyprinus_carpio.rds")
+s10 <- readRDS("model_4/predictions/predictions_Cyprinus_carpio.rds")
 s11 <- readRDS("model_4/predictions/predictions_Gasterosteus_aculeatus.rds")
 s12 <- readRDS("model_4/predictions/predictions_Gobio_gobio.rds")
 s13 <- readRDS("model_4/predictions/predictions_Gymnocephalus_cernua.rds")
-# s14 <- readRDS("model_4/predictions/predictions_Lepomis_gibbosus.rds")
+s14 <- readRDS("model_4/predictions/predictions_Lepomis_gibbosus.rds")
 s15 <- readRDS("model_4/predictions/predictions_Leuciscus_leuciscus.rds")
-# s16 <- readRDS("model_4/predictions/predictions_Lota_lota.rds")
+s16 <- readRDS("model_4/predictions/predictions_Lota_lota.rds")
 s17 <- readRDS("model_4/predictions/predictions_Perca_fluviatilis.rds")
-# s18 <- readRDS("model_4/predictions/predictions_Phoxinus_csikii.rds")
+s18 <- readRDS("model_4/predictions/predictions_Phoxinus_csikii.rds")
 s19 <- readRDS("model_4/predictions/predictions_Rutilus_rutilus.rds")
-# s20 <- readRDS("model_4/predictions/predictions_Salmo_trutta.rds")
+s20 <- readRDS("model_4/predictions/predictions_Salmo_trutta.rds")
 s21 <- readRDS("model_4/predictions/predictions_Sander_lucioperca.rds")
 s22 <- readRDS("model_4/predictions/predictions_Scardinius_erythrophthalmus.rds")
 s23 <- readRDS("model_4/predictions/predictions_Scardinius_hesperidicus.rds")
 s24 <- readRDS("model_4/predictions/predictions_Tinca_tinca.rds")
 
 
-total_model_4_pred <- bind_rows(s1, s2, s4, s6, s7, s8, s9, s11, s12,
-                                s13, s15, s17, s19, s21, s22, s23,
+total_model_4_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10,  s11, s12,
+                                s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
                                 s24) |> 
-  rename(temp = mean_last_7days)
+  rename(temp = mean_last_7days, prediction = fit)
 
-
+#save all predictions as RDS
+# saveRDS(total_model_4_pred, "total_models/total_model_4_pred")
 
 
 # The reason we can't keep p-value < 2.2e-16 in the output is that that
@@ -257,4 +258,31 @@ total_model_4_pred |>
 
 #decide which species can go in: done!
 #residual checking
-*
+
+mean_se_model_4 <- total_model_4_pred |> 
+  group_by(species) |> 
+  mutate(mean_se = mean(se.fit)) |> 
+  # mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) |> 
+  distinct(mean_se)
+
+
+test4 <- df_abundance_re |> 
+  group_by(Species) |> 
+  mutate(total_abundance = sum(Abundance), 
+         observation_0 = sum(Abundance == 0)) |> 
+  distinct(total_abundance, observation_0) |> 
+  rename(species = Species)
+
+
+n_lake4 <- df_abundance_re |>
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  rename(species = Species)
+
+two_bind4 <- merge(test4, n_lake4, by.x = "species")
+
+bind_4 <- merge(two_bind4, mean_se_model_4)
+
+saveRDS(bind_4, "model_4/bind_4.rds")
+
+
