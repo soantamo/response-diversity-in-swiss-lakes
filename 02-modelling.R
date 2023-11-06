@@ -10,116 +10,8 @@ library(broom)
 library(mgcViz)
 
 #loading subset of df for model 1
-#added two species, need to be checked! Coregonus and Salmo
 
 df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
-
-### model 1: GAM with binomial distribution, test with one species first, then loop
-#double-check if all data is 1 or 0
-
-table(df_binomial_gam$Presence) 
-str(df_binomial_gam)
-head(df_binomial_gam)
-
-df_binomial_gam |> 
-  distinct(Species) |> 
-  pull(Species)
-
-#correct
-
-#model testing for one species
-
-df_one <- df_binomial_gam |> 
-  filter(Species == "Coregonus_intermundia")
-
-M1 <- gam(Abundance ~ s(mean_last_7days, k = 3), family = binomial,
-          data = df_one)
-
-summary.gam(M1)
-gam.check(M1)
-tidy(M1)
-#MODEL VALIDATION# M1
-#Synthesis of pdf, GAMM book and GAM book
-
-plot(M1)
-tidy(M1)
-glance(M1)
-#1.verifiy homogeneity: rsd vs fitted
-fv <- fitted(M1) ##predicted values
-rsd <- resid(M1) ##residuals
-plot(x = fv, y = rsd, xlab = "Fitted values", ylab = "Residuals")
-
-#ok?
-
-#2.verify model misfit (or independence): rsd vs each covariate in the model and not in the model
-par(mfrow = c(2,2), mar = c(5,5,2,2), cex.lab = 1.5)    
-E1 <- resid(M1)
-F1 <- fitted(M1)
-plot(x=F1, y=E1, xlab = "Fitted values", ylab ="Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$mean_last_7days, y = E1, xlab = "Temp", ylab = "Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$Protocol, y = E1, xlab = "Protocol", ylab = "Residuals")
-abline(h=0, lty=2)
-
-plot(x=df_one$Depth_sample, y = E1, xlab = "Depth", ylab = "Residuals")
-abline(h=0, lty=2)
-
-#not bad I guess
-
-#3. verifiy independence when multiple measurements were taken over time: auto-correlation
-#not the case here
-
-#4.verifiy normality: histogram of residuals
-
-par(mfrow = c(1,2), mar = c(5, 5, 2, 2))
-hist(E1, main = "", xlab = "Residuals", ylim = c(0,20))
-qqnorm(E1, main = "")
-qqline(E1)
-
-#looks better
-
-#5. check for influental observations: cook distance values
-
-# par(mfrow = c(1,1), mar = c( 5, 5, 2, 2))
-# plot(cooks.distance(M3), xlim = c(0,10000), 
-#      ylim = c(0,1), xlab = "Observations", 
-#      ylab = " Cooks distance values")
-# abline(h = 1, lwd = 2, lty = 2)
-
-#not working!
-
-#6.if repeated measurements taken from the same site, check for patterns
-#not the case
-
-# #overdispersion
-
-E1 <- resid(M1, type = "pearson")
-sum(E1^2)/M1$df.residual
-
-#below 1
-
-#general
-gam.check(M1)
-summary(M1)
-
-#predictions
-# 
-# temp_gradient <- data.frame(mean_last_7days = seq(
-#   from = min(df_one$mean_last_7days, na.rm = TRUE),
-#   to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
-# ))
-# 
-# predictions_one <- predict.gam(M1, temp_gradient, type = "response", se.fit = TRUE)$fit
-# 
-# pred_bind <- cbind(predictions_one, temp_gradient)
-# 
-# pred_bind |> 
-#   ggplot(aes(mean_last_7days, predictions_one)) +
-#   geom_line()
-
 
 #####Loop Model 1 ######
 
@@ -132,7 +24,9 @@ species_list <- sort(species_list)
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
+pred_df <- list()
 viz <- list()
+
 #make new loop
   
 
@@ -159,9 +53,14 @@ for (i in species_list) {
   # print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE) #adding se, $fit 
-  model_bind <- cbind(model_prediction[[i]], temp_gradient) |> 
+  model_bind <- cbind(model_prediction[[i]], temp_gradient)
+  pred_df <- model_bind |>
+    group_by(mean_last_7days) |>
+    mutate(fit = mean(fit)) |>
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
     mutate(species = factor(i))
-  saveRDS(model_bind, paste0("model_1/predictions/predictions_",i,".rds"))
+  saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
@@ -207,10 +106,13 @@ s27 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_Walen_I.
 s28 <- readRDS("model_1/predictions/predictions_Coregonus_duplex.rds")
 s29 <- readRDS("model_1/predictions/predictions_Salmo_marmoratus.rds")
 
-total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s28,  s7, s8, s9, s10, s11, s12,
-                                s13, s14, s15, s16, s17, s18, s29, s20, s19, s21, s22, s23,
-                                s24, s25, s26, s27) |> 
+total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
+                                s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
+                                s24, s25, s26, s27, s28, s29) |> 
   rename(prediction = fit, temp = mean_last_7days)
+
+#save all predictions as RDS
+saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
 
 
 total_model_1_pred |> 
@@ -281,11 +183,14 @@ test1 <- df_binomial_gam |>
   group_by(Species) |> 
   count(Abundance) |> 
   pivot_wider(names_from = Abundance, values_from = n) |> 
-  rename(species = Species, observation_0 = `0`, observation_1 = `1`)
+  rename(species = Species, observation_0 = `0`, total_abundance = `1`) |> 
+  mutate(n_lake = factor("1"))
 
-test_bind_1 <- merge(mean_se_model_1, test1)
 
-library(writexl)
+bind_1 <- merge(mean_se_model_1, test1) #ready
+saveRDS(bind_1, "model_1/bind_1.rds")
 
-print(mean_se_model_1, n = 29)
-write_xlsx(test_bind, "model_1/mean_se_model_1.xlsx")
+# library(writexl)
+# 
+# 
+# write_xlsx(test_bind, "model_1/mean_se_model_1.xlsx")
