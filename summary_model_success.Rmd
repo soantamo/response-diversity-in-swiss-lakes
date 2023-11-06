@@ -1,0 +1,71 @@
+---
+title: "Model Summary table"
+author: "Sophie"
+date: "2023-11-06"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+
+```{r, include=FALSE}
+library(tidyverse)
+library(mgcv)
+library(gratia)
+library(here)
+library(readr)
+library(viridis)
+library(gamm4)
+library(lattice)
+library(broom)
+library(mgcViz)
+library(readxl)
+
+```
+
+```{r, echo=FALSE}
+
+total_summary_table <- read_excel("model_1/total_summary_table.xlsx")
+
+#make summary of summary 
+#sum total successful models and se for those
+
+library(gt)
+
+total_summary_table |> 
+  select(success, species, mean_se_fit, total_abundance, n_lake) |> 
+  arrange(species) |> 
+  gt() |>
+  tab_header(title = "All models")
+
+
+total_summary_table |> 
+  filter(success == 1) |> 
+  select(species, mean_se_fit, total_abundance, n_lake, model_type) |> 
+  arrange(species) |> 
+  gt() |>
+  tab_header(title = "Successful models")
+
+```
+
+
+```{r pressure, echo=FALSE}
+
+library("gtsummary")
+
+lakes_models <- total_summary_table |> 
+  filter(success == 1) |> 
+  select(n_lake, model_type)
+
+tbl_summary_1 <- tbl_summary(lakes_models)
+
+
+tbl_summary_1
+
+```
+
+
