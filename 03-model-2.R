@@ -156,12 +156,12 @@ for (i in species_list) {
   # print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)$fit
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)
   model_bind <- cbind(model_prediction[[i]], temp_gradient) |>
     mutate(species = factor(i))
   saveRDS(model_bind, paste0("model_2/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_2/derivatives/derivatives_", i, ".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_2/derivatives/derivatives_", i, ".rds"))
 }
 
 #how can I check all the models easily??? some do not look good
@@ -183,7 +183,7 @@ s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
 s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
 
 total_model_2_pred <- bind_rows(s1, s2, s5, s6, s7, s9, s10, s11) |> 
-  rename(prediction = `model_prediction[[i]]`, temp = mean_last_7days)
+  rename(prediction = fit, temp = mean_last_7days)
 
 
 
@@ -213,8 +213,7 @@ total_model_2_pred |>
 
 
 total_model_2_pred |> 
-  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po",
-                        "Coregonus_profundus", "Coregonus_zugensis")) |> 
+  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po")) |> 
   ggplot(aes(temp, prediction)) +
   geom_line(aes(colour = species)) 
 
@@ -257,3 +256,19 @@ total_model_2_pred |>
 
 #final: "Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po"
 #double-check residuals etc
+
+
+mean_se_model_2 <- total_model_2_pred |> 
+  group_by(species) |> 
+  mutate(mean_se = mean(se.fit)) |> 
+  distinct(mean_se)
+
+
+test2 <- df_abundance_gam |> 
+  group_by(Species) |> 
+  count(Abundance) |> 
+  pivot_wider(names_from = Abundance, values_from = n) |> 
+  mutate(sumrow = rowSums(pick(3:8), na.rm = T)) |> 
+  select(-`2`, -`3`, -`4`, -`5`, -`7`, -`15`) |> 
+  rename(species = Species, observation_0 = `0`, observation_1 = `1`, observations_abu = `sumrow`)
+  # rename(species = Species, observation_0 = `0`, observation_1 = `1`)
