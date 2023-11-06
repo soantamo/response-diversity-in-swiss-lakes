@@ -236,6 +236,7 @@ derivatives <- list()
 grid <- list()
 pred_df <- list()
 unique_lakes <- list()
+viz <- list()
 
 
 df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
@@ -268,15 +269,16 @@ for (i in species_list) {
   # print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   print(glance(gam_output[[i]]))
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  # model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  # pred_df <- model_bind |> 
-  #   group_by(mean_last_7days) |> 
-  #   mutate(fit = mean(fit)) |> 
-  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |> 
-  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper)) |> 
-  #   mutate(species = factor(i))
-  # saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  pred_df <- model_bind |>
+    group_by(mean_last_7days) |>
+    mutate(fit = mean(fit)) |>
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |> 
+    #with across() we can retain our column for se.fit
+    mutate(species = factor(i))
+  saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
 }
@@ -306,11 +308,12 @@ s17 <- readRDS("model_3/predictions/predictions_Squalius_squalus.rds")
 s18 <- readRDS("model_3/predictions/predictions_Thymallus_thymallus.rds")
 
 
-total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s8, s9, s10, s11, s12,
-                                s13, s14, s16, s17, s18, s19, s20) |> 
-  rename(temp = mean_last_7days)
+total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
+                                s13, s14, s15, s16, s17, s18) |> 
+  rename(temp = mean_last_7days, prediction = fit)
 
-
+#save all predictions as RDS
+saveRDS(total_model_3_pred, "total_models/total_model_3_pred")
 
 total_model_3_pred |> 
   ggplot(aes(temp, fit, fill = species)) +
@@ -384,4 +387,29 @@ total_model_3_pred |>
 # "Coregonus_brienzii"
 
 #double.check residuals 
+
+
+mean_se_model_3 <- total_model_3_pred |> 
+  group_by(species) |> 
+  mutate(mean_se = mean(se.fit)) |> 
+  # mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) |> 
+  distinct(mean_se)
+
+
+test3 <- df_binomial_re |> 
+  group_by(Species) |> 
+  count(Abundance) |> 
+  pivot_wider(names_from = Abundance, values_from = n) |> 
+  rename(species = Species, observation_0 = `0`, total_abundance = `1`)
+
+n_lake3 <- df_binomial_re |>
+  group_by(Species) |>
+  summarize(n_lake = n_distinct(Lake)) |>
+  rename(species = Species)
+
+two_bind <- merge(test3, n_lake3, by.x = "species")
+
+bind_3 <- merge(two_bind, mean_se_model_3)
+
+saveRDS(bind_3, "model_3/bind_3.rds")
 
