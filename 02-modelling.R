@@ -16,6 +16,12 @@ df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
+  # filter(Species %in% c("Coregonus_confusus", "Coregonus_litoralis",
+  #                       "Coregonus_macrophthalmus", "Coregonus_wartmanni",
+  #                       "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
+  #                       "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
+  #                       "Coregonus_helveticus"
+  # )) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -27,7 +33,14 @@ derivatives <- list()
 pred_df <- list()
 viz <- list()
 
+
+df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
+
+df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
+str(df_binomial_gam)
 #make new loop
+#adding fProtocol as random effect
+
   
 
 for (i in species_list) {
@@ -37,30 +50,30 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02))
   
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = binomial)
-  # viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
-  # print(plot(viz[[i]], allTerms = T), pages = 1)
-  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs"), family = binomial)
+  viz <- getViz(gam_output) #needs to be in mgcviz class
+  print(plot(viz, allTerms = T), pages = 1)
+  print(qq(viz, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
   # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
   # tiff(tiff_filename, width = 800, height = 600)
-  # print(check(viz[[i]],
-  #             a.qq = list(method = "simul1"), 
-  #             a.respoi = list(size = 0.5),
-  #             a.hist = list(bins = 10)))
+  print(check(viz,
+              a.qq = list(method = "simul1"),
+              a.respoi = list(size = 0.5),
+              a.hist = list(bins = 10)))
   # dev.off()
   # print(gam.check(gam_output[[i]]))
   # print(summary(gam_output[[i]]))
-  # print(tidy(gam_output[[i]]))
+  print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE) #adding se, $fit 
-  model_bind <- cbind(model_prediction[[i]], temp_gradient)
-  pred_df <- model_bind |>
-    group_by(mean_last_7days) |>
-    mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
-    mutate(species = factor(i))
-  saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE) #adding se, $fit 
+  # model_bind <- cbind(model_prediction[[i]], temp_gradient)
+  # pred_df <- model_bind |>
+  #   group_by(mean_last_7days) |>
+  #   mutate(fit = mean(fit)) |>
+  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
+  #   mutate(species = factor(i))
+  # saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
@@ -112,7 +125,7 @@ total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s1
   rename(prediction = fit, temp = mean_last_7days)
 
 #save all predictions as RDS
-saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
+# saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
 
 
 total_model_1_pred |> 
@@ -176,7 +189,9 @@ total_model_1_pred |>
 mean_se_model_1 <- total_model_1_pred |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
-  distinct(mean_se)
+  mutate(max_se = max(se.fit)) |> 
+  mutate(min_se = min(se.fit)) |> 
+  distinct(mean_se, max_se, min_se)
 
 
 test1 <- df_binomial_gam |> 
@@ -188,9 +203,5 @@ test1 <- df_binomial_gam |>
 
 
 bind_1 <- merge(mean_se_model_1, test1) #ready
-saveRDS(bind_1, "model_1/bind_1.rds")
+# saveRDS(bind_1, "model_1/bind_1.rds")
 
-# library(writexl)
-# 
-# 
-# write_xlsx(test_bind, "model_1/mean_se_model_1.xlsx")
