@@ -36,6 +36,7 @@ viz <- list()
 grid <- list()
 unique_method <- list()
 simulationOutput <- list()
+tiff_file_2  <- list()
 
 
 df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
@@ -48,76 +49,45 @@ str(df_binomial_gam)
 
 for (i in species_list) {
   data <- df_binomial_gam |> 
-    filter(Species == "Chondrostoma_nasus")
+    filter(Species == i)
   unique_method <- distinct(data, fProtocol)
   grid <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs") + 
-                     s(fProtocol, bs = 're'), family = binomial)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs") + 
-  #                     s(fProtocol, bs = 're'), family = binomial)
-  # performance::check_model(gam_output) not working
-  simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
-  residuals(simulationOutput)
-  residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
-  plot(simulationOutput)
-  testDispersion(simulationOutput)
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                      s(fProtocol, bs = 're'), family = binomial)
   
-  
-  # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff_filename <- paste("model_1/gam_check.tiff")
+  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # residuals(simulationOutput)
+  # residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
+  # plot(simulationOutput)
+  # testDispersion(simulationOutput)
+  tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
   tiff(tiff_filename, width = 800, height = 600)
   print(plot(simulationOutput))
   dev.off()
-  # performance::check_model(gam_output[[i]])
-  print(tidy(gam_output))
-  # print(tidy(gam_output[[i]]))
-  model_prediction <- predict.gam(gam_output, grid, type = "response", se.fit = TRUE)
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit 
-  model_bind <- cbind(model_prediction, grid)
-  # model_bind <- cbind(model_prediction[[i]], grid)
+  tiff_file_2 <- paste("model_1/gam_check/dispersion_", i, ".tiff", sep = "")
+  tiff(tiff_file_2, width = 800, height = 600)
+  print(testDispersion(simulationOutput))
+  dev.off()
+  print(tidy(gam_output[[i]]))
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
+  model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
     mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
               across(se.fit), across(fProtocol)) |> 
-    rename(temp = mean_last_7days) 
-    # mutate(species = factor(i))
-  # saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
+    rename(temp = mean_last_7days) |> 
+    mutate(species = factor(i))
+  saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
-
-  pred_df |> 
-    ggplot(aes(temp, fit)) +
-    geom_line() +
-    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
-    theme_bw() +
-    theme(strip.background = element_rect(fill="lightgrey"))
-  
-  # viz <- getViz(gam_output) #needs to be in mgcviz class
-  # print(plot(viz, allTerms = T), pages = 1)
-  # print(qq(viz, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
-  # # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
-  # # tiff(tiff_filename, width = 800, height = 600)
-  # print(check(viz,
-  #             a.qq = list(method = "simul1"),
-  #             a.respoi = list(size = 0.5),
-  #             a.hist = list(bins = 10)))
-  # dev.off()
 }
 
-# Warnmeldungen:
-#   1: In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,  :
-#                  Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig prüfen
-#                2: In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,  :
-#                               Anpassung beendet mit Schrittweitenfehler - Ergebnisse sorgfältig prüfen
-
-#how can I check all the models easily??? some do not look good
-# checking out all plots
-#one big data frame and using facet_wrap
+# no warnings!
 
 
 s1 <- readRDS("model_1/predictions/predictions_Alosa_fallax.rds")
@@ -153,67 +123,33 @@ s29 <- readRDS("model_1/predictions/predictions_Salmo_marmoratus.rds")
 total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
                                 s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
                                 s24, s25, s26, s27, s28, s29) |> 
-  rename(prediction = fit, temp = mean_last_7days)
+  rename(prediction = fit)
 
 #save all predictions as RDS
-# saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
+saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
 
 
 total_model_1_pred |> 
-  ggplot(aes(temp, prediction)) +
+  ggplot(aes(temp, prediction, color = factor(species))) +
   geom_line() +
-  facet_wrap(~species)
-
-#some look very strange :I
-#I can for sure exclude some of the species
-#looking strange and not significant:
-
-#1. exclude species that look too strange (Visually, tidy, glance, summary, and gam.check)
-#species that stay
-#species_list shows the numbers, check again now
-
-# 25.10
-#include 
-# "Coregonus_confusus"
-# "Coregonus_litoralis"
-# "Coregonus_macrophthalmus"
-# "Coregonus_wartmanni"
-# "Coregonus_zuerichensis"
-# "Salmo_sp_Blackspot"
-# "Salvelinus_sp_Profundal_Walen_I"
-# "Coregonus_candidus" #see below
-# "Coregonus_helveticus" #see below
-
-# double-check: 5, 8, 9, 10
-#include those too
-# "Coregonus_candidus" #temp 0
-# ***"Coregonus_heglingus" #0.07
-# "Coregonus_helveticus" #negative p-value?? problem with tidy, summary normal
-# ***"Coregonus_intermundia" #0.06
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~species) +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE) 
 
 
-total_model_1_pred |> 
-  filter(species %in% c("Coregonus_confusus", "Coregonus_litoralis",
-                        "Coregonus_macrophthalmus", "Coregonus_wartmanni",
-                        "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
-                        "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
-                        "Coregonus_helveticus"
-                        # "Coregonus_heglingus",
-                        # "Coregonus_intermundia"
-                        )) |> 
-  ggplot(aes(temp, prediction)) +
-  geom_line() +
-  facet_wrap(~species)
-  
-# to do
-#can i include almost significant temp species? no
-
-#final list: "Coregonus_confusus", "Coregonus_litoralis",
-# "Coregonus_macrophthalmus", "Coregonus_wartmanni",
-# "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
-# "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
-# "Coregonus_helveticus"
-#double check residuals
+#new selection: 10.11.23
+# library(readxl)
+# model_1_selection <- read_excel("model_1/model_selection.xlsx")
+# 
+# library(gt)
+# 
+# model_1_selection |> 
+#   select(-model_type) |> 
+#   arrange(species) |> 
+#   gt() |>
+#   tab_header(title = "All models")
 
 # prepare mean values of se.fit 
 
@@ -234,5 +170,5 @@ test1 <- df_binomial_gam |>
 
 
 bind_1 <- merge(mean_se_model_1, test1) #ready
-# saveRDS(bind_1, "model_1/bind_1.rds")
+saveRDS(bind_1, "model_1/bind_1.rds")
 
