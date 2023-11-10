@@ -63,6 +63,14 @@ df_models <- df_final |>
 #2. species that occur only in one lake
 #3. species that occur only once in a lake
 
+#new problem: should I put a minimum total_abundance per lake to be included in the analysis?
+#write code and then decide threshold
+#not finished yet
+
+# tot_abundance_lake <- df_models |> 
+#   group_by(Lake, Species) |> 
+#   summarize(TotalAbundance = sum(Abundance)) |> 
+#   filter(TotalAbundance >= 5) 
 
 #1. binomial vs. abundance data
 
@@ -160,6 +168,7 @@ df_abundance_re <- df_models |>
 # saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
 #What about the ones with only one occurence in one of the lakes?
+#10.11. here we could set a higher threshold
 #3. 
 one_fish_in_lake <- df_models |> 
   group_by(Lake, Species) |> 
