@@ -8,32 +8,32 @@ library(gamm4)
 library(lattice)
 library(broom)
 library(mgcViz)
+library(readxl)
 
 
 #model overview table
-
-
-bind_1 <- readRDS("model_1/bind_1.rds")
-bind_2 <- readRDS("model_2/bind_2.rds")
-bind_3 <- readRDS("model_3/bind_3.rds")
-bind_4 <- readRDS("model_4/bind_4.rds")
-
-str(bind_1)
-str(bind_2)
-str(bind_3) 
-str(bind_4)
-
-bind_3$n_lake <- as.factor(bind_3$n_lake)
-bind_4$n_lake <- as.factor(bind_4$n_lake)
-
-total_summary <- bind_rows(bind_1, bind_2, bind_3, bind_4) |> 
-  rename(mean_se_fit = mean_se, total_zeros = observation_0)
+# 
+# bind_1 <- readRDS("model_1/bind_1.rds")
+# bind_2 <- readRDS("model_2/bind_2.rds")
+# bind_3 <- readRDS("model_3/bind_3.rds")
+# bind_4 <- readRDS("model_4/bind_4.rds")
+# 
+# str(bind_1)
+# str(bind_2)
+# str(bind_3) 
+# str(bind_4)
+# 
+# bind_3$n_lake <- as.factor(bind_3$n_lake)
+# bind_4$n_lake <- as.factor(bind_4$n_lake)
+# 
+# total_summary <- bind_rows(bind_1, bind_2, bind_3, bind_4) |> 
+#   rename(total_zeros = observation_0)
 
 # library(writexl)
 # dont redo
-# write_xlsx(total_summary, "model_1/total_summary_table.xlsx")
+# write_xlsx(total_summary, "model_1/total_summary_table_ver2.xlsx")
 
-total_summary_table <- read_excel("model_1/total_summary_table.xlsx")
+total_summary_table <- read_excel("model_1/total_summary_table_ver2.xlsx")
 
 #make summary of summary 
 #sum total successful models and se for those
@@ -41,24 +41,87 @@ total_summary_table <- read_excel("model_1/total_summary_table.xlsx")
 library(gt)
 
 total_summary_table |> 
-  filter(success == 1) |> 
-  select(species, mean_se_fit, total_abundance, n_lake, model_type) |> 
+  select(species, mean_se, max_se, min_se, total_abundance, n_lake, success) |> 
   arrange(species) |> 
   gt() |>
-  tab_header(title = "Successful models")
+  tab_header(title = "All models")
 
+
+total_summary_table |> 
+  filter(success == 1) |> 
+  select(species, mean_se, max_se, min_se, total_abundance, n_lake, model_type) |> 
+  arrange(max_se) |> 
+  gt() |>
+  tab_header(title = "Potentially successful models")
   
+#model 1
+total_summary_table |> 
+  filter(model_type == 1) |> 
+  filter(total_abundance > 5) |> 
+  select(species, mean_se, max_se, min_se, total_abundance) |> 
+  arrange(total_abundance) |> 
+  gt() |>
+  tab_header(title = "Model 1: binomial")
+
+#model 2
+total_summary_table |> 
+  filter(model_type == 2) |> 
+  # filter(total_abundance > 5) |> 
+  select(species, mean_se, max_se, min_se, total_abundance) |> 
+  arrange(total_abundance) |> 
+  gt() |>
+  tab_header(title = "Model 2: zero-inflated poisson")
+
+#model 3
+total_summary_table |> 
+  filter(model_type == 3) |> 
+  # filter(total_abundance > 5) |> 
+  select(species, mean_se, max_se, min_se, total_abundance) |> 
+  arrange(total_abundance) |> 
+  gt() |>
+  tab_header(title = "Model 3: binomial with re")
+
+#model 4
+total_summary_table |> 
+  filter(model_type == 4) |> 
+  # filter(total_abundance > 5) |> 
+  select(species, mean_se, max_se, min_se, total_abundance) |> 
+  arrange(total_abundance) |> 
+  gt() |>
+  tab_header(title = "Model 4: zero-inflated poisson with re")
 
 library("gtsummary")
 
 lakes_models <- summary_success |> 
   select(n_lake, model_type)
 
+
 tbl_summary_1 <- tbl_summary(lakes_models)
 
 
 tbl_summary_1
 
+#table for percentages of models, number of species
+
+percentages_model_types <- total_summary_table |> 
+  select(model_type)
+
+tbl_summary(percentages_model_types)
+
+#table for percentages of number of lakes, number of species
+
+percentages_lakes <- total_summary_table |> 
+  select(n_lake)
+
+tbl_summary(percentages_lakes)
+
+
+#model validation
+# see https://r.qcbs.ca/workshop08/book-en/gam-model-checking.html
+# and https://r.qcbs.ca/workshop04/pres-en/workshop04-pres-en.html#38
+# and https://r.qcbs.ca/workshop06/pres-en/workshop06-pres-en.html#1
+# https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html
+#reread https://stats.stackexchange.com/questions/405129/model-selection-for-gam-in-r
 
 
 #predictions for all species
@@ -74,6 +137,9 @@ total_model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_p
 
 success_list <- total_summary_table |> 
   filter(success == 1) |> 
+  filter(model_type %in% c(3, 4)) |> 
+  #also filter the ones with abundance < 10 
+  filter(total_abundance > 10) |>
   distinct(species) |> 
   pull(species)
 
@@ -85,13 +151,162 @@ success_model_predictions <- total_model_predictions |>
 #   distinct(species)
 
 
-#plot
+#plot, fixed scales
+
+#model 1 
+
+model_1 <- total_summary_table |> 
+  filter(model_type == 1) |> 
+  filter(total_abundance > 5) |> 
+  distinct(species) |> 
+  pull(species)
+
+
+total_model_predictions |> 
+  filter(species %in% model_1) |> 
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))+
+  scale_color_viridis(discrete=TRUE) 
+  
+#model 2
+
+
+model_2 <- total_summary_table |> 
+  filter(model_type == 2) |> 
+  distinct(species) |> 
+  pull(species)
+
+
+total_model_predictions |> 
+  filter(species %in% model_2) |> 
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))+
+  scale_color_viridis(discrete=TRUE) 
+
+# model 3
+
+model_3 <- total_summary_table |> 
+  filter(model_type == 3) |> 
+  distinct(species) |> 
+  pull(species)
+
+
+total_model_predictions |> 
+  filter(species %in% model_3) |> 
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))+
+  scale_color_viridis(discrete=TRUE) 
+
+# model 4
+model_4 <- total_summary_table |> 
+  filter(model_type == 4) |> 
+  distinct(species) |> 
+  pull(species)
+
+
+total_model_predictions |> 
+  filter(species %in% model_4) |> 
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))+
+  scale_color_viridis(discrete=TRUE) 
+
+#plot only with good looking ones
+
+# success_model_predictions |> 
+#   filter(species %in% c("Salvelinus_umbla", "Coregonus_albellus",
+#                         "Coregonus_sp", "Perca_fluviatilis", "Rutilus_rutilus",
+#                         "Gasterosteus_aculeatus", "Gymnopcephalus_cernua")) |> 
+#   ggplot(aes(temp, prediction, color = factor(species))) +
+#   geom_line() +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+#   facet_wrap(~species, scales = "free") +
+#   theme_bw() +
+#   theme(strip.background = element_rect(fill="lightgrey")) + 
+#   scale_color_viridis(discrete=TRUE) 
+#   
+
+
+# without confidence interval
+q <- success_model_predictions |>
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  facet_wrap(~species, scales = "free") +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))
+
+q + scale_color_viridis(discrete=TRUE) 
+
+# with confidence interval,success species with abundance > 10
+p <- success_model_predictions |>
+  ggplot(aes(temp, prediction, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species) +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey"))
+
+p + scale_color_viridis(discrete=TRUE) 
+
+
+total_summary_table |>
+  filter(success == 1) |> 
+  filter(total_abundance > 10) |> 
+  filter(model_type %in% c(3, 4)) |> 
+  select(species, mean_se, max_se, min_se, total_abundance, n_lake, model_type) |> 
+  arrange(model_type) |> 
+  gt()
+
+
+t <- success_model_predictions |>
+  # filter(species == "Lota_lota") |>
+  ggplot(aes(temp, prediction, colour = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  facet_wrap(~species, scales = "free") +
+  theme_bw()
+  # theme(strip.background = element_rect(fill="orange"))
+
+#13 might need to go
+
+# change colors
+t + scale_color_viridis(discrete=TRUE) 
+t + scale_color_viridis(discrete = TRUE, option = "turbo") 
+
+#total plot
+
 success_model_predictions |>
   # filter(species == "Lota_lota") |>
-  ggplot(aes(temp, prediction, fill = species)) +
+  ggplot(aes(temp, prediction, fill = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw()
+
+
+#13 might need to go
+
+success_model_predictions |>
+  filter(species == "Coregonus_wartmanni") |>
+  ggplot(aes(temp, prediction, colour = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.5) +
-  facet_wrap(~species)
+  theme_bw()
+
 
 
 #original data 
