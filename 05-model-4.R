@@ -8,6 +8,7 @@ library(gamm4)
 library(lattice)
 library(broom)
 library(mgcViz)
+library(DHARMa)
 
 #this model is for species with abundance data and random effects
 
@@ -55,9 +56,10 @@ glance(M1)
 #lota_lota needs to run separately
 
 species_list <- df_abundance_re |> 
-  filter(!Species == "Lota_lota") |> #with k = 6
-  # filter(Species %in% c("Blicca_bjoerkna", "Gobio_gobio", "Lepomis_gibbosus",
-  #                       "Phoxinus_csikii", "Salmo_trutta")) |> 
+  # filter(!Species == "Lota_lota") |> #with k = 6
+  filter(!Species %in% c("Alburnus_arborella",
+           "Cyprinus_carpio", "Blicca_bjoerkna", "Lepomis_gibbosus", "Phoxinus_csikii",
+           "Salmo_trutta", "Lota_lota")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -91,29 +93,29 @@ for (i in species_list) {
   #lota_lota
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're'),
   #                        family = ziP())
-  viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
+  # viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
   # print(plot(viz[[i]], allTerms = T), pages = 1)
   # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
-  tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff(tiff_filename, width = 800, height = 600)
-  print(check(viz[[i]],
-              a.qq = list(method = "simul1"),
-              a.respoi = list(size = 0.5),
-              a.hist = list(bins = 10)))
-  dev.off()
+  # tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
+  # tiff(tiff_filename, width = 800, height = 600)
+  # print(check(viz[[i]],
+  #             a.qq = list(method = "simul1"),
+  #             a.respoi = list(size = 0.5),
+  #             a.hist = list(bins = 10)))
+  # dev.off()
   # print(gam.check(gam_output[[i]]))
-  print(summary(gam_output[[i]]))
+  # print(summary(gam_output[[i]]))
   print(tidy(gam_output[[i]]))
   # print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  pred_df <- model_bind |>
-    group_by(mean_last_7days) |>
-    mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
-    mutate(species = factor(i))
-  saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+  # model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+  # pred_df <- model_bind |>
+  #   group_by(mean_last_7days) |>
+  #   mutate(fit = mean(fit)) |>
+  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
+  #   mutate(species = factor(i))
+  # saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
@@ -262,8 +264,10 @@ total_model_4_pred |>
 mean_se_model_4 <- total_model_4_pred |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
-  # mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) |> 
-  distinct(mean_se)
+  mutate(max_se = max(se.fit)) |> 
+  mutate(min_se = min(se.fit)) |> 
+  distinct(mean_se, max_se, min_se)
+
 
 
 test4 <- df_abundance_re |> 
@@ -286,3 +290,131 @@ bind_4 <- merge(two_bind4, mean_se_model_4)
 saveRDS(bind_4, "model_4/bind_4.rds")
 
 
+##testing bs = "cs" -> no difference for predictions
+##changing K -> no difference
+##add dharma
+###add random effects for method
+
+
+df_one <- df_abundance_re |> 
+  filter(Species == "Alburnus_alburnus")
+
+df_one$fLake <- as.factor(df_one$Lake)
+df_one$fProtocol <- as.factor(df_one$Protocol)
+
+str(df_one)
+
+gam_output <- gam(data = df_one, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                  + s(fProtocol, bs = 're') , family = ziP())
+
+
+
+##dharma
+#dispersion problems?
+testDispersion(gam_output)
+#simulate residuals
+simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
+residuals(simulationOutput)
+residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
+plot(simulationOutput)
+
+#undertsand
+plotResiduals(simulationOutput, form = fLake)
+
+
+
+
+viz <- getViz(gam_output) #needs to be in mgcviz class
+print(plot(viz, allTerms = T), pages = 1)
+print(qq(viz, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+print(check(viz,
+            a.qq = list(method = "simul1"),
+            a.respoi = list(size = 0.5),
+            a.hist = list(bins = 10)))
+
+print(tidy(gam_output))
+
+
+###add weights in predictions
+
+#maybe do a grid instead of data frame -> needs to be grid for the plotting
+#dont forget to add method
+
+percentages <- table(df_one$fLake) / length(df_one$fLake) * 100
+
+
+unique_method <- distinct(df_one, fProtocol)
+
+#predictions weighted not working yet 
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), length.out = 100), 
+  fLake = sample(levels(df_one$fLake), size = 100, replace = TRUE, prob = percentages),
+  fProtocol = unique_method$fProtocol)
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02), 
+  fLake = sample(levels(unique_lakes$fLake), replace = TRUE, prob = percentages),
+  fProtocol = unique_method$fProtocol)
+
+
+table(grid$fLake) / length(grid$fLake) *100
+# 
+# fProtocol = unique_method$fProtocol
+##no weighting
+
+unique_lakes <- distinct(df_one, fLake)
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_one$mean_last_7days, na.rm = TRUE),
+  to = max(df_one$mean_last_7days, na.rm = TRUE), by = 0.02
+), fLake = unique_lakes$fLake)
+
+#grid
+model_prediction <- predict.gam(gam_output, newdata = grid, type = "response", se.fit = TRUE)
+model_bind <- cbind(grid, as.data.frame(model_prediction))
+
+# try to include fLake and fProtocol
+
+pred_df <- model_bind |>
+  group_by(mean_last_7days) |>
+  mutate(fit = mean(fit)) |> 
+  mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+  summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
+            across(se.fit), across(fLake), across(fProtocol)) |> 
+  rename(temp = mean_last_7days)
+
+pred_df |> 
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~fLake) +
+  theme(strip.background = element_rect(fill="lightgrey"))
+
+table(pred_df$fLake) / length(pred_df$fLake) * 100
+
+#weight in GAM 
+#https://stats.stackexchange.com/questions/598261/what-does-the-weights-do-in-mgcvgam-and-how-to-put-weights-in-gam
+# https://stats.stackexchange.com/questions/598261/what-does-the-weights-do-in-mgcvgam-and-how-to-put-weights-in-gam
+# 
+
+# weights works in the same way for gam() and it does for glm() - GAMs fitted by 
+# gam() and bam() are really just fancy GLMs, and when the models contain smooths 
+# then they are fitted with a penalised version of the algorithm used to fit GLMs.
+# 
+# Because changing the weights changes the overall magnitude of the likelihood.
+# You will likely want to actually used weights = my_weights / mean(my_weights),
+# which is given on the help page for ?gam in the description of the weights argument.
+# 
+# I wouldn't recommend using bootstrapping with GAMs however; non-parametric 
+# bootstrapping can lead to over smoothing because of the repeated observations of
+# some samples in each bootstrap sample, and parametric bootstrapping of models is
+# incredibly time consuming for GAMs and we can usually do just as well with posterior
+# simulation.
+
+
+
+  
