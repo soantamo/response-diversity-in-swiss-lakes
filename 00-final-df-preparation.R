@@ -4,6 +4,7 @@ library(tidyverse)
 
 projet_lac_data <- read.csv("~/Downloads/PLDB_final_short_depth_climate_cleantaxa_20052022(2).csv")
 
+
 abundance_data <- projet_lac_data |> 
   # take out no fish
   filter(!Taxa_latin_FINAL %in% "NO_FISH") |> 
