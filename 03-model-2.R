@@ -8,6 +8,7 @@ library(gamm4)
 library(lattice)
 library(broom)
 library(mgcViz)
+library(DHARMa)
 
 #second model for species with abundance data which only occur in one lake
 #re-do with two additional species
@@ -39,66 +40,74 @@ species_list <- sort(species_list)
 gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
-viz <- list()
 pred_df <- list()
+viz <- list()
+grid <- list()
+unique_method <- list()
+simulationOutput <- list()
+tiff_file_2  <- list()
 
+
+df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
+str(df_abundance_gam)
 #make new loop 
 
 for (i in species_list) {
   data <- df_abundance_gam |> 
     filter(Species == i)
-  temp_gradient <- data.frame(mean_last_7days = seq(
+  unique_method <- distinct(data, fProtocol)
+  grid <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02))
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3), family = ziP())
-  # viz[[i]] <- getViz(gam_output[[i]]) #needs to be in mgcviz class
-  # print(plot(viz[[i]], allTerms = T), pages = 1)
-  # print(qq(viz[[i]], rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
-  # tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
-  # tiff(tiff_filename, width = 800, height = 600)
-  # print(check(viz[[i]],
-  #             a.qq = list(method = "simul1"),
-  #             a.respoi = list(size = 0.5),
-  #             a.hist = list(bins = 10)))
-  # dev.off()
-  # print(gam.check(gam_output[[i]]))
-  # print(summary(gam_output[[i]]))
+    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+    fProtocol = unique_method$fProtocol)
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = ziP())
+
+  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # residuals(simulationOutput)
+  # residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
+  # plot(simulationOutput)
+  # testDispersion(simulationOutput)
+  tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(plot(simulationOutput))
+  dev.off()
+  tiff_file_2 <- paste("model_2/gam_check/dispersion_", i, ".tiff", sep = "")
+  tiff(tiff_file_2, width = 800, height = 600)
+  print(testDispersion(simulationOutput))
+  dev.off()
   print(tidy(gam_output[[i]]))
-  # print(glance(gam_output[[i]]))
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE)
-  model_bind <- cbind(model_prediction[[i]], temp_gradient)
+  model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
+  model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
     mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
+              across(se.fit), across(fProtocol)) |> 
+    rename(temp = mean_last_7days) |> 
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_2/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_2/derivatives/derivatives_", i, ".rds"))
+  # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
-
-#how can I check all the models easily??? some do not look good
-# checking out all plots
-#one big data frame and using facet_wrap
 
 
 
 s1 <- readRDS("model_2/predictions/predictions_Barbatula_sp_Lineage_II.rds")
 s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
-s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
-s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
+# s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
+# s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
 s5 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Lucerne.rds")
 s6 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Thun.rds")
 s7 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po_profundal.rds")
-s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
+# s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
 s9 <- readRDS("model_2/predictions/predictions_Telestes_muticellus.rds")
 s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
 s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
 
-total_model_2_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8,  s9, s10, s11) |> 
-  rename(prediction = fit, temp = mean_last_7days) |> 
-  select(-`model_prediction[[i]]`)
+total_model_2_pred <- bind_rows(s1, s2, s5, s6, s7, s9, s10, s11) |> 
+  rename(prediction = fit) 
 
 #save all predictions as RDS
 # saveRDS(total_model_2_pred, "total_models/total_model_2_pred")
@@ -106,9 +115,13 @@ total_model_2_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8,  s9, s10, s11) |
 
 
 total_model_2_pred |> 
-  ggplot(aes(temp, prediction)) +
+  ggplot(aes(temp, prediction, color = factor(species))) +
   geom_line() +
-  facet_wrap(~species)
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~species) +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE) 
 
 
 #negbin checking 25.10.
@@ -179,11 +192,11 @@ total_model_2_pred |>
 mean_se_model_2 <- total_model_2_pred |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
-  # mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) |> 
-  distinct(mean_se)
+  mutate(max_se = max(se.fit)) |> 
+  mutate(min_se = min(se.fit)) |> 
+  distinct(mean_se, max_se, min_se)
 
 
-summarize(n_lake = n_distinct(Lake))
 
 
 test2 <- df_abundance_gam |> 
@@ -192,14 +205,7 @@ test2 <- df_abundance_gam |>
          observation_0 = sum(Abundance == 0)) |> 
   distinct(total_abundance, observation_0) |> 
   rename(species = Species) |> 
-  # pivot_wider(names_from = Abundance, values_from = n) |> 
-  # mutate(across(where(is.numeric), ~ ifelse(is.na(.), 0, .))) |> 
-  # rename(species = Species, observation_0 = `0`, observation_1 = `1`) |> 
   mutate(n_lake = factor("1"))
-  # mutate(sumrow = rowSums(pick(3:8), na.rm = T)) |> 
-  # select(-`2`, -`3`, -`4`, -`5`, -`7`, -`15`) |> 
-  # rename(species = Species, observation_0 = `0`, observation_1 = `1`, observations_abu = `sumrow`)
-  # rename(species = Species, observation_0 = `0`, observation_1 = `1`)
 
 #double check if all occur in one
 # n_lake <- df_abundance_gam |> 
