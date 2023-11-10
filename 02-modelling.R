@@ -8,6 +8,7 @@ library(gamm4)
 library(lattice)
 library(broom)
 library(mgcViz)
+library(DHARMa)
 
 #loading subset of df for model 1
 
@@ -32,11 +33,13 @@ model_prediction <- list()
 derivatives <- list()
 pred_df <- list()
 viz <- list()
+grid <- list()
+unique_method <- list()
+simulationOutput <- list()
 
 
 df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
 
-df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
 str(df_binomial_gam)
 #make new loop
 #adding fProtocol as random effect
@@ -45,37 +48,65 @@ str(df_binomial_gam)
 
 for (i in species_list) {
   data <- df_binomial_gam |> 
-    filter(Species == i)
-  temp_gradient <- data.frame(mean_last_7days = seq(
+    filter(Species == "Chondrostoma_nasus")
+  unique_method <- distinct(data, fProtocol)
+  grid <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02))
+    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+    fProtocol = unique_method$fProtocol)
+  gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs") + 
+                     s(fProtocol, bs = 're'), family = binomial)
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs") + 
+  #                     s(fProtocol, bs = 're'), family = binomial)
+  # performance::check_model(gam_output) not working
+  simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
+  residuals(simulationOutput)
+  residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
+  plot(simulationOutput)
+  testDispersion(simulationOutput)
   
-  gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3, bs = "cs"), family = binomial)
-  viz <- getViz(gam_output) #needs to be in mgcviz class
-  print(plot(viz, allTerms = T), pages = 1)
-  print(qq(viz, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  
   # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
-  # tiff(tiff_filename, width = 800, height = 600)
-  print(check(viz,
-              a.qq = list(method = "simul1"),
-              a.respoi = list(size = 0.5),
-              a.hist = list(bins = 10)))
-  # dev.off()
-  # print(gam.check(gam_output[[i]]))
-  # print(summary(gam_output[[i]]))
-  print(tidy(gam_output[[i]]))
-  # print(glance(gam_output[[i]]))
-  # model_prediction[[i]] <- predict.gam(gam_output[[i]], temp_gradient, type = "response", se.fit = TRUE) #adding se, $fit 
-  # model_bind <- cbind(model_prediction[[i]], temp_gradient)
-  # pred_df <- model_bind |>
-  #   group_by(mean_last_7days) |>
-  #   mutate(fit = mean(fit)) |>
-  #   mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-  #   summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
-  #   mutate(species = factor(i))
+  tiff_filename <- paste("model_1/gam_check.tiff")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(plot(simulationOutput))
+  dev.off()
+  # performance::check_model(gam_output[[i]])
+  print(tidy(gam_output))
+  # print(tidy(gam_output[[i]]))
+  model_prediction <- predict.gam(gam_output, grid, type = "response", se.fit = TRUE)
+  # model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit 
+  model_bind <- cbind(model_prediction, grid)
+  # model_bind <- cbind(model_prediction[[i]], grid)
+  pred_df <- model_bind |>
+    group_by(mean_last_7days) |>
+    mutate(fit = mean(fit)) |>
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
+              across(se.fit), across(fProtocol)) |> 
+    rename(temp = mean_last_7days) 
+    # mutate(species = factor(i))
   # saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
+
+  pred_df |> 
+    ggplot(aes(temp, fit)) +
+    geom_line() +
+    geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+    theme_bw() +
+    theme(strip.background = element_rect(fill="lightgrey"))
+  
+  # viz <- getViz(gam_output) #needs to be in mgcviz class
+  # print(plot(viz, allTerms = T), pages = 1)
+  # print(qq(viz, rep = 20, showReps = T, CI = "none", a.qqpoi = list("shape" = 19), a.replin = list("alpha" = 0.2)))
+  # # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
+  # # tiff(tiff_filename, width = 800, height = 600)
+  # print(check(viz,
+  #             a.qq = list(method = "simul1"),
+  #             a.respoi = list(size = 0.5),
+  #             a.hist = list(bins = 10)))
+  # dev.off()
 }
 
 # Warnmeldungen:
