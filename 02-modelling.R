@@ -32,11 +32,11 @@ gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
 pred_df <- list()
-viz <- list()
 grid <- list()
 unique_method <- list()
 simulationOutput <- list()
 tiff_file_2  <- list()
+temp_data <- list()
 
 
 df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
@@ -58,20 +58,24 @@ for (i in species_list) {
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                       s(fProtocol, bs = 're'), family = binomial)
   
+  # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # residuals(simulationOutput)
-  # residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
-  # plot(simulationOutput)
-  # testDispersion(simulationOutput)
+  # Main plot function from DHARMa, which gives 
+  # Left: a qq-plot to detect overall deviations from the expected distribution
+  # Right: a plot of the residuals against the rank-transformed model predictions
   tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
   tiff(tiff_filename, width = 800, height = 600)
   print(plot(simulationOutput))
   dev.off()
-  tiff_file_2 <- paste("model_1/gam_check/dispersion_", i, ".tiff", sep = "")
+  # get rid of NAs in temp datat
+  temp_data <- data |> 
+    drop_na(mean_last_7days)
+  # Plotting standardized residuals against predictors
+  tiff_file_2 <- paste("model_1/gam_check/predictor_", i, ".tiff", sep = "")
   tiff(tiff_file_2, width = 800, height = 600)
-  print(testDispersion(simulationOutput))
+  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
   dev.off()
-  print(tidy(gam_output[[i]]))
+  print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
   model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
@@ -79,12 +83,12 @@ for (i in species_list) {
     mutate(fit = mean(fit)) |>
     mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
-              across(se.fit), across(fProtocol)) |> 
-    rename(temp = mean_last_7days) |> 
+              across(se.fit), across(fProtocol)) |>
+    rename(temp = mean_last_7days) |>
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
-  # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
+  derivatives[[i]] <- derivatives(gam_output[[i]])
+  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
 # no warnings!
@@ -126,7 +130,7 @@ total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s1
   rename(prediction = fit)
 
 #save all predictions as RDS
-saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
+# saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
 
 
 total_model_1_pred |> 
