@@ -46,6 +46,7 @@ grid <- list()
 unique_method <- list()
 simulationOutput <- list()
 tiff_file_2  <- list()
+temp_data <- list()
 
 
 df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
@@ -62,21 +63,25 @@ for (i in species_list) {
     fProtocol = unique_method$fProtocol)
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                            s(fProtocol, bs = 're'), family = ziP())
-
+  # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # residuals(simulationOutput)
-  # residuals(simulationOutput, quantileFunction = qnorm, outlierValues = c(-7,7))
-  # plot(simulationOutput)
-  # testDispersion(simulationOutput)
+  # Main plot function from DHARMa, which gives 
+  # Left: a qq-plot to detect overall deviations from the expected distribution
+  # Right: a plot of the residuals against the rank-transformed model predictions
   tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
   tiff(tiff_filename, width = 800, height = 600)
   print(plot(simulationOutput))
   dev.off()
-  tiff_file_2 <- paste("model_2/gam_check/dispersion_", i, ".tiff", sep = "")
+  # get rid of NAs in temp datat
+  temp_data <- data |> 
+    drop_na(mean_last_7days)
+  # Plotting standardized residuals against predictors
+  tiff_file_2 <- paste("model_2/gam_check/predictor_", i, ".tiff", sep = "")
   tiff(tiff_file_2, width = 800, height = 600)
-  print(testDispersion(simulationOutput))
+  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
   dev.off()
-  print(tidy(gam_output[[i]]))
+  print(glance(gam_output[[i]]))
+  
   model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
   model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
@@ -84,8 +89,8 @@ for (i in species_list) {
     mutate(fit = mean(fit)) |>
     mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
-              across(se.fit), across(fProtocol)) |> 
-    rename(temp = mean_last_7days) |> 
+              across(se.fit), across(fProtocol)) |>
+    rename(temp = mean_last_7days) |>
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_2/predictions/predictions_",i,".rds"))
   # derivatives[[i]] <- derivatives(gam_output[[i]])
@@ -124,70 +129,7 @@ total_model_2_pred |>
   scale_color_viridis(discrete=TRUE) 
 
 
-#negbin checking 25.10.
-#include
-"Alosa_agone" 
-"Coregonus_acrinasus" 
-"Cottus_sp_Po"
-"Coregonus_profundus" #tidy 0
-"Coregonus_zugensis" #tidy 0
-
-#exclude
-# "Cottus_gobio_Profundal_Lucerne" definitily exclude looks crazy
-# "Cottus_sp_Po_profundal" definitely exclude looks crazy
-# "Phoxinus_sp" definitely exclude looks crazy
-
-#ZIP checking
-#visual horror
-
-
-
-
-total_model_2_pred |> 
-  filter(species %in% c("Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po")) |> 
-  ggplot(aes(temp, prediction)) +
-  geom_line(aes(colour = species)) 
-
-#to do
-#work on zip
-
-#Coregonus_acrinasus  k = 3 works
-#coregonus profundus not working with k = 40, exclude from analysis I guess
-#phoxinus sp not working with k = 20
-
-#all working with k = 3 separately, except the two # ones
-"Alosa_agone"
-"Barbatula_sp_Lineage_II"       
-"Coregonus_acrinasus"
-# "Coregonus_profundus"  #not working           
-"Coregonus_zugensis"
-"Cottus_gobio_Profundal_Lucerne"
-"Cottus_gobio_Profundal_Thun"
-"Cottus_sp_Po"                  
-"Cottus_sp_Po_profundal"
-# "Phoxinus_sp" #not working          
-"Telestes_muticellus"
-
-#testing loop without those two species. stops at c-zugensis, works when excluding
-#c.profundus, phoxinus and c.zugensis
-#c.zugensis works with k = 7 but looks bad -> excldue
-
-
-#significant?
-
-"Alosa_agone" #s, visually ok
-# "Barbatula_sp_Lineage_II" #s, no good
-"Coregonus_acrinasus" #s, visually ok
-# "Cottus_gobio_Profundal_Lucerne" #s 0, no
-# "Cottus_gobio_Profundal_Thun" #ns, no
-"Cottus_sp_Po" #s, ok         
-# "Cottus_sp_Po_profundal"# s, no
-# "Telestes_muticellus" #ns, no
-
-
-#final: "Alosa_agone", "Coregonus_acrinasus", "Cottus_sp_Po"
-#double-check residuals etc
-
+# df for all species
 
 mean_se_model_2 <- total_model_2_pred |> 
   group_by(species) |> 
@@ -195,8 +137,6 @@ mean_se_model_2 <- total_model_2_pred |>
   mutate(max_se = max(se.fit)) |> 
   mutate(min_se = min(se.fit)) |> 
   distinct(mean_se, max_se, min_se)
-
-
 
 
 test2 <- df_abundance_gam |> 
