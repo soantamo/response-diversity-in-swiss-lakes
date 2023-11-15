@@ -10,6 +10,75 @@ library(broom)
 library(mgcViz)
 library(readxl)
 
+#four interesting dharma links
+# https://stats.stackexchange.com/questions/495823/residual-diagnostics-in-dharma-for-multilevel-logistic-regression
+# https://stats.stackexchange.com/questions/531749/interpretation-of-dharma-residuals-for-gamma-glmm
+# https://stats.stackexchange.com/questions/478369/generalised-linear-mixed-model-diagnostics-using-dharma
+# https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html#general-remarks-on-interperting-residual-patterns-and-tests
+
+
+
+#predictions for all species
+
+mod_1_pred <- readRDS("total_models/pred_model_1_total")
+mod_2_pred <- readRDS("total_models/pred_model_2_total")
+mod_3_pred <- readRDS("total_models/pred_model_3_total")
+mod_4_pred <- readRDS("total_models/pred_model_4_total")
+
+total_model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
+  select(-fProtocol)
+
+# derivatives for all species
+
+mod_1_deriv <- readRDS("total_models/deriv_model_1_total")
+mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
+mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
+mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
+
+total_model_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
+
+
+
+#filter predictions in succesful models
+
+successful_models <- read_excel("model_1/model_success_final.xlsx")
+table(successful_models$model_success)
+
+
+success_list <- successful_models |> 
+  filter(model_success == 1) |> 
+  distinct(species) |> 
+  pull(species)
+
+success_model_predictions <- total_model_predictions |> 
+  filter(species %in% success_list)
+
+
+success_model_predictions |> 
+  ggplot(aes(temp, fit, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~species) +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = "none")
+
+
+# next steps:
+# make dfs of derivatives per lake
+# 0. filter derivatives total into successful species
+# 1. loop for (i in lakes_list){
+# data <- total_derivatives |> 
+# filter(fLake == i)
+# }
+# 2. we need to only use the temp data that is occuring in this lake ->
+# min() and max() from e.g. df_final as second filter, filter temp
+# 3. use Ross function to calculate response diversity for every lake
+# 4. we need a overview table across all species and number of lakes
+
+
+
+#############################################################################3
 
 #model overview table
 # 
@@ -33,7 +102,7 @@ library(readxl)
 # dont redo
 # write_xlsx(total_summary, "model_1/total_summary_table_ver2.xlsx")
 
-total_summary_table <- read_excel("model_1/total_summary_table_ver2.xlsx")
+# total_summary_table <- read_excel("model_1/total_summary_table_ver2.xlsx")
 
 #make summary of summary 
 #sum total successful models and se for those
