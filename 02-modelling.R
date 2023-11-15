@@ -17,12 +17,6 @@ df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
-  # filter(Species %in% c("Coregonus_confusus", "Coregonus_litoralis",
-  #                       "Coregonus_macrophthalmus", "Coregonus_wartmanni",
-  #                       "Coregonus_zuerichensis", "Salmo_sp_Blackspot",
-  #                       "Salvelinus_sp_Profundal_Walen_I", "Coregonus_candidus",
-  #                       "Coregonus_helveticus"
-  # )) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -87,54 +81,20 @@ for (i in species_list) {
     rename(temp = mean_last_7days) |>
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
 # no warnings!
 
+# predictions df
+df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
 
-s1 <- readRDS("model_1/predictions/predictions_Alosa_fallax.rds")
-s2 <- readRDS("model_1/predictions/predictions_Chondrostoma_nasus.rds")
-s3 <- readRDS("model_1/predictions/predictions_Chondrostoma_soetta.rds")
-s4 <- readRDS("model_1/predictions/predictions_Coregonus_arenicolus.rds")
-s5 <- readRDS("model_1/predictions/predictions_Coregonus_candidus.rds")
-s6 <- readRDS("model_1/predictions/predictions_Coregonus_confusus.rds")
-s7 <- readRDS("model_1/predictions/predictions_Coregonus_heglingus.rds")
-s8 <- readRDS("model_1/predictions/predictions_Coregonus_helveticus.rds")
-s9 <- readRDS("model_1/predictions/predictions_Coregonus_intermundia.rds")
-s10 <- readRDS("model_1/predictions/predictions_Coregonus_litoralis.rds")
-s11 <- readRDS("model_1/predictions/predictions_Coregonus_macrophthalmus.rds")
-s12 <- readRDS("model_1/predictions/predictions_Coregonus_wartmanni.rds")
-s13 <- readRDS("model_1/predictions/predictions_Coregonus_zuerichensis.rds")
-s14 <- readRDS("model_1/predictions/predictions_Cottus_gobio_Profundal_Walen.rds")
-s15 <- readRDS("model_1/predictions/predictions_Gasterosteus_gymnurus.rds")
-s16 <- readRDS("model_1/predictions/predictions_Rutilus_aula.rds")
-s17 <- readRDS("model_1/predictions/predictions_Salaria_fluviatilis_French.rds")
-s18 <- readRDS("model_1/predictions/predictions_Salmo_labrax.rds")
-s19 <- readRDS("model_1/predictions/predictions_Salmo_sp_Blackspot.rds")
-s20 <- readRDS("model_1/predictions/predictions_Salmo_sp.rds")
-s21 <- readRDS("model_1/predictions/predictions_Salvelinus_namaycush.rds")
-s22 <- readRDS("model_1/predictions/predictions_Salvelinus_profundus.rds")
-s23 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Limnetic_Thun.rds")
-s24 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_Thun.rds")
-s25 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_dwarf_VWS.rds")
-s26 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_extreme_Thun.rds")
-s27 <- readRDS("model_1/predictions/predictions_Salvelinus_sp_Profundal_Walen_I.rds")
-s28 <- readRDS("model_1/predictions/predictions_Coregonus_duplex.rds")
-s29 <- readRDS("model_1/predictions/predictions_Salmo_marmoratus.rds")
-
-total_model_1_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
-                                s13, s14, s15, s16, s17, s18, s19, s20, s21, s22, s23,
-                                s24, s25, s26, s27, s28, s29) |> 
-  rename(prediction = fit)
-
-#save all predictions as RDS
-# saveRDS(total_model_1_pred, "total_models/total_model_1_pred")
+# save total derivatives as RDS
+# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
-total_model_1_pred |> 
-  ggplot(aes(temp, prediction, color = factor(species))) +
+df_pred_mod1 |> 
+  ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
@@ -143,17 +103,48 @@ total_model_1_pred |>
   scale_color_viridis(discrete=TRUE) 
 
 
-#new selection: 10.11.23
-# library(readxl)
-# model_1_selection <- read_excel("model_1/model_selection.xlsx")
-# 
-# library(gt)
-# 
-# model_1_selection |> 
-#   select(-model_type) |> 
-#   arrange(species) |> 
-#   gt() |>
-#   tab_header(title = "All models")
+
+###################derivatives
+
+
+species_list <- df_binomial_gam |> 
+  distinct(Species) |> 
+  pull(Species)
+
+species_list <- sort(species_list)
+
+
+df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
+str(df_binomial_gam)
+
+#make new loop
+
+derivatives <- list()
+gam_output <- list()
+
+for (i in species_list) {
+  data <- df_binomial_gam |> 
+    filter(Species == i)
+  lake <- pull(data, Lake)
+  length(lake) <- 200
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = binomial)
+  derivatives[[i]] <- derivatives(gam_output[[i]]) |> 
+    mutate(fLake = factor(lake)) |> 
+    mutate(species = factor(i)) |> 
+    rename(temp = data)
+  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
+}
+
+
+# derivatives
+#prepare total df for derivatives
+
+df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+# saveRDS(df_deriv_mod2, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
 
