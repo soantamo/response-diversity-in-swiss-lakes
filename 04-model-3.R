@@ -26,15 +26,6 @@ df_binomial_re |>
 #adding the manual margin effect calculation
 
 species_list <- df_binomial_re |> 
-  # filter(Species %in% c( "Ameiurus_melas", "Cobitis_bilineata", "Cottus_gobio_Aare_littoral",
-  #                        "Esox_lucius", "Squalius_cephalus", "Salvelinus_umbla",
-  #                        "Cottus_gobio_unknownlineage", "Coregonus_palaea", "Cottus_gobio_Rhine",
-  #                        "Coregonus_brienzii"
-  # )) |> 
-  # # filter(Species %in% c("Ameiurus_melas", "Cobitis_bilineata","Cottus_gobio_Aare_littoral"
-  # #                       # "Esox_lucius", "Barbus_barbus", "Coregonus_brienzii", "Cottus_gobio_Rhine", 
-  # #                       # "Silurus_glanis", "Squalius_squalus"
-  # #                       )) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -100,50 +91,76 @@ for (i in species_list) {
     #with across() we can retain our column for se.fit
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_3/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_3/derivatives/derivatives_", i, ".rds"))
 }
 
-#how can I check all the models easily??? some do not look good
-# checking out all plots
-#one big data frame and using facet_wrap
+
+# predictions df
 
 
-s1 <- readRDS("model_3/predictions/predictions_Ameiurus_melas.rds")
-s2 <- readRDS("model_3/predictions/predictions_Barbus_barbus.rds")
-s3 <- readRDS("model_3/predictions/predictions_Carassius_gibelio.rds")
-s4 <- readRDS("model_3/predictions/predictions_Cobitis_bilineata.rds")
-s5 <- readRDS("model_3/predictions/predictions_Coregonus_alpinus.rds")
-s6 <- readRDS("model_3/predictions/predictions_Coregonus_brienzii.rds")
-s7 <- readRDS("model_3/predictions/predictions_Coregonus_palaea.rds")
-s8 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Aare_littoral.rds")
-s9 <- readRDS("model_3/predictions/predictions_Cottus_gobio_Rhine.rds")
-s10 <- readRDS("model_3/predictions/predictions_Cottus_gobio_unknownlineage.rds")
-s11 <- readRDS("model_3/predictions/predictions_Esox_cisalpinus.rds")
-s12 <- readRDS("model_3/predictions/predictions_Esox_lucius.rds")
-s13 <- readRDS("model_3/predictions/predictions_Micropterus_salmoides.rds")
-s14 <- readRDS("model_3/predictions/predictions_Salvelinus_umbla.rds")
-s15 <- readRDS("model_3/predictions/predictions_Silurus_glanis.rds")
-s16 <- readRDS("model_3/predictions/predictions_Squalius_cephalus.rds")
-s17 <- readRDS("model_3/predictions/predictions_Squalius_squalus.rds")
-s18 <- readRDS("model_3/predictions/predictions_Thymallus_thymallus.rds")
+df_pred_mod3 <- list.files(path = "model_3/predictions", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+# saveRDS(df_pred_mod3, "total_models/pred_model_3_total")
 
 
-total_model_3_pred <- bind_rows(s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11, s12,
-                                s13, s14, s15, s16, s17, s18) |> 
-  rename(prediction = fit)
 
-#save all predictions as RDS
-# saveRDS(total_model_3_pred, "total_models/total_model_3_pred")
-
-total_model_3_pred |> 
-  ggplot(aes(temp, prediction, color = factor(species))) +
+df_pred_mod3 |> 
+  ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species) +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE) 
+
+
+
+###################derivatives
+
+
+species_list <- df_binomial_re |> 
+  distinct(Species) |> 
+  pull(Species)
+
+species_list <- sort(species_list)
+
+
+df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
+df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
+
+str(df_binomial_re)
+
+# we need to get the derivatives for every lake
+
+derivatives <- list()
+gam_output <- list()
+
+for (i in species_list) {
+  data <- df_binomial_re |> 
+    filter(Species == i)
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = "re")
+                    + s(fProtocol, bs = 're'), family = binomial)
+  lake_list <- distinct(data, Lake) |> 
+    pull()
+  for (j in lake_list){
+    derivatives <- derivatives(gam_output[[i]]) |> 
+      mutate(fLake = factor(j)) |>
+      mutate(species = factor(i)) |>
+      rename(temp = data)
+    saveRDS(derivatives, paste0("model_3/derivatives/derivatives_", i, "_",  j, ".rds"))
+  }
+}
+
+#prepare total df for derivatives
+
+df_deriv_mod3 <- list.files(path = "model_3/derivatives", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
+
+
 
 #prepare for all df
 mean_se_model_3 <- total_model_3_pred |> 
