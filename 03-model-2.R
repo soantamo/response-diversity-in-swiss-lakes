@@ -15,10 +15,12 @@ library(DHARMa)
 
 #read df
 df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
+df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
 
 table(df_abundance_gam$Abundance) 
 str(df_abundance_gam)
 head(df_abundance_gam)
+
 
 
 #####Loop Model 2 ######
@@ -41,7 +43,6 @@ gam_output <- list()
 model_prediction <- list()
 derivatives <- list()
 pred_df <- list()
-viz <- list()
 grid <- list()
 unique_method <- list()
 simulationOutput <- list()
@@ -97,30 +98,77 @@ for (i in species_list) {
   # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
+# predictions df
+
+df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+# saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
 
-s1 <- readRDS("model_2/predictions/predictions_Barbatula_sp_Lineage_II.rds")
-s2 <- readRDS("model_2/predictions/predictions_Coregonus_acrinasus.rds")
-# s3 <- readRDS("model_2/predictions/predictions_Coregonus_profundus.rds")
-# s4 <- readRDS("model_2/predictions/predictions_Coregonus_zugensis.rds")
-s5 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Lucerne.rds")
-s6 <- readRDS("model_2/predictions/predictions_Cottus_gobio_Profundal_Thun.rds")
-s7 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po_profundal.rds")
-# s8 <- readRDS("model_2/predictions/predictions_Phoxinus_sp.rds")
-s9 <- readRDS("model_2/predictions/predictions_Telestes_muticellus.rds")
-s10 <- readRDS("model_2/predictions/predictions_Alosa_agone.rds")
-s11 <- readRDS("model_2/predictions/predictions_Cottus_sp_Po.rds")
-
-total_model_2_pred <- bind_rows(s1, s2, s5, s6, s7, s9, s10, s11) |> 
-  rename(prediction = fit) 
-
-#save all predictions as RDS
-# saveRDS(total_model_2_pred, "total_models/total_model_2_pred")
+###################derivatives
 
 
+species_list <- df_abundance_gam |>
+  filter(!Species %in% c("Coregonus_profundus",
+                         "Phoxinus_sp", "Coregonus_zugensis")) |>
+  distinct(Species) |> 
+  pull(Species)
 
-total_model_2_pred |> 
-  ggplot(aes(temp, prediction, color = factor(species))) +
+species_list <- sort(species_list)
+
+str(df_abundance_gam)
+
+#make new loop
+
+derivatives <- list()
+gam_output <- list()
+
+for (i in species_list) {
+  data <- df_abundance_gam |> 
+    filter(Species == i)
+  lake <- pull(data, Lake)
+  length(lake) <- 200
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = ziP())
+  derivatives[[i]] <- derivatives(gam_output[[i]]) |> 
+    mutate(fLake = factor(lake)) |> 
+    mutate(species = factor(i)) |> 
+    rename(temp = data)
+  saveRDS(derivatives[[i]], paste0("model_2/derivatives/derivatives_", i, ".rds"))
+}
+
+
+# derivatives
+
+#prepare total df for derivatives
+
+df_deriv_mod2 <- list.files(path = "model_2/derivatives", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+# saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
+
+
+# more lengthy
+
+# datalist <- list()
+# 
+# for (i in species_list){
+#   deriv <- readRDS(paste0("model_2/derivatives/derivatives_", i, ".rds"))
+#   datalist[[i]] <- deriv
+# }
+# 
+# df_deriv_mod2 = do.call(rbind, datalist)
+
+# save total derivatives as RDS
+# saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
+
+
+df_deriv_mod2 |> 
+  filter(species %in% c("Alosa_agone", "Cottus_sp_Po", "Coregonus_acrinasus")) |> 
+  ggplot(aes(temp, derivative, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
@@ -131,32 +179,32 @@ total_model_2_pred |>
 
 # df for all species
 
-mean_se_model_2 <- total_model_2_pred |> 
-  group_by(species) |> 
-  mutate(mean_se = mean(se.fit)) |> 
-  mutate(max_se = max(se.fit)) |> 
-  mutate(min_se = min(se.fit)) |> 
-  distinct(mean_se, max_se, min_se)
-
-
-test2 <- df_abundance_gam |> 
-  group_by(Species) |> 
-  mutate(total_abundance = sum(Abundance), 
-         observation_0 = sum(Abundance == 0)) |> 
-  distinct(total_abundance, observation_0) |> 
-  rename(species = Species) |> 
-  mutate(n_lake = factor("1"))
-
-#double check if all occur in one
-# n_lake <- df_abundance_gam |> 
-#   group_by(Lake, Species) |> 
-#   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
-#   filter(TotalAbundance > 1) |> 
+# mean_se_model_2 <- total_model_2_pred |> 
+#   group_by(species) |> 
+#   mutate(mean_se = mean(se.fit)) |> 
+#   mutate(max_se = max(se.fit)) |> 
+#   mutate(min_se = min(se.fit)) |> 
+#   distinct(mean_se, max_se, min_se)
+# 
+# 
+# test2 <- df_abundance_gam |> 
 #   group_by(Species) |> 
-#   summarize(n_lake = n_distinct(Lake)) |> 
-#   rename(species = Species)
-
-bind_2 <- merge(mean_se_model_2, test2)
-
-saveRDS(bind_2, "model_2/bind_2.rds")
+#   mutate(total_abundance = sum(Abundance), 
+#          observation_0 = sum(Abundance == 0)) |> 
+#   distinct(total_abundance, observation_0) |> 
+#   rename(species = Species) |> 
+#   mutate(n_lake = factor("1"))
+# 
+# #double check if all occur in one
+# # n_lake <- df_abundance_gam |> 
+# #   group_by(Lake, Species) |> 
+# #   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
+# #   filter(TotalAbundance > 1) |> 
+# #   group_by(Species) |> 
+# #   summarize(n_lake = n_distinct(Lake)) |> 
+# #   rename(species = Species)
+# 
+# bind_2 <- merge(mean_se_model_2, test2)
+# 
+# saveRDS(bind_2, "model_2/bind_2.rds")
 
