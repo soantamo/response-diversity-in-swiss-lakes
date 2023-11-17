@@ -83,7 +83,9 @@ for (i in species_list) {
   saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
 }
 
-# no warnings!
+# warning for "Gasterosteus_gymnurus" 
+# 16: In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS,  ... :
+#                 Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig pr
 
 # predictions df
 df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
@@ -98,7 +100,7 @@ df_pred_mod1 |>
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
-  facet_wrap(~species) +
+  facet_wrap(~species, scales = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE) 
 
@@ -107,6 +109,8 @@ df_pred_mod1 |>
 ###################derivatives
 
 
+########################## some problem with the derivatives, try this
+
 species_list <- df_binomial_gam |> 
   distinct(Species) |> 
   pull(Species)
@@ -114,10 +118,12 @@ species_list <- df_binomial_gam |>
 species_list <- sort(species_list)
 
 
+df_binomial_gam$fLake <- as.factor(df_binomial_gam$Lake)
 df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
+
 str(df_binomial_gam)
 
-#make new loop
+# we need to get the derivatives for every lake
 
 derivatives <- list()
 gam_output <- list()
@@ -125,26 +131,46 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_binomial_gam |> 
     filter(Species == i)
-  lake <- pull(data, Lake)
-  length(lake) <- 200
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = binomial)
-  derivatives[[i]] <- derivatives(gam_output[[i]]) |> 
-    mutate(fLake = factor(lake)) |> 
-    mutate(species = factor(i)) |> 
-    rename(temp = data)
-  saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
+  lake_list <- distinct(data, Lake) |> 
+    pull()
+  for (j in lake_list){
+    
+    data_lake <- df_binomial_gam |> 
+      filter(fLake == j)
+    
+    unique_lakes <- distinct(data_lake, fLake)
+    unique_protocol <- distinct(data_lake, fProtocol)
+    
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$mean_last_7days, na.rm = TRUE),
+      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+    
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+      mutate(fLake = factor(j)) |>
+      mutate(species = factor(i)) |>
+      rename(temp = data)
+    saveRDS(derivatives, paste0("model_1/derivatives/derivatives_", i, "_",  j, ".rds"))
+  }
 }
 
+# again Warnmeldung:
+# In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,  :
+#             Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig prüfen
+# probably for gasterosteus gymnurus
 
-# derivatives
+# df_binomial_gam |> 
+#   filter(Species == "Salmo_marmoratus") |> 
+#   group_by(Lake) |> 
+#   summarize(observations = sum(Abundance))
 #prepare total df for derivatives
 
 df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_deriv_mod2, "total_models/deriv_model_1_total")
+saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
 
