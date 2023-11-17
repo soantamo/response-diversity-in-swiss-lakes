@@ -16,6 +16,7 @@ library(DHARMa)
 #read df
 df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
 df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
+df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
 
 table(df_abundance_gam$Abundance) 
 str(df_abundance_gam)
@@ -106,11 +107,22 @@ df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.
 # save total derivatives as RDS
 # saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
+df_pred_mod2 |> 
+  ggplot(aes(temp, fit, color = factor(species))) +
+  geom_line() +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~species, scales = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE) 
+
+
 
 ###################derivatives
 
+########################## some problem with the derivatives, try this
 
-species_list <- df_abundance_gam |>
+species_list <- df_abundance_gam |> 
   filter(!Species %in% c("Coregonus_profundus",
                          "Phoxinus_sp", "Coregonus_zugensis")) |>
   distinct(Species) |> 
@@ -118,9 +130,13 @@ species_list <- df_abundance_gam |>
 
 species_list <- sort(species_list)
 
+
+df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
+df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
+
 str(df_abundance_gam)
 
-#make new loop
+# we need to get the derivatives for every lake
 
 derivatives <- list()
 gam_output <- list()
@@ -128,42 +144,38 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_abundance_gam |> 
     filter(Species == i)
-  lake <- pull(data, Lake)
-  length(lake) <- 200
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = ziP())
-  derivatives[[i]] <- derivatives(gam_output[[i]]) |> 
-    mutate(fLake = factor(lake)) |> 
-    mutate(species = factor(i)) |> 
-    rename(temp = data)
-  saveRDS(derivatives[[i]], paste0("model_2/derivatives/derivatives_", i, ".rds"))
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = ziP())
+  lake_list <- distinct(data, Lake) |> 
+    pull()
+  for (j in lake_list){
+    data_lake <- df_abundance_gam |> 
+      filter(fLake == j)
+    
+    unique_lakes <- distinct(data_lake, fLake)
+    unique_protocol <- distinct(data_lake, fProtocol)
+    
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$mean_last_7days, na.rm = TRUE),
+      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+    
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+      mutate(fLake = factor(j)) |>
+      mutate(species = factor(i)) |>
+      rename(temp = data)
+    saveRDS(derivatives, paste0("model_2/derivatives/derivatives_", i, "_",  j, ".rds"))
+  }
 }
 
-
-# derivatives
 
 #prepare total df for derivatives
 
 df_deriv_mod2 <- list.files(path = "model_2/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
-# save total derivatives as RDS
-# saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
-
-
-# more lengthy
-
-# datalist <- list()
-# 
-# for (i in species_list){
-#   deriv <- readRDS(paste0("model_2/derivatives/derivatives_", i, ".rds"))
-#   datalist[[i]] <- deriv
-# }
-# 
-# df_deriv_mod2 = do.call(rbind, datalist)
 
 # save total derivatives as RDS
-# saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
+#saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
 
 
 df_deriv_mod2 |> 
