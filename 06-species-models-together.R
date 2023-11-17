@@ -10,6 +10,12 @@ library(broom)
 library(mgcViz)
 library(readxl)
 
+source(here("functions.R"))
+
+# the filtering of the dfs is not working
+# some problem with the type of df. when you change it to a tibble and innerjoin with
+# success lsit -> works
+
 #four interesting dharma links
 # https://stats.stackexchange.com/questions/495823/residual-diagnostics-in-dharma-for-multilevel-logistic-regression
 # https://stats.stackexchange.com/questions/531749/interpretation-of-dharma-residuals-for-gamma-glmm
@@ -28,16 +34,9 @@ mod_4_pred <- readRDS("total_models/pred_model_4_total")
 total_model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
   select(-fProtocol)
 
-# derivatives for all species
+test <- as_tibble(total_model_predictions)
 
-mod_1_deriv <- readRDS("total_models/deriv_model_1_total")
-mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
-mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
-mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
-
-total_model_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
-
-
+test$species <- as.factor(test$species)
 
 #filter predictions in succesful models
 
@@ -46,22 +45,25 @@ table(successful_models$model_success)
 
 
 success_list <- successful_models |> 
-  filter(model_success == 1) |> 
-  distinct(species) |> 
-  pull(species)
+  filter(model_success == 1) 
 
-success_model_predictions <- total_model_predictions |> 
-  filter(species %in% success_list)
 
+test2 <- test |> 
+  inner_join(success_list)
+
+
+# at least now it is filtered! continue monday 
+str(test2)
+test2$species <- as.factor(test2$species)
 
 success_model_predictions |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
-  facet_wrap(~species) +
+  facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = "none")
+  scale_color_viridis(discrete=TRUE, guide = NULL)
 
 
 # next steps:
@@ -76,6 +78,111 @@ success_model_predictions |>
 # 3. use Ross function to calculate response diversity for every lake
 # 4. we need a overview table across all species and number of lakes
 
+
+# derivatives for all species
+
+mod_1_deriv <- readRDS("total_models/deriv_model_1_total")
+mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
+mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
+mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
+
+#filter predictions in succesful models
+# something is very off with these dataframes, I cannnot filter them
+# all species are coming
+# it is not a tibble!!
+
+
+successful_models <- read_excel("model_1/model_success_final.xlsx")
+table(successful_models$model_success)
+
+
+success_list <- successful_models |> 
+  filter(model_success == 1) 
+
+
+
+total_model_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
+test <- total_model_derivatives |> 
+  inner_join(success_list)
+
+levels(total_model_derivatives$species)
+
+test <- subset(total_model_derivatives, species %in% success_list)
+
+test <- total_model_derivatives |> 
+  filter(species == "Salmo_trutta")
+
+str(test)
+# filtering is not workign apparently 
+
+str(total_model_derivatives)
+
+total_model_derivatives |> 
+  filter(fLake == )
+
+# list of all lakes
+lakes_list <- total_model_derivatives |> 
+  filter(!fLake == "Maggiore") |> 
+  distinct(fLake) |> 
+  pull(fLake)
+
+sort(lakes_list)
+
+# loop to get response diversity measures for each lake 
+
+for (i in lakes_list){
+  data <- total_model_derivatives |> 
+    filter(fLake == i)
+  # would be nice to get a tibble for each Lake and number of species
+  # number_species <- data |> 
+  #   distinct(species) |> 
+  #   count()
+  # 
+  # print(number_species)
+  # problem: not all species have the same temp values, we need this. solved
+  
+  df_resp_div[[i]] <- data |> 
+    # select(temp, derivative, species, fLake) |> 
+    select(temp, fLake, derivative, species) |> 
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+
+  
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
+  
+}
+
+# maggiore is not working and it looks strnage
+
+
+resp_div_all_models <- list.files(path = "total_models/lakes", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS)
+
+str(resp_div_all_models)
+
+test <- resp_div_all_models |> 
+  filter(fLake == "Maggiore")
+
+levels(resp_div_all_models$fLake)
+# save total derivatives as RDS
+#saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
+
+resp_div_all_models |> 
+  ggplot(aes(x = temp, y = rdiv)) +
+  # geom_line(aes (y = Med))
+  geom_line() +
+  facet_wrap(~fLake)
+
+
+resp_div_all_models |> 
+  ggplot(aes(x = temp, y = sign)) +
+  # geom_line(aes (y = Med))
+  geom_line() +
+  facet_wrap(~fLake)
 
 
 #############################################################################3
