@@ -143,8 +143,21 @@ for (i in species_list) {
                     + s(fProtocol, bs = 're'), family = binomial)
   lake_list <- distinct(data, Lake) |> 
     pull()
+  
   for (j in lake_list){
-    derivatives <- derivatives(gam_output[[i]]) |> 
+    
+    data_lake <- df_binomial_re |> 
+      filter(fLake == j)
+    
+    unique_lakes <- distinct(data_lake, fLake)
+    unique_protocol <- distinct(data_lake, fProtocol)
+    
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$mean_last_7days, na.rm = TRUE),
+      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
@@ -160,6 +173,10 @@ df_deriv_mod3 <- list.files(path = "model_3/derivatives", pattern = ".rds", full
 # save total derivatives as RDS
 saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
 
+test2 <- df_deriv_mod3 |> 
+  filter(fLake ==  "Biel") |> 
+  select(temp, derivative, species) |> 
+  pivot_wider(values_from = derivative, names_from = species)
 
 
 #prepare for all df
