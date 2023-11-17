@@ -103,16 +103,28 @@ df_bi <- df_models |>
 
 #add  #Coregonus_duplex and Salmo_marmormatus
 
-model_1 <- df_models |> 
-  filter(Species %in% c("Coregonus_duplex", "Salmo_marmoratus"))
+overview <- df_models |>  
+  filter(Species %in% c("Coregonus_duplex", "Salmo_marmoratus")) |> 
+  group_by(Species, Lake, Abundance) |> 
+  summarize(abu = sum(Abundance))
 
-df_binomial_gam <- bind_rows(df_bi, model_1)
+# only lake with > 1 observation
+coregonus_duplex <- df_models |>
+  filter(Species == "Coregonus_duplex") |> 
+  filter(Lake == "Zurich")
+
+salmo_marmo <- df_models |> 
+  filter(Species == "Salmo_marmoratus") |> 
+  filter(Lake == "Poschiavo")
+  
+
+df_binomial_gam <- bind_rows(df_bi, coregonus_duplex, salmo_marmo)
 
 df_binomial_gam |> 
   distinct(Species) |> 
   pull(Species)
 
-#saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
+# saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
 #gam without re -> zip probably
 abu_one_occurence <- df_models |> 
@@ -128,16 +140,29 @@ df_abu <- df_models |>
 
 #Alosa_agone and  "Cottus_sp_Po" need to go to model 2
 
-model_2 <- df_models |> 
-  filter(Species %in% c("Alosa_agone", "Cottus_sp_Po"))
+overview2 <- df_models |> 
+  filter(Species %in% c("Alosa_agone", "Cottus_sp_Po")) |> 
+  group_by(Species, Lake, Abundance) |> 
+  summarize(abu = sum(Abundance))
 
-df_abundance_gam <- bind_rows(df_abu, model_2)
+
+# only lake with > 1 observation
+alosa_agone <- df_models |>
+  filter(Species == "Alosa_agone") |> 
+  filter(Lake == "Maggiore")
+
+cottus_sp_po <- df_models |> 
+  filter(Species == "Cottus_sp_Po") |> 
+  filter(Lake == "Poschiavo")
+
+
+df_abundance_gam <- bind_rows(df_abu, alosa_agone, cottus_sp_po)
 
 df_abundance_gam |> 
   distinct(Species) |> 
   pull(Species)
 
-#saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
+# saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
 
 #binomial vs. abundance species occuring in several lakes
 
