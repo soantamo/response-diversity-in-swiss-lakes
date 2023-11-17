@@ -162,7 +162,7 @@ df_pred_mod4 |>
 
 
 species_list <- df_abundance_re |> 
-  filter(!Species == "Lota_lota") |> 
+  filter(Species == "Lota_lota") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -184,20 +184,34 @@ for (i in species_list) {
     filter(Species == i)
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = ziP())
-  #lota_lota
+  # lota_lota
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
   # +  s(fProtocol, bs = 're'), family = ziP())
   
   lake_list <- distinct(data, Lake) |> 
     pull()
+  
   for (j in lake_list){
-    derivatives <- derivatives(gam_output[[i]]) |> 
+    
+   data_lake <- df_abundance_re |> 
+      filter(fLake == j)
+    
+    unique_lakes <- distinct(data_lake, fLake)
+    unique_protocol <- distinct(data_lake, fProtocol)
+    
+     newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$mean_last_7days, na.rm = TRUE),
+      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+    
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
     saveRDS(derivatives, paste0("model_4/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
+
 
 #prepare total df for derivatives
 
@@ -206,6 +220,18 @@ df_deriv_mod4 <- list.files(path = "model_4/derivatives", pattern = ".rds", full
 
 # save total derivatives as RDS
 # saveRDS(df_deriv_mod4, "total_models/deriv_model_4_total")
+
+
+# should work now!! do for all other models
+test2 <- df_deriv_mod4 |> 
+  filter(fLake ==  "Joux") |> 
+  select(temp, derivative, species) |> 
+  pivot_wider(values_from = derivative, names_from = species)
+
+test_species <- df_deriv_mod4 |> 
+  filter(species ==  "Barbatula_sp_Lineage_I") |> 
+  select(derivative, fLake) |> 
+  pivot_wider(values_from = derivative, names_from = fLake)
 
 
 
