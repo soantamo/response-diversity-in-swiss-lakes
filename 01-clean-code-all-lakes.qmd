@@ -157,6 +157,7 @@ for (i in small_lakes){
   for (j in deriv_lakes){
     # print(predictions_test)
     deriv[[j]] <- readRDS(paste0(path_deriv,"/", j))
+    deriv <- readRDS("test_deriv_abu_small/derivatives_Biel_Abramis_brama.rds")
     df_deriv <- deriv |>
       bind_rows(.id ="id") |>
       rename(Species = id) |> 
@@ -204,7 +205,7 @@ for (i in small_lakes){
     df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
     df_resp_div$sign <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = T)
     df_resp_div$Med <- median(df_resp_div$rdiv)
-    saveRDS(df_resp_div, paste0("test_df_resp/df_resp_div_", i, ".rds"))
+    #saveRDS(df_resp_div, paste0("test_df_resp/df_resp_div_", i, ".rds"))
   }
 }
 

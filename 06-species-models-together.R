@@ -34,6 +34,7 @@ mod_4_pred <- readRDS("total_models/pred_model_4_total")
 total_model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
   select(-fProtocol)
 
+
 test <- as_tibble(total_model_predictions)
 
 test$species <- as.factor(test$species)
@@ -86,6 +87,7 @@ mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
 mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
 mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
 
+
 #filter predictions in succesful models
 # something is very off with these dataframes, I cannnot filter them
 # all species are coming
@@ -134,24 +136,23 @@ species_overview <- tibble()
 
 
 for (i in lakes_list){
+  
   data <- total_model_derivatives |>
     select(temp, fLake, derivative, species) |> 
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
   
-  number_species <- data |>
-    group_by(fLake) |> 
-    mutate(sum_species = n_distinct(species)) |> 
-    group_by(fLake, species, sum_species) |> 
-    distinct(species) |> 
-    relocate(sum_species, .after = species) 
-  
+  number_species <- data |> 
+    group_by(fLake) |>
+    mutate(sum_species = n_distinct(species)) |>
+    group_by(fLake, species, sum_species) |>
+    distinct(species) |>
+    relocate(sum_species, .after = species)
+
   species_overview <- bind_rows(species_overview, number_species)
 
-  # print(number_species)
-  # problem: not all species have the same temp values, we need this. solved
   
-  # df_resp_div <- data |> 
+  # df_resp_div <- data |>
   #   pivot_wider(
   #     names_from = species,
   #     values_from = derivative)
@@ -161,58 +162,42 @@ for (i in lakes_list){
   # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
   # df_resp_div$Med <- median(df_resp_div$rdiv)
   # saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
-  
+  # 
 }
 
 
-# prepare for a tibble with the number of lakes and species caught
+# prepare for a tibble with the numvber of observations
+# join species_overview from loop with number of observations of species per lake
 
-data <- total_model_derivatives |>
-  select(temp, fLake, derivative, species) |>
-  filter(fLake == "Biel")
+df_final <- readRDS("df_final.rds")
 
-number_species <- data |>
-  group_by(fLake) |> 
-  mutate(sum_species = n_distinct(species)) |> 
-  group_by(fLake, species, sum_species) |> 
-  distinct(species) |> 
-  relocate(sum_species, .after = species)
+df_success <- df_final |> 
+  select(Presence, Species, Lake) |> 
+  rename(fLake = Lake, species = Species) |> 
+  inner_join(success_list)
 
+str(df_success)
+df_success |> distinct(species) #60 species
 
-
-
-
-
-# maggiore is not working!!! Thymallus_thymallus is the problem!! Thymallus should not be 
-# here, somehow thymallus thymallus sneaked into the model3
-data <- total_model_derivatives |>
-  select(temp, fLake, derivative, species) |> 
-  filter(fLake == "Maggiore") |> 
-  filter(!species == "Thymallus_thymallus")
-
-min(data$temp)
-max(data$temp)
-
-# no NAs there
-
-df_resp_div <- data |> 
-  pivot_wider(
-    names_from = species,
-    values_from = derivative)
+df_success_min_1 <- df_success |> 
+  select(-model_success) |>  
+  group_by(species, fLake) |>
+  mutate(n_observations = sum(Presence)) |> 
+  distinct(n_observations) |> 
+  filter(!n_observations == 1)
 
 
+# merge df_success and species_overview
 
-resp_div_all_models <- list.files(path = "total_models/lakes", pattern = ".rds", full.names = TRUE) |>
-  map_dfr(readRDS)
+overview_obs <- merge(df_success_min_1, species_overview)
 
-str(resp_div_all_models)
+library(gt)
 
-# 
-# df_resp_div_all_models <- resp_div_all_models |> 
-#   relocate(c(rdiv, sign, Med), .after = fLake) 
-  # pivot_longer(cols = Coregonus_confusus:Coregonus_zuerichensis, names_to = "species", values_to = "derivative") 
-
-
+overview_obs |> 
+  select(species, mean_se, max_se, min_se, total_abundance, n_lake, success) |> 
+  arrange(species) |> 
+  gt() |>
+  tab_header(title = "All models")
 
 
 resp_div_all_models |> 
