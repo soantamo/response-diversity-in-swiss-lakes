@@ -23,7 +23,6 @@ str(df_abundance_gam)
 head(df_abundance_gam)
 
 
-
 #####Loop Model 2 ######
 
 #ZIP not working in those three species
@@ -95,8 +94,6 @@ for (i in species_list) {
     rename(temp = mean_last_7days) |>
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_2/predictions/predictions_",i,".rds"))
-  # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_1/derivatives/derivatives_", i, ".rds"))
 }
 
 # predictions df
@@ -175,7 +172,7 @@ df_deriv_mod2 <- list.files(path = "model_2/derivatives", pattern = ".rds", full
 
 
 # save total derivatives as RDS
-#saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
+# saveRDS(df_deriv_mod2, "total_models/deriv_model_2_total")
 
 
 df_deriv_mod2 |> 
