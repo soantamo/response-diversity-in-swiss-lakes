@@ -34,7 +34,7 @@ temp_data <- list()
 
 
 df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
-
+df_binomial_gam$fLake <- as.factor(df_binomial_gam$Lake)
 str(df_binomial_gam)
 #make new loop
 #adding fProtocol as random effect
@@ -170,7 +170,7 @@ df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
+# saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
 
