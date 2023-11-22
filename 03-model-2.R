@@ -188,32 +188,32 @@ df_deriv_mod2 |>
 
 # df for all species
 
-# mean_se_model_2 <- total_model_2_pred |> 
-#   group_by(species) |> 
-#   mutate(mean_se = mean(se.fit)) |> 
-#   mutate(max_se = max(se.fit)) |> 
-#   mutate(min_se = min(se.fit)) |> 
-#   distinct(mean_se, max_se, min_se)
-# 
-# 
-# test2 <- df_abundance_gam |> 
-#   group_by(Species) |> 
-#   mutate(total_abundance = sum(Abundance), 
-#          observation_0 = sum(Abundance == 0)) |> 
-#   distinct(total_abundance, observation_0) |> 
-#   rename(species = Species) |> 
-#   mutate(n_lake = factor("1"))
-# 
-# #double check if all occur in one
-# # n_lake <- df_abundance_gam |> 
-# #   group_by(Lake, Species) |> 
-# #   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
-# #   filter(TotalAbundance > 1) |> 
-# #   group_by(Species) |> 
-# #   summarize(n_lake = n_distinct(Lake)) |> 
-# #   rename(species = Species)
-# 
-# bind_2 <- merge(mean_se_model_2, test2)
-# 
-# saveRDS(bind_2, "model_2/bind_2.rds")
+mean_se_model_2 <- df_pred_mod2 |>
+  group_by(species) |>
+  mutate(mean_se = mean(se.fit)) |>
+  mutate(max_se = max(se.fit)) |>
+  mutate(min_se = min(se.fit)) |>
+  distinct(mean_se, max_se, min_se)
+
+
+test2 <- df_abundance_gam |>
+ group_by(Species, Presence) |> 
+  summarize(n_observations = sum(Presence)) |> 
+  select(Species, n_observations) |> 
+  filter(n_observations != 0) |> 
+  rename(species = Species) |>
+  mutate(n_lake = factor("1"))
+
+# double check if all occur in one
+# n_lake <- df_abundance_gam |>
+#   group_by(Lake, Species) |>
+#   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |>
+#   filter(TotalAbundance > 1) |>
+#   group_by(Species) |>
+#   summarize(n_lake = n_distinct(Lake)) |>
+#   rename(species = Species)
+
+bind_2 <- merge(mean_se_model_2, test2)
+
+saveRDS(bind_2, "model_2/bind_2.rds")
 
