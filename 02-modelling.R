@@ -174,7 +174,7 @@ df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full
 
 # prepare mean values of se.fit 
 
-mean_se_model_1 <- total_model_1_pred |> 
+mean_se_model_1 <- df_pred_mod1 |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
   mutate(max_se = max(se.fit)) |> 
@@ -183,10 +183,11 @@ mean_se_model_1 <- total_model_1_pred |>
 
 
 test1 <- df_binomial_gam |> 
-  group_by(Species) |> 
-  count(Abundance) |> 
-  pivot_wider(names_from = Abundance, values_from = n) |> 
-  rename(species = Species, observation_0 = `0`, total_abundance = `1`) |> 
+  group_by(Species, Presence) |> 
+  summarize(n_observations = sum(Presence)) |> 
+  select(Species, n_observations) |> 
+  filter(n_observations != 0) |> 
+  rename(species = Species) |> 
   mutate(n_lake = factor("1"))
 
 
