@@ -124,6 +124,10 @@ df_binomial_gam |>
   distinct(Species) |> 
   pull(Species)
 
+# df_binomial_gam |> 
+#   filter(Species == "Coregonus_duplex") |> 
+#   distinct(Lake)
+
 # saveRDS(df_binomial_gam, "data_frame_models/df_binomial_gam")
 
 #gam without re -> zip probably
@@ -161,6 +165,10 @@ df_abundance_gam <- bind_rows(df_abu, alosa_agone, cottus_sp_po)
 df_abundance_gam |> 
   distinct(Species) |> 
   pull(Species)
+
+df_abundance_gam |> 
+  filter(Species == "Cottus_sp_Po") |> 
+  distinct(Lake)
 
 # saveRDS(df_abundance_gam, "data_frame_models/df_abundance_gam")
 
