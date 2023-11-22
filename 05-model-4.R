@@ -127,8 +127,9 @@ df_pred_mod4 <- list.files(path = "model_4/predictions", pattern = ".rds", full.
 # saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 df_pred_mod4 |> 
-  filter(!species %in% c("Alburnus_arborella", "Cyprinus_carpio", "Salmo_trutta"
-                         , "Lepomis_gibbosus", "Phoxinus_csikii")) |>
+  # filter(species == "Phoxinus_csikii") |> 
+  # filter(!species %in% c("Alburnus_arborella", "Cyprinus_carpio", "Salmo_trutta"
+  #                        , "Lepomis_gibbosus", "Phoxinus_csikii")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -262,7 +263,7 @@ s17 |>
 
 # df for later
 
-mean_se_model_4 <- total_model_4_pred |> 
+mean_se_model_4 <- df_pred_mod4 |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
   mutate(max_se = max(se.fit)) |> 
@@ -272,10 +273,10 @@ mean_se_model_4 <- total_model_4_pred |>
 
 
 test4 <- df_abundance_re |> 
-  group_by(Species) |> 
-  mutate(total_abundance = sum(Abundance), 
-         observation_0 = sum(Abundance == 0)) |> 
-  distinct(total_abundance, observation_0) |> 
+  group_by(Species, Presence) |> 
+  summarize(n_observations = sum(Presence)) |> 
+  select(Species, n_observations) |> 
+  filter(n_observations != 0) |> 
   rename(species = Species)
 
 
