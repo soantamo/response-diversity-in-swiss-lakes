@@ -180,7 +180,7 @@ test2 <- df_deriv_mod3 |>
 
 
 #prepare for all df
-mean_se_model_3 <- total_model_3_pred |> 
+mean_se_model_3 <- df_pred_mod3 |> 
   group_by(species) |> 
   mutate(mean_se = mean(se.fit)) |> 
   mutate(max_se = max(se.fit)) |> 
@@ -189,10 +189,12 @@ mean_se_model_3 <- total_model_3_pred |>
 
 
 test3 <- df_binomial_re |> 
-  group_by(Species) |> 
-  count(Abundance) |> 
-  pivot_wider(names_from = Abundance, values_from = n) |> 
-  rename(species = Species, observation_0 = `0`, total_abundance = `1`)
+  group_by(Species, Presence) |> 
+  summarize(n_observations = sum(Presence)) |> 
+  select(Species, n_observations) |> 
+  filter(n_observations != 0) |> 
+  rename(species = Species)
+
 
 n_lake3 <- df_binomial_re |>
   group_by(Species) |>
@@ -203,5 +205,5 @@ two_bind <- merge(test3, n_lake3, by.x = "species")
 
 bind_3 <- merge(two_bind, mean_se_model_3)
 
-saveRDS(bind_3, "model_3/bind_3.rds")
+# saveRDS(bind_3, "model_3/bind_3.rds")
 
