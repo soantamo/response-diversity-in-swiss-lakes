@@ -40,7 +40,8 @@ df_abundance_re |>
 #lota_lota needs to run separately
 
 species_list <- df_abundance_re |> 
-  filter(!Species == "Lota_lota") |> #with k = 6
+  # filter(!Species == "Lota_lota") |> #with k = 6
+  filter(Species == "Salmo_trutta") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -76,8 +77,11 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+  #                        +  s(fProtocol, bs = 're'), family = ziP())
+  # salmo_trutta test
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+  #                        +  s(fProtocol, bs = 're'), family = binomial)
   #lota_lota
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
   # +  s(fProtocol, bs = 're'), family = ziP())
@@ -108,15 +112,34 @@ for (i in species_list) {
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
     mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
+    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit), across(fLake)) |>
     rename(temp = mean_last_7days) |> 
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
-  derivatives[[i]] <- derivatives(gam_output[[i]])
-  saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
+  # derivatives[[i]] <- derivatives(gam_output[[i]])
+  # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
 
 
+# salmo trutta has 2 points with abundance 2 in poschiavo. this breaks the model ->
+# with presence data and binomial famility -> beautiful!!!!
+
+test2 <- df_abundance_re |> 
+  filter(Species == "Salmo_trutta")
+  filter(mean_last_7days > 19) |>
+  filter(mean_last_7days < 20)
+
+
+test2 |> 
+  ggplot(aes(mean_last_7days, Abundance, color = fLake)) +
+  geom_point()
+
+test <- readRDS("model_4/predictions/predictions_Salmo_trutta.rds")
+
+test |> 
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  ylim(0,1)
 
 # combined df
 
@@ -163,7 +186,8 @@ df_pred_mod4 |>
 
 
 species_list <- df_abundance_re |> 
-  filter(Species == "Lota_lota") |> 
+  # filter(Species == "Lota_lota") |> 
+  filter(Species == "Salmo_trutta") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -183,8 +207,11 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_abundance_re |> 
     filter(Species == i)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+  #                        +  s(fProtocol, bs = 're'), family = ziP())
+  # salmo trutta
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = binomial)
   # lota_lota
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
   # +  s(fProtocol, bs = 're'), family = ziP())
