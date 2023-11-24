@@ -61,22 +61,44 @@ levels(success_model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  # filter(species %in% c("Abramis_brama", "Alburnus_alburnus", "Alosa_agone",
-  #                       "Ameiurus_melas")) |> 
+  filter(!species %in% c("Lepomis_gibbosus", "Phoxinus_csikii")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE, guide = NULL)
+  ylim(0,1)
 
+# plot se, not working both
+model_predictions |> 
+  ggplot(aes(temp, se.fit, color = factor(species))) +
+  geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) 
+  theme_bw() +
+  facet_wrap(~species, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylim(0,1)
+    
 
 # plots not succesfull models
+  # with ylim(0,20) -> lepomis_gibbosus and phoxinus csiikii lok impossible
 
 unsuccesful_model_predictions |> 
-  # filter(species %in% c("Abramis_brama", "Alburnus_alburnus", "Alosa_agone",
-  #                       "Ameiurus_melas")) |> 
+  filter(!species %in% c("Lepomis_gibbosus", "Phoxinus_csikii")) |>
+  ggplot(aes(temp, fit, color = factor(species))) +
+  geom_line() +
+  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_bw() +
+  facet_wrap(~species, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylim(0, 1)
+
+
+unsuccesful_model_predictions |> 
+  # filter(species %in% c("Salmo_trutta")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -84,6 +106,10 @@ unsuccesful_model_predictions |>
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE, guide = NULL)
+
+test <- unsuccesful_model_predictions |> 
+  filter(species %in% c("Salmo_trutta")) 
+  
 
 # plots successful models 
 
@@ -120,6 +146,11 @@ mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
 mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
 
 
+all_lakes <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
+str(all_lakes)
+
+all_lakes_tib <- as_tibble(all_lakes)
+str(all_lakes_tib)
 #filter predictions in succesful models
 # something is very off with these dataframes, I cannnot filter them
 # all species are coming
@@ -133,6 +164,15 @@ table(successful_models$model_success)
 success_list <- successful_models |> 
   filter(model_success == 1) 
 
+no_success_list <- successful_models |> 
+  filter(model_success == 0)
+
+
+unsuccesful_model_deriv <- all_lakes |> 
+  inner_join(no_success_list)
+
+
+
 model_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
 
 # bind with successful models
@@ -144,6 +184,9 @@ total_model_derivatives$species <- as.factor(total_model_derivatives$species)
 levels(total_model_derivatives$species)
 
 
+# model_derivatives$species <- as.factor(model_derivatives$species)
+# levels(model_derivatives$species)
+
 str(total_model_derivatives)
 
 
@@ -151,7 +194,7 @@ str(total_model_derivatives)
 
 # to be able to sort the pulled values fLake needs to be a character
 total_model_derivatives$fLake <- as.character(total_model_derivatives$fLake)
-
+# model_derivatives$fLake <- as.character(model_derivatives$fLake)
 
 lakes_list <- total_model_derivatives |> 
   # filter(!fLake %in% c("Maggiore")) |>
@@ -174,27 +217,27 @@ for (i in lakes_list){
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
   
-  number_species <- data |> 
-    group_by(fLake) |>
-    mutate(sum_species = n_distinct(species)) |>
-    group_by(fLake, species, sum_species) |>
-    distinct(species) |>
-    relocate(sum_species, .after = species)
+  # number_species <- data |> 
+  #   group_by(fLake) |>
+  #   mutate(sum_species = n_distinct(species)) |>
+  #   group_by(fLake, species, sum_species) |>
+  #   distinct(species) |>
+  #   relocate(sum_species, .after = species)
+  # 
+  # species_overview <- bind_rows(species_overview, number_species)
 
-  species_overview <- bind_rows(species_overview, number_species)
 
-  
-  # df_resp_div <- data |>
-  #   pivot_wider(
-  #     names_from = species,
-  #     values_from = derivative)
-  # 
-  # 
-  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  # df_resp_div$Med <- median(df_resp_div$rdiv)
-  # saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
-  # 
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+
+
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
+
 }
 
 
@@ -207,68 +250,132 @@ df_median <- resp_div_all_models |>
   summarise(median_rdiv = median(rdiv))
 
 resp_div_all_models |> 
-  ggplot(aes(x = temp, y = rdiv, color = fLake)) +
-  geom_line() +
-  geom_hline(data = df_median, aes(yintercept = median_rdiv), size = 0.5,
+  ggplot(aes(x = temp, y = rdiv)) +
+  geom_line(color = "#54008B") +
+  geom_hline(data = df_median, aes(yintercept = median_rdiv), linewidth = 0.5,
              lty = "dashed")+
   facet_wrap(~fLake) +
   theme_bw()
-  
 
 resp_div_all_models |> 
   ggplot(aes(x = temp, y = sign, color = fLake)) +
-  geom_line() +
+  geom_line(color = "#54008B") +
   facet_wrap(~fLake)  +
   theme_bw()
 
 
+median_lakes <- resp_div_all_models |> 
+  distinct(fLake, Med)
+######resp div with all models except phoxinus and lepomis
+
+all_lakes_tib <- all_lakes_tib |> 
+  filter(!species %in% c("Phoxinus_csikii", "Lepomis_gibbosus"))
+
+lakes_list <- all_lakes_tib |> 
+  distinct(fLake) |> 
+  pull(fLake)
+
+str(lakes_list)
+
+lakes_list <- sort(lakes_list)
+
+species_overview <- tibble()
+
+all_lakes_tib |> 
+  distinct(species)
+
+str(all_lakes_tib)
+
+# loop to get response diversity measures for each lake 
+
+
+for (i in lakes_list){
+  
+  data <- all_lakes_tib |>
+    select(temp, fLake, derivative, species) |> 
+    filter(fLake == i)
+  # would be nice to get a tibble for each Lake and number of species
+  
+  # number_species <- data |> 
+  #   group_by(fLake) |>
+  #   mutate(sum_species = n_distinct(species)) |>
+  #   group_by(fLake, species, sum_species) |>
+  #   distinct(species) |>
+  #   relocate(sum_species, .after = species)
+  # 
+  # species_overview <- bind_rows(species_overview, number_species)
+  
+  
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+
+
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
+  # 
+}
+
+
+resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS) |> 
+  relocate(rdiv, Med, sign, .after = temp)
+
 # prepare for a tibble with the numvber of observations
 # join species_overview from loop with number of observations of species per lake
 
-df_final <- readRDS("df_final.rds")
 
-df_success <- df_final |> 
-  select(Presence, Species, Lake) |> 
-  rename(fLake = Lake, species = Species) |> 
-  inner_join(success_list)
+df_median <- resp_div_no_excl |>
+  group_by(fLake) |> 
+  summarise(median_rdiv = median(rdiv))
 
-str(df_success)
-df_success |> distinct(species) #60 species
-
-df_success_min_1 <- df_success |> 
-  select(-model_success) |>  
-  group_by(species, fLake) |>
-  mutate(n_observations = sum(Presence)) |> 
-  distinct(n_observations) |> 
-  filter(!n_observations == 1)
-
-
-# merge df_success and species_overview
-
-overview_obs <- merge(df_success_min_1, species_overview)
-
-library(gt)
-
-overview_obs |> 
-  select(species, mean_se, max_se, min_se, total_abundance, n_lake, success) |> 
-  arrange(species) |> 
-  gt() |>
-  tab_header(title = "All models")
-
-
-resp_div_all_models |> 
+resp_div_no_excl |> 
   ggplot(aes(x = temp, y = rdiv)) +
-  geom_hline(yintercept = Med, lty = 2) +
+  geom_line(color = "#54008B") +
+  geom_hline(data = df_median, aes(yintercept = median_rdiv), linewidth = 0.5,
+             lty = "dashed")+
+  facet_wrap(~fLake) +
+  theme_bw()
+
+
+
+resp_div_no_excl |> 
+  ggplot(aes(x = temp, y = sign, color = fLake)) +
+  geom_line(color = "#54008B") +
+  facet_wrap(~fLake)  +
+  theme_bw()
+
+# maggiore: driven by  Chondrostoma soetta, rutilus aula, carassius gibelio
+# alburnus arborella
+
+all_lakes_tib |> 
+  filter(fLake == "Maggiore") |>
+  filter(derivative > 15) |> 
+  ggplot(aes(temp, derivative, colour = species)) +
+  geom_line()
+
+total_model_derivatives |> 
+  filter(fLake == "Maggiore") |> 
+  ggplot(aes(temp, derivative, colour = species)) +
+  geom_line()
+
+
+# how do the derivatives of the non successufl ones look?
+unsuccesful_model_deriv  |>  
+  filter(!species %in% c("Phoxinus_csikii", "Lepomis_gibbosus", "Gasterosteus_gymnurus")) |> 
+  # filter(derivative > 35) |> 
+  # filter(derivative > 0) |> 
+  ggplot(aes(temp, derivative, colour = species)) +
   geom_line() +
-  facet_wrap(~fLake)
+  ylim(-5, 30)
 
-
-resp_div_all_models |> 
-  ggplot(aes(x = temp, y = sign)) +
-  # geom_line(aes (y = Med))
-  geom_line() +
-  facet_wrap(~fLake)
-
+# derivative has a crazy impact altough the predictions are basically 0 -> problem
+# Cottus gobio profundal thun cant be included at -2500
+# Gasterosteus gymnurus looks crazy
+# alburnus_arborella, chondrostoma_soetta, cyprinus carpio and salmo sp -> no
 
 #############################################################################3
 
