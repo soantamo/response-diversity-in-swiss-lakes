@@ -18,6 +18,14 @@ df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
 df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
 df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
 
+
+# barbatula sp_lineage_ii has outliers, get rid of them
+
+# df_abundance_gam <- df_abundance_gam |> 
+#   filter((Species == "Barbatula_sp_Lineage_II" & Abundance %in% c(15, 7, 5)))
+
+
+
 table(df_abundance_gam$Abundance) 
 str(df_abundance_gam)
 head(df_abundance_gam)
@@ -30,8 +38,11 @@ head(df_abundance_gam)
 
 
 species_list <- df_abundance_gam |>
-  filter(!Species %in% c("Coregonus_profundus",
-                         "Phoxinus_sp", "Coregonus_zugensis")) |>
+  # filter(!Species %in% c("Coregonus_profundus",
+  #                        "Phoxinus_sp", "Coregonus_zugensis")) |>
+  # filter(Species == "Barbatula_sp_Lineage_II") |> 
+  filter(Species %in% c("Coregonus_profundus",
+                        "Phoxinus_sp", "Coregonus_zugensis", "Telestes_muticellus")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -62,8 +73,11 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = ziP())
+  
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = binomial())
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # Main plot function from DHARMa, which gives 
@@ -88,7 +102,7 @@ for (i in species_list) {
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    mutate(lower = fit - se.fit, upper = fit + se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
               across(se.fit), across(fProtocol)) |>
     rename(temp = mean_last_7days) |>
@@ -105,6 +119,8 @@ df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.
 # saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
 df_pred_mod2 |> 
+  filter(species %in% c("Coregonus_profundus",
+                        "Phoxinus_sp", "Coregonus_zugensis", "Telestes_muticellus")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -112,7 +128,6 @@ df_pred_mod2 |>
   facet_wrap(~species, scales = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE) 
-
 
 
 ###################derivatives
