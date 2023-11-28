@@ -14,6 +14,11 @@ library(DHARMa)
 
 df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 
+# we have to delete the observation of lepomis gibbosus at 7.132625 degrees
+
+df_abundance_re <- df_abundance_re |> 
+  filter(!(mean_last_7days == 7.132625 & Species == "Lepomis_gibbosus" & Presence == 1))
+
 table(df_abundance_re$Abundance) 
 str(df_abundance_re)
 head(df_abundance_re)
@@ -41,7 +46,11 @@ df_abundance_re |>
 
 species_list <- df_abundance_re |> 
   # filter(!Species == "Lota_lota") |> #with k = 6
-  filter(Species == "Salmo_trutta") |> 
+  # filter(Species == "Salmo_trutta") |> 
+  # filter(Species == "Alburnus_arborella") |> 
+  # filter(Species == "Lepomis_gibbosus") |> 
+  # filter(Species == "Blicca_bjoerkna") |> 
+  filter(Species == "Cyprinus_carpio") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -79,9 +88,9 @@ for (i in species_list) {
   ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
   #                        +  s(fProtocol, bs = 're'), family = ziP())
-  # salmo_trutta test
-  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-  #                        +  s(fProtocol, bs = 're'), family = binomial)
+  # salmo_trutta, alburnus_arborella test
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = binomial)
   #lota_lota
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
   # +  s(fProtocol, bs = 're'), family = ziP())
@@ -120,27 +129,6 @@ for (i in species_list) {
   # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
 
-
-# salmo trutta has 2 points with abundance 2 in poschiavo. this breaks the model ->
-# with presence data and binomial famility -> beautiful!!!!
-
-test2 <- df_abundance_re |> 
-  filter(Species == "Salmo_trutta")
-  filter(mean_last_7days > 19) |>
-  filter(mean_last_7days < 20)
-
-
-test2 |> 
-  ggplot(aes(mean_last_7days, Abundance, color = fLake)) +
-  geom_point()
-
-test <- readRDS("model_4/predictions/predictions_Salmo_trutta.rds")
-
-test |> 
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  ylim(0,1)
-
 # combined df
 
 df_pred_mod4 <- list.files(path = "model_4/predictions", pattern = ".rds", full.names = TRUE) |> 
@@ -150,6 +138,7 @@ df_pred_mod4 <- list.files(path = "model_4/predictions", pattern = ".rds", full.
 # saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 df_pred_mod4 |> 
+  filter(species == "Cyprinus_carpio") |> 
   # filter(species == "Phoxinus_csikii") |> 
   # filter(!species %in% c("Alburnus_arborella", "Cyprinus_carpio", "Salmo_trutta"
   #                        , "Lepomis_gibbosus", "Phoxinus_csikii")) |>
@@ -187,7 +176,9 @@ df_pred_mod4 |>
 
 species_list <- df_abundance_re |> 
   # filter(Species == "Lota_lota") |> 
-  filter(Species == "Salmo_trutta") |> 
+  # filter(Species == "Salmo_trutta") |> 
+  # filter(Species == "Alburnus_arborella") |> 
+  filter(Species == "Lepomis_gibbosus") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -209,7 +200,7 @@ for (i in species_list) {
     filter(Species == i)
   # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
   #                        +  s(fProtocol, bs = 're'), family = ziP())
-  # salmo trutta
+  # salmo trutta, alburnus_arborella
   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = binomial)
   # lota_lota
