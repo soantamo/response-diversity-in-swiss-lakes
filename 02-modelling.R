@@ -17,6 +17,7 @@ df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
+  filter(Species == "Coregonus_brienzii") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -92,7 +93,7 @@ df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
 df_pred_mod1 |> 
@@ -259,7 +260,7 @@ df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
+saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
 
