@@ -98,7 +98,7 @@ unsuccesful_model_predictions |>
 
 
 unsuccesful_model_predictions |> 
-  # filter(species %in% c("Salmo_trutta")) |>
+  # filter(species %in% c("Alburnus_arborella")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -378,4 +378,34 @@ unsuccesful_model_deriv  |>
 # alburnus_arborella, chondrostoma_soetta, cyprinus carpio and salmo sp -> no
 
 #############################################################################3
+# checking out the strange ones
+# alburnus arborella -> do presence-absence data gam, looks good now
+# lepomis_gibbosus wird ab 21 grad strange, try presence absence, one caught at 
+# 7 degrees, this data cant be included -> works with binomial gam
+# rutilus_aula just has 4 observations -> not include
+# salmo_sp has 2 observations -> not include 
+# gasterosteus gymnurus 4 obs -> not include
+# blicca_bjoerkna: better with binomial
+# cyprinus_carpio: try presence -> perfect!
+# chondrostoma_nasus: try to include
+# chondrostoma_soetta:2 obs and strange -> not include
+# telestes_muticellus_might work with binomial: still strane, 5 obs total -> not include
+# phoxinus_sp: not include -> 4 obs
 
+# continue with: Barbatula_sp_Lineage_II, Cottus_gobio_profundals, Cottus_sp_Po_profundal
+# phoxinus_ciskii, Salvelinus_profundus, Salvelinus_sp_limnetci
+
+
+
+df_final <- readRDS("df_final.rds")
+
+test <- df_final |> 
+  filter(Species == "Phoxinus_sp") |> 
+  # filter(mean_last_7days > 22)
+  summarize(total = sum(Presence))
+
+
+# only strange at 23.8 degrees
+test2 <- model_predictions |> 
+  filter(species == "Cyprinus_carpio") |> 
+  filter(temp > 24)
