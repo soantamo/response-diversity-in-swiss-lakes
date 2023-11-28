@@ -12,6 +12,13 @@ df_final <- readRDS("df_final.rds")
 
 str(df_final)
 head(df_final)
+# 
+test <- df_final |>
+  filter(Species == "Coregonus_brienzii") |>
+  group_by(Lake) |>
+  summarize(sum(Presence))
+# 
+# only include brienzii from lake brienz
 
 ###OVERVIEW
 #three problems: 
