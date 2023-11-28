@@ -19,6 +19,13 @@ df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 df_abundance_re <- df_abundance_re |> 
   filter(!(mean_last_7days == 7.132625 & Species == "Lepomis_gibbosus" & Presence == 1))
 
+# df_abundance_re <- df_abundance_re |>
+#   filter(!(Species == "Phoxinus_csikii" & Abundance %in% c(8, 3)))
+
+# tskhd <- df_abundance_re |> 
+#   filter(Species == "Phoxinus_csikii") |> 
+#   filter(mean_last_7days > 15)
+
 table(df_abundance_re$Abundance) 
 str(df_abundance_re)
 head(df_abundance_re)
@@ -31,26 +38,15 @@ df_abundance_re |>
 
 ####################3#model testing for one species
 
-#lota_lota: k = 3 not working
-# "Lota_lota" not running with k = 3, also not k = 5
-#k = 10 works
-#k = 9 works
-#k = 8 works
-# k = 7 works
-# k = 6 works
-# k = 5 not working 
-#testing backwards to 5
 
 #####Loop Model 4 ######
 #lota_lota needs to run separately
 
 species_list <- df_abundance_re |> 
-  # filter(!Species == "Lota_lota") |> #with k = 6
-  # filter(Species == "Salmo_trutta") |> 
-  # filter(Species == "Alburnus_arborella") |> 
-  # filter(Species == "Lepomis_gibbosus") |> 
-  # filter(Species == "Blicca_bjoerkna") |> 
-  filter(Species == "Cyprinus_carpio") |> 
+  # binomial ones
+  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
+                        "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
+                        "Phoxinus_csikii")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -86,15 +82,11 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-  #                        +  s(fProtocol, bs = 're'), family = ziP())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = ziP())
   # salmo_trutta, alburnus_arborella test
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = binomial)
-  #lota_lota
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
-  # +  s(fProtocol, bs = 're'), family = ziP())
-  # 
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+  #                        +  s(fProtocol, bs = 're'), family = binomial)
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # Main plot function from DHARMa, which gives 
@@ -120,7 +112,7 @@ for (i in species_list) {
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    mutate(lower = fit - se.fit, upper = fit + se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit), across(fLake)) |>
     rename(temp = mean_last_7days) |> 
     mutate(species = factor(i))
@@ -134,14 +126,10 @@ for (i in species_list) {
 df_pred_mod4 <- list.files(path = "model_4/predictions", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
-# save total derivatives as RDS
+# save total predictions as RDS
 # saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 df_pred_mod4 |> 
-  filter(species == "Cyprinus_carpio") |> 
-  # filter(species == "Phoxinus_csikii") |> 
-  # filter(!species %in% c("Alburnus_arborella", "Cyprinus_carpio", "Salmo_trutta"
-  #                        , "Lepomis_gibbosus", "Phoxinus_csikii")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -175,10 +163,10 @@ df_pred_mod4 |>
 
 
 species_list <- df_abundance_re |> 
-  # filter(Species == "Lota_lota") |> 
-  # filter(Species == "Salmo_trutta") |> 
-  # filter(Species == "Alburnus_arborella") |> 
-  filter(Species == "Lepomis_gibbosus") |> 
+  filter(Species == "Perca_fluviatilis") |> 
+  # filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
+  #                       "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
+  #                       "Phoxinus_csikii")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -195,18 +183,15 @@ str(df_abundance_re)
 derivatives <- list()
 gam_output <- list()
 
+
 for (i in species_list) {
   data <- df_abundance_re |> 
     filter(Species == i)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-  #                        +  s(fProtocol, bs = 're'), family = ziP())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = ziP())
   # salmo trutta, alburnus_arborella
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = binomial)
-  # lota_lota
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 6) + s(fLake, bs = 're')
-  # +  s(fProtocol, bs = 're'), family = ziP())
-  
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+  #                        +  s(fProtocol, bs = 're'), family = binomial)
   lake_list <- distinct(data, Lake) |> 
     pull()
   
@@ -232,6 +217,17 @@ for (i in species_list) {
 }
 
 
+test1 <- readRDS("model_4/derivatives/derivatives_Perca_fluviatilis_Joux.rds")
+test2 <- readRDS("model_4/derivatives/derivatives_Perca_fluviatilis_Biel.rds")
+
+test1 |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line()
+
+test2 |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line()
+
 #prepare total df for derivatives
 
 df_deriv_mod4 <- list.files(path = "model_4/derivatives", pattern = ".rds", full.names = TRUE) |> 
@@ -240,26 +236,49 @@ df_deriv_mod4 <- list.files(path = "model_4/derivatives", pattern = ".rds", full
 # save total derivatives as RDS
 # saveRDS(df_deriv_mod4, "total_models/deriv_model_4_total")
 
-
-# should work now!! do for all other models
-test2 <- df_deriv_mod4 |> 
-  filter(fLake ==  "Joux") |> 
-  select(temp, derivative, species) |> 
-  pivot_wider(values_from = derivative, names_from = species)
-
-test_species <- df_deriv_mod4 |> 
-  filter(species ==  "Barbatula_sp_Lineage_I") |> 
-  select(derivative, fLake) |> 
-  pivot_wider(values_from = derivative, names_from = fLake)
+df_deriv_mod4 |> 
+  filter(species == "Perca_fluviatilis") |> 
+  ggplot(aes(temp, derivative, color = factor(species))) +
+  geom_line() +
+  theme_bw() +
+  facet_wrap(~species) +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = NULL)
 
 
+# is this loop working correctly????
+
+data <- df_abundance_re |> 
+  filter(Species == "Perca_fluviatilis")
+
+data$fLake <- as.factor(data$Lake)
+
+data$fProtocol <- as.factor(data$Protocol)
+
+gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                       +  s(fProtocol, bs = 're'), family = ziP())
+
+unique_lakes <- distinct(data, fLake)
+unique_protocol <- distinct(data, fProtocol)
+
+newdata <- tibble(mean_last_7days = seq(
+  from = min(data$mean_last_7days, na.rm = TRUE),
+  to = max(data$mean_last_7days, na.rm = TRUE), length = 200),
+  fLake = sample(levels(unique_lakes$fLake), size = 200, replace = TRUE), fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+
+derivatives <- derivatives(gam_output, data = newdata) |> 
+  # mutate(fLake = factor(j)) |>
+  # mutate(species = factor(i)) |>
+  rename(temp = data)
+
+derivatives |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line()
 
 
 # plot
 
 total_model_4_pred |> 
-  filter(!species %in% c("Alburnus_arborella", "Cyprinus_carpio", "Salmo_trutta"
-                         , "Lepomis_gibbosus", "Phoxinus_csikii")) |> 
   ggplot(aes(temp, prediction, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -269,15 +288,6 @@ total_model_4_pred |>
   scale_color_viridis(discrete=TRUE) +
   ylim(0,1)
 
-
-s17 |> 
-  ggplot(aes(temp, fit, color = factor(species))) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
-  theme_bw() +
-  facet_wrap(~species) +
-  theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE) 
 
 # df for later
 
