@@ -38,11 +38,10 @@ head(df_abundance_gam)
 
 
 species_list <- df_abundance_gam |>
-  # filter(!Species %in% c("Coregonus_profundus",
-  #                        "Phoxinus_sp", "Coregonus_zugensis")) |>
-  # filter(Species == "Barbatula_sp_Lineage_II") |> 
   filter(Species %in% c("Coregonus_profundus",
-                        "Phoxinus_sp", "Coregonus_zugensis", "Telestes_muticellus")) |>
+                        "Phoxinus_sp", "Coregonus_zugensis",
+  "Telestes_muticellus", "Cottus_gobio_Profundal_Lucerne", "Cottus_gobio_Profundal_Thun" )) |>
+  # binomial species
   distinct(Species) |> 
   pull(Species)
 
@@ -73,11 +72,11 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-  #                          s(fProtocol, bs = 're'), family = ziP())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = ziP())
   
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = binomial())
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = binomial())
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # Main plot function from DHARMa, which gives 
@@ -102,7 +101,7 @@ for (i in species_list) {
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
-    mutate(lower = fit - se.fit, upper = fit + se.fit) |>
+    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
               across(se.fit), across(fProtocol)) |>
     rename(temp = mean_last_7days) |>
@@ -116,11 +115,12 @@ df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
+saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
-df_pred_mod2 |> 
-  filter(species %in% c("Coregonus_profundus",
-                        "Phoxinus_sp", "Coregonus_zugensis", "Telestes_muticellus")) |>
+df_pred_mod2 |>  
+  # filter(species ==  "Cottus_gobio_Profundal_Lucerne") |> 
+  # filter(species %in% c("Coregonus_profundus",
+  #                       "Phoxinus_sp", "Coregonus_zugensis", "Telestes_muticellus")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -136,7 +136,8 @@ df_pred_mod2 |>
 
 species_list <- df_abundance_gam |> 
   filter(!Species %in% c("Coregonus_profundus",
-                         "Phoxinus_sp", "Coregonus_zugensis")) |>
+                         "Phoxinus_sp", "Coregonus_zugensis",
+                         "Telestes_muticellus", "Cottus_gobio_Profundal_Lucerne", "Cottus_gobio_Profundal_Thun" )) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -156,7 +157,10 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_abundance_gam |> 
     filter(Species == i)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = binomial())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
+                         family = ziP())
   lake_list <- distinct(data, Lake) |> 
     pull()
   for (j in lake_list){
