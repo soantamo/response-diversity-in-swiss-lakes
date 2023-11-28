@@ -6,7 +6,9 @@ library(readr)
 library(viridis)
 library(lattice)
 library(broom)
-library(mgcViz) #https://cran.r-project.org/web/packages/mgcViz/vignettes/mgcviz.html
+library(mgcViz)
+library(DHARMa)
+#https://cran.r-project.org/web/packages/mgcViz/vignettes/mgcviz.html
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
@@ -171,7 +173,7 @@ df_deriv_mod3 <- list.files(path = "model_3/derivatives", pattern = ".rds", full
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
+# saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
 
 test2 <- df_deriv_mod3 |> 
   filter(fLake ==  "Biel") |> 
