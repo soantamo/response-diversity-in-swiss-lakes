@@ -34,13 +34,13 @@ mod_4_pred <- readRDS("total_models/pred_model_4_total")
 model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
   select(-fProtocol)
 
-test1 <- mod_3_pred |> 
-  filter(species == "Coregonus_brienzii")
-
-test <- model_predictions |> 
-  filter(species == "Coregonus_brienzii")
-  ggplot(aes(temp, fit)) +
-  geom_line()
+# test1 <- mod_3_pred |> 
+#   filter(species == "Coregonus_brienzii")
+# 
+# test <- model_predictions |> 
+#   filter(species == "Coregonus_brienzii")
+#   ggplot(aes(temp, fit)) +
+#   geom_line()
 
 
 #filter predictions in succesful models
@@ -122,7 +122,7 @@ test <- unsuccesful_model_predictions |>
 # plots successful models 
 
 success_model_predictions |> 
-  filter(species == "Coregonus_brienzii") |> 
+  # filter(species == "Coregonus_brienzii") |> 
   mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
@@ -266,18 +266,23 @@ success_model_deriv <- all_lakes_tib |>
 success_model_deriv$species <- as.factor(success_model_deriv$species)
 levels(success_model_deriv$species)
 
+# plotting derivatives
+
+# success_model_deriv |> 
+#   filter(fLake %in% c("Biel", "Brienz", "Thun")) |> 
+#   ggplot(aes(temp, derivative, color = factor(species))) +
+#   geom_line() +
+#   # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
+#   theme_bw() +
+#   facet_wrap(~fLake, scale = "free") +
+#   theme(strip.background = element_rect(fill="lightgrey")) +
+#   scale_color_viridis(discrete=TRUE)
+
 
 # to be able to sort the pulled values fLake needs to be a character
 success_model_deriv$fLake <- as.character(success_model_deriv$fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
 
-# exclude the strange derivatives 
-# success_model_deriv <- success_model_deriv |> 
-#   filter(species %in% c("Phoxinus_sp", "Chondrostoma_nasus", "Chondrostoma_soetta",
-#                         "Cottus_gobio_Profundal_Walen", "Cottus_gobio_Profundal_Thun",
-#                         "Cottus_gobio_Profundal_Lucerne", "Rutilus_aula", "Salmo_sp",
-#                         "Salvelinus_profundus", "Barbatula_sp_Lineage_II", "Cottus_sp_Po_profundal",
-#                         "Phoxinus_sp", "Telestes_muticellus")) 
 
 lakes_list <- success_model_deriv |> 
   distinct(fLake) |> 
@@ -371,6 +376,11 @@ resp_div_succ_models  |>
   facet_wrap(~fLake)  +
   theme_bw()
 
+median <- df_median |> 
+  group_by(fLake) |> 
+  distinct(median_rdiv)
+
+
 ################ look at derivatives
 
 # some loook weird, all weird ones are in this list, is something off with the derivatives???
@@ -434,47 +444,7 @@ success_model_deriv
 # alburnus_arborella, chondrostoma_soetta, cyprinus carpio and salmo sp -> no
 
 #############################################################################3
-# checking out the strange ones
-# alburnus arborella -> do presence-absence data gam, looks good now
-# lepomis_gibbosus wird ab 21 grad strange, try presence absence, one caught at 
-# 7 degrees, this data cant be included -> works with binomial gam
-# rutilus_aula just has 4 observations -> not include
-# salmo_sp has 2 observations -> not include 
-# gasterosteus gymnurus 4 obs -> not include
-# blicca_bjoerkna: better with binomial
-# cyprinus_carpio: try presence -> perfect!
-# chondrostoma_nasus: try to include
-# chondrostoma_soetta:2 obs and strange -> not include
-# telestes_muticellus_might work with binomial: still strane, 5 obs total -> not include
-# phoxinus_sp: not include -> 4 obs
+# interpretation:
 
-# continue with: Barbatula_sp_Lineage_II, Cottus_gobio_profundals  (walen, thun, lucerne), Cottus_sp_Po_profundal
-# phoxinus_ciskii, Salvelinus_profundus, Salvelinus_sp_limnetci
-
-# salvelinus_profundus: 3 obs -> try to include, looks okay
-# s.sp_limnetic_thun: include
-# c.sp_po_profundal: include, binomial does not really change anything
-# barbatula: include
-# phoxinus_csikii: binomial
-# cottus_gobio_prof_thun: 7 obs, needs to be binomial then include
-# c.gobio.prof.walen: 18 obs, include
-# c-gobio.prof.lucerne: binomial testing
-# probably not a real difference in thun and lucerne 
-# Lota_lota: binomial with k = 3!!!!
-# c. brienzii
-
-
-
-
-df_final <- readRDS("df_final.rds")
-
-test <- df_final |> 
-  filter(Species == "Lota_lota")
-  # filter(mean_last_7days < 8)
-  summarize(total = sum(Presence))
-
-
-# only strange at 23.8 degrees
-test2 <- model_predictions |> 
-  filter(species == "Cyprinus_carpio") |> 
-  filter(temp > 24)
+# work with the succesful ones
+# changes
