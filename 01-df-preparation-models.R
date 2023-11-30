@@ -18,6 +18,26 @@ head(df_final)
 
 df_final <- df_final |> 
   filter(!(Species == "Coregonus_brienzii" & Lake == "Thun"))
+
+df_final$Species <- as.factor(df_final$Species)
+levels(df_final$Species)
+
+# cottus_gobio_profundal lucerne, thun and walen put together 
+
+df_final <- df_final |> 
+  mutate(Species = ifelse(Species %in% c(
+   "Cottus_gobio_Profundal_Thun",
+   "Cottus_gobio_Profundal_Lucerne", "Cottus_gobio_Profundal_Walen"
+ ),
+ "Cottus_gobio_Profundal", as.character(Species)
+ ))
+
+# df_final$Species <- as.factor(df_final$Species)
+levels(df_final$Species)
+
+# test <- df_final |> 
+#   filter(Species == "Cottus_gobio_Profundal") |> 
+#   select(Lake, Species, Abundance)
   
 
 ###OVERVIEW
@@ -62,6 +82,9 @@ table(double_check$Abundance)
 df_models <- df_final |> 
   filter(!Species %in% exclude)
 
+df_models |> 
+  distinct(Species) |> 
+  pull(Species)
 ###OVERVIEW
 #three problems: 
 #0. species that occurin only once in one lake are excluded
@@ -192,6 +215,7 @@ bi_multi_occurence <- df_models |>
 df_binomial_re <- df_models |> 
   filter(Species %in% bi_multi_occurence)
 
+
 # saveRDS(df_binomial_re, "data_frame_models/df_binomial_re")
 
 #gam with re, zip
@@ -204,7 +228,10 @@ abu_multi_occurence <- df_models |>
 
 df_abundance_re <- df_models |> 
   filter(Species %in% abu_multi_occurence)
-
+# df_abundance_re |> 
+#   distinct(Species) |> 
+#   pull(Species)
+ 
 # saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
 #What about the ones with only one occurence in one of the lakes?
@@ -278,7 +305,7 @@ df_abundance_re_excluded |>
   pull(Species)
 
 
-saveRDS(df_abundance_re_excluded, "data_frame_models/df_abundance_re")
+# saveRDS(df_abundance_re_excluded, "data_frame_models/df_abundance_re")
 
 #Alosa_agone and  "Cottus_sp_Po" need to go to model 2
 
