@@ -34,6 +34,14 @@ mod_4_pred <- readRDS("total_models/pred_model_4_total")
 model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
   select(-fProtocol)
 
+test1 <- mod_3_pred |> 
+  filter(species == "Coregonus_brienzii")
+
+test <- model_predictions |> 
+  filter(species == "Coregonus_brienzii")
+  ggplot(aes(temp, fit)) +
+  geom_line()
+
 
 #filter predictions in succesful models
 
@@ -114,11 +122,11 @@ test <- unsuccesful_model_predictions |>
 # plots successful models 
 
 success_model_predictions |> 
-  # filter(species %in% c("Abramis_brama", "Alburnus_alburnus", "Alosa_agone",
-  #                       "Ameiurus_melas")) |> 
+  filter(species == "Coregonus_brienzii") |> 
+  mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
@@ -370,7 +378,7 @@ resp_div_succ_models  |>
 all_lakes_tib |> 
   filter(species %in% c("perca"))
 
-all_lakes_tib |> 
+test <- all_lakes_tib |> 
   filter(species %in% c("Phoxinus_sp", "Chondrostoma_nasus", "Chondrostoma_soetta",
                         "Cottus_gobio_Profundal_Walen", "Cottus_gobio_Profundal_Thun",
                         "Cottus_gobio_Profundal_Lucerne", "Rutilus_aula", "Salmo_sp",
@@ -379,9 +387,15 @@ all_lakes_tib |>
   ggplot(aes(temp, derivative, color = factor(species))) +
   geom_line() +
   theme_bw() +
-  facet_wrap(~species, scale = "free") +
+  facet_wrap(~species) +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL)
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylim(20, 50)
+
+test
+
+# two look special -> Cottus_gobio_Profundal_Walen is at -50, Salmo sp 25,
+# chondrostoma_soetta 40. salmo and chondrostoma are not included anyway
 
 # all models
 
