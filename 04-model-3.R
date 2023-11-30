@@ -13,7 +13,8 @@ library(DHARMa)
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
 
-df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
+df_binomial_re <- readRDS("data_frame_models/df_binomial_re") |> 
+  filter(!Species == "Coregonus_brienzii")
 
 table(df_binomial_re$Abundance) 
 str(df_binomial_re)
@@ -108,6 +109,7 @@ df_pred_mod3 <- list.files(path = "model_3/predictions", pattern = ".rds", full.
 
 
 df_pred_mod3 |> 
+  filter(species == "Coregonus_brienzii") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -174,11 +176,6 @@ df_deriv_mod3 <- list.files(path = "model_3/derivatives", pattern = ".rds", full
 
 # save total derivatives as RDS
 # saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
-
-test2 <- df_deriv_mod3 |> 
-  filter(fLake ==  "Biel") |> 
-  select(temp, derivative, species) |> 
-  pivot_wider(values_from = derivative, names_from = species)
 
 
 #prepare for all df
