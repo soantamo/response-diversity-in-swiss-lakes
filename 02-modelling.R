@@ -15,6 +15,7 @@ library(DHARMa)
 df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 
 
+
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
@@ -93,7 +94,7 @@ df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
 df_pred_mod1 |> 
@@ -111,9 +112,13 @@ df_pred_mod1 |>
 ########################## some problem with the derivatives, try this
 
 species_list <- df_binomial_gam |> 
-  filter(Species == "Coregonus_brienzii") |> 
+  # filter(Species == "Chondrostoma_nasus") |>
   distinct(Species) |> 
   pull(Species)
+
+# some derivatives look strange: both chondrostoma, Cottus_gobio_Profundal_Walen,
+# Rutilus_aula, Salmo_sp, Salvelinus_profundus -> the only problem is the scale of y axis
+
 
 species_list <- sort(species_list)
 
@@ -164,14 +169,15 @@ for (i in species_list) {
 #             Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig prüfen
 # probably for gasterosteus gymnurus
 
+
 # df_binomial_gam |> 
 #   filter(Species == "Salmo_marmoratus") |> 
 #   group_by(Lake) |> 
 #   summarize(observations = sum(Abundance))
 #prepare total df for derivatives
 
-df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |> 
-  map_dfr(readRDS)
+# df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |> 
+#   map_dfr(readRDS)
 
 # save total derivatives as RDS
 # saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
