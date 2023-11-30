@@ -19,10 +19,6 @@ df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
 df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
 
 
-# barbatula sp_lineage_ii has outliers, get rid of them
-
-# df_abundance_gam <- df_abundance_gam |> 
-#   filter((Species == "Barbatula_sp_Lineage_II" & Abundance %in% c(15, 7, 5)))
 
 
 
@@ -36,11 +32,10 @@ head(df_abundance_gam)
 #ZIP not working in those three species
 #all others work with k = 3
 
-
 species_list <- df_abundance_gam |>
   filter(Species %in% c("Coregonus_profundus",
                         "Phoxinus_sp", "Coregonus_zugensis",
-  "Telestes_muticellus", "Cottus_gobio_Profundal_Lucerne", "Cottus_gobio_Profundal_Thun" )) |>
+  "Telestes_muticellus")) |>
   # binomial species
   distinct(Species) |> 
   pull(Species)
@@ -72,11 +67,11 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = ziP())
   
-  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-  #                          s(fProtocol, bs = 're'), family = binomial())
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = binomial())
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # Main plot function from DHARMa, which gives 
@@ -115,7 +110,7 @@ df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
+# saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
 df_pred_mod2 |>  
   # filter(species ==  "Cottus_gobio_Profundal_Lucerne") |> 
@@ -134,10 +129,12 @@ df_pred_mod2 |>
 
 ########################## some problem with the derivatives, try this
 
+# telestes muticellsu derivative incredebibly strange
+
 species_list <- df_abundance_gam |> 
-  filter(!Species %in% c("Coregonus_profundus",
+  filter(Species %in% c("Coregonus_profundus",
                          "Phoxinus_sp", "Coregonus_zugensis",
-                         "Telestes_muticellus", "Cottus_gobio_Profundal_Lucerne", "Cottus_gobio_Profundal_Thun" )) |>
+                         "Telestes_muticellus")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -157,10 +154,10 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_abundance_gam |> 
     filter(Species == i)
-  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-  #                          s(fProtocol, bs = 're'), family = binomial())
-  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
-                         family = ziP())
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = binomial())
+  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
+  #                        family = ziP())
   lake_list <- distinct(data, Lake) |> 
     pull()
   for (j in lake_list){
