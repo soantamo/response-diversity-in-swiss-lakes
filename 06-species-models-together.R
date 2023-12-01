@@ -109,11 +109,12 @@ unsuccesful_model_predictions |>
   # filter(species %in% c("Alburnus_arborella")) |>
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL)
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylim(0,1)
 
 test <- unsuccesful_model_predictions |> 
   filter(species %in% c("Salmo_trutta")) 
@@ -126,11 +127,12 @@ success_model_predictions |>
   mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
+  # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL)
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylim(0, 1)
 
 
 # next steps:
@@ -163,6 +165,10 @@ str(all_lakes_tib)
 # all species are coming
 # it is not a tibble!!
 
+poschiavo <- all_lakes_tib |> 
+  filter(fLake == "Poschiavo") |> 
+  distinct(species)
+
 ######resp div with all models 
 
 lakes_list <- all_lakes_tib |> 
@@ -193,30 +199,30 @@ str(all_lakes_tib)
 for (i in lakes_list){
   
   data <- all_lakes_tib |>
-    select(temp, fLake, derivative, species) |> 
+    select(temp, fLake, derivative, species) |>
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
   
-  # number_species <- data |> 
-  #   group_by(fLake) |>
-  #   mutate(sum_species = n_distinct(species)) |>
-  #   group_by(fLake, species, sum_species) |>
-  #   distinct(species) |>
-  #   relocate(sum_species, .after = species)
+  number_species <- data |>
+    group_by(fLake) |>
+    mutate(sum_species = n_distinct(species)) |>
+    group_by(fLake, species, sum_species) |>
+    distinct(species) |>
+    relocate(sum_species, .after = species)
+
+  species_overview <- bind_rows(species_overview, number_species)
+  
+  
+  # df_resp_div <- data |>
+  #   pivot_wider(
+  #     names_from = species,
+  #     values_from = derivative)
   # 
-  # species_overview <- bind_rows(species_overview, number_species)
-  
-  
-  df_resp_div <- data |>
-    pivot_wider(
-      names_from = species,
-      values_from = derivative)
-  
-  
-  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  df_resp_div$Med <- median(df_resp_div$rdiv)
-  saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
+  # 
+  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  # df_resp_div$Med <- median(df_resp_div$rdiv)
+  # saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
   # 
 }
 
@@ -224,6 +230,23 @@ for (i in lakes_list){
 resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS) |> 
   relocate(rdiv, Med, sign, .after = temp)
+
+# saveRDS(resp_div_no_excl,"total_models/lakes_all_models/resp_div_all.rds")
+
+# resp_div_long <- resp_div_no_excl |> 
+#   pivot_longer(cols = Coregonus_confusus:Coregonus_zuerichensis,
+#                names_to = "species", values_to = "derivative")
+# 
+# test <- resp_div_long |> 
+#   drop_na() |> 
+#   filter(fLake == "Poschiavo") |> 
+#   distinct(species)
+#  
+# 
+# 
+# poschiavo_rd <- resp_div_no_excl |> 
+#   filter(fLake == "Poschiavo") |> 
+#   distinct(species)
 
 # prepare for a tibble with the numvber of observations
 # join species_overview from loop with number of observations of species per lake
@@ -299,31 +322,31 @@ species_overview <- tibble()
 
 for (i in lakes_list){
   
-  data <- success_model_deriv |>
-    select(temp, fLake, derivative, species) |> 
-    filter(fLake == i)
+  # data <- success_model_deriv |>
+  #   select(temp, fLake, derivative, species) |> 
+  #   filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
   
-  # number_species <- data |> 
-  #   group_by(fLake) |>
-  #   mutate(sum_species = n_distinct(species)) |>
-  #   group_by(fLake, species, sum_species) |>
-  #   distinct(species) |>
-  #   relocate(sum_species, .after = species)
-  # 
+  number_species <- data |>
+    group_by(fLake) |>
+    mutate(sum_species = n_distinct(species)) |>
+    group_by(fLake, species, sum_species) |>
+    distinct(species) |>
+    relocate(sum_species, .after = species)
+
   # species_overview <- bind_rows(species_overview, number_species)
 
 
-  df_resp_div <- data |>
-    pivot_wider(
-      names_from = species,
-      values_from = derivative)
-
-
-  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  df_resp_div$Med <- median(df_resp_div$rdiv)
-  saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
+  # df_resp_div <- data |>
+  #   pivot_wider(
+  #     names_from = species,
+  #     values_from = derivative)
+  # 
+  # 
+  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  # df_resp_div$Med <- median(df_resp_div$rdiv)
+  # saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
 
 }
 
@@ -332,6 +355,7 @@ resp_div_succ_models <- list.files(path = "total_models/lakes", pattern = ".rds"
   map_dfr(readRDS) |> 
   relocate(rdiv, Med, sign, .after = temp)
 
+# saveRDS(resp_div_succ_models,"total_models/lakes/resp_div_succ.rds")
 
 ##################################################### plotting
 # all models
@@ -355,6 +379,11 @@ resp_div_no_excl |>
   facet_wrap(~fLake)  +
   theme_bw()
 
+median_non <- df_median_all |> 
+  group_by(fLake) |> 
+  distinct(median_rdiv)
+
+
 
 # successful ones
 
@@ -376,10 +405,16 @@ resp_div_succ_models  |>
   facet_wrap(~fLake)  +
   theme_bw()
 
-median <- df_median |> 
+median_succ <- df_median |> 
   group_by(fLake) |> 
-  distinct(median_rdiv)
+  distinct(median_rdiv) |> 
+  rename(median_success = median_rdiv)
 
+
+sensitivitiy <- merge(median_succ, median_non)
+
+# only changes rdiv in maggiore and poschiavo 
+# 
 
 ################ look at derivatives
 
@@ -427,14 +462,22 @@ success_model_deriv |>
 # one very different: 
 
 success_model_deriv |>
-  filter(fLake %in% c("Biel", "Joux", "Morat"))  |> 
-  filter(derivative > 3) |> 
+  filter(fLake %in% c("Poschiavo"))  |> 
+  # filter(derivative > 3) |> 
   # filter(!species == "Phoxinus_csikii") |> 
   ggplot(aes(temp, derivative, color = factor(species))) +
   geom_line() +
-  facet_wrap(~fLake)
+  facet_wrap(~species)
 
 success_model_deriv
+
+all_lakes_tib |>
+  filter(fLake %in% c("Poschiavo"))  |> 
+  # filter(derivative > 3) |> 
+  # filter(!species == "Phoxinus_csikii") |> 
+  ggplot(aes(temp, derivative, color = factor(species))) +
+  geom_line() +
+  facet_wrap(~species)
 
 # squalius cephalus
 
@@ -446,5 +489,130 @@ success_model_deriv
 #############################################################################3
 # interpretation:
 
-# work with the succesful ones
-# changes
+mod_1_deriv <- readRDS("total_models/deriv_model_1_total")
+mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
+mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
+mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
+
+all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
+
+
+resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
+resp_div_succ <- readRDS("total_models/lakes/resp_div_succ.rds")
+# all models
+
+df_mean_all <- resp_div_all |>
+  group_by(fLake) |> 
+  summarise(mean_rdiv = mean(rdiv))
+
+dissimilarity_all <- resp_div_all |> 
+  ggplot(aes(x = temp, y = rdiv)) +
+  geom_line(color = "#54008B") +
+  geom_hline(data = df_mean_all, aes(yintercept = median_rdiv), linewidth = 0.5,
+             lty = "dashed")+
+  facet_wrap(~fLake) +
+  theme_bw() +
+  ylim(0,7)
+
+
+divergence_all <- resp_div_all|> 
+  ggplot(aes(x = temp, y = sign, color = fLake)) +
+  geom_line(color = "#54008B") +
+  facet_wrap(~fLake)  +
+  theme_bw()
+
+mean_non <- df_mean_all |> 
+  group_by(fLake) |> 
+  distinct(mean_rdiv)
+
+sign_all <- resp_div_all |> 
+  group_by(fLake) |> 
+  summarise(mean_sign = mean(sign))
+ 
+
+
+# successful ones
+
+df_mean <- resp_div_succ |>
+  group_by(fLake) |> 
+  summarise(mean_rdiv = mean(rdiv))
+
+dissimilarity_succ <- resp_div_succ |> 
+  ggplot(aes(x = temp, y = rdiv)) +
+  geom_line(color = "#54008B") +
+  geom_hline(data = df_median, aes(yintercept = median_rdiv), linewidth = 0.5,
+             lty = "dashed")+
+  facet_wrap(~fLake) +
+  theme_bw() +
+  ylim(0, 7)
+
+divergence_succ <- resp_div_succ  |> 
+  ggplot(aes(x = temp, y = sign, color = fLake)) +
+  geom_line(color = "#54008B") +
+  facet_wrap(~fLake)  +
+  theme_bw()
+
+mean_succ <- df_mean |> 
+  group_by(fLake) |> 
+  distinct(mean_rdiv) |> 
+  rename(mean_success = mean_rdiv)
+
+sign_succ <- resp_div_succ |> 
+  group_by(fLake) |> 
+  summarise(mean_succ = mean(sign)) 
+
+
+sensitivity_divergence <- merge(sign_all, sign_succ)
+sensitivity <- merge(mean_succ, mean_non)
+
+
+# only changes rdiv in geneva, maggiore and poschiavo 
+
+# compare plots:
+
+library(gridExtra)
+
+grid.arrange(dissimilarity_all, dissimilarity_succ, ncol=2)
+
+
+mean_all_lakes <- merge(sensitivity, sensitivity_divergence) |> 
+  select(fLake, mean_rdiv, mean_sign)
+
+library(pals)
+
+mean_all_lakes |> 
+  ggplot(aes(mean_rdiv, mean_sign, color = fLake)) +
+  geom_point() +
+  theme_bw() +
+  scale_colour_manual(values=unname(glasbey()))
+
+# library(pals)
+# 
+# pal.bands(alphabet, alphabet2, cols25, glasbey, kelly, polychrome, 
+#           stepped, tol, watlington,
+#           show.names=FALSE)
+
+
+mean_all_lakes |> 
+  ggplot(aes(mean_rdiv, mean_sign)) +
+  geom_text(aes(label = fLake)) +
+  theme_bw()
+
+mean_all_lakes |> 
+  ggplot(aes(mean_rdiv, mean_sign)) +
+  geom_label(aes(label = fLake)) +
+  theme_bw()
+
+# look at all derivatives: gasterosteus gymnurus is strangeeee
+# maggiore: outlier is chondrostoma soetta
+all_lakes_tib |> 
+  filter(fLake == "Maggiore") |> 
+  # filter(derivative > 30) |>
+  ggplot(aes(temp, derivative, color = factor(species))) +
+  geom_line()
+
+
+species_lake <-  species_overview |> 
+  group_by(fLake, species) |> 
+  distinct() |> 
+  pivot_wider(names_from = fLake, values_from = species)
