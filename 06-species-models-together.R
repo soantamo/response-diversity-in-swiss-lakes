@@ -134,6 +134,27 @@ success_model_predictions |>
   scale_color_viridis(discrete=TRUE, guide = NULL)
   ylim(0, 1)
 
+  
+  # only joux 
+  
+  
+  joux_prediction <- model_predictions |> 
+    filter(species %in% c("Esox_lucius", "Thymallus_thymallus", "Coregonus_sp", 
+                          "Leuciscus_leuciscus", "Perca_fluviatilis", "Rutilus_rutilus",
+                          "Salmo_trutta", "Tinca_tinca")) |> 
+    filter(temp > 11.80075 & temp < 18.13332) |> 
+    mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |> 
+    ggplot(aes(temp, fit, color = factor(species))) +
+    geom_line() +
+    # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
+    theme_bw() +
+    # facet_wrap(~species, scale = "free") +
+    theme(strip.background = element_rect(fill="lightgrey")) +
+    scale_color_viridis(discrete=TRUE) +
+    ylab("Abundance") +
+    ggtitle("Lac de Joux")
+  
+  joux_prediction
 
 # next steps:
 # make dfs of derivatives per lake
@@ -165,10 +186,17 @@ str(all_lakes_tib)
 # all species are coming
 # it is not a tibble!!
 
-poschiavo <- all_lakes_tib |> 
-  filter(fLake == "Poschiavo") |> 
-  distinct(species)
+joux_deriv_plot <- all_models_derivatives |> 
+  filter(fLake == "Joux") |> 
+  ggplot(aes(temp, derivative, color = factor(species))) +
+  geom_line() +
+  theme_bw() +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  ylab("Derivative")
+  ylim(0, 0.5)
 
+joux_deriv_plot
 ######resp div with all models 
 
 lakes_list <- all_lakes_tib |> 
@@ -651,10 +679,11 @@ species_lake <-  species_overview |>
 
 
 lake_list <- resp_div_all |> 
+  filter(fLake == "Joux") |> 
   distinct(fLake) |> 
   pull(fLake)
 
-i == "Zurich"
+
 
 for (i in lake_list){
   data <- resp_div_all |> 
@@ -669,9 +698,10 @@ for (i in lake_list){
     geom_line(color = "#54008B") +
     geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
                lty = "dashed")+
-    facet_wrap(~fLake) +
+    # facet_wrap(~fLake) +
     theme_bw() +
-    ylim(0,7.5)
+    ylab("Dissimilarity") +
+    ylim(1,7.5)
   
   df_mean_divergence_all <- data |>
     group_by(fLake) |> 
@@ -680,12 +710,16 @@ for (i in lake_list){
   divergence_all <- data |> 
     ggplot(aes(x = temp, y = sign, color = fLake)) +
     geom_line(color = "#54008B") +
-    geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
-               lty = "dashed")+
-    facet_wrap(~fLake)  +
-    theme_bw()
+    # geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
+    #            lty = "dashed") +
+    # facet_wrap(~fLake)  +
+    theme_bw() +
+    ylab("Divergence") +
+    ylim(0, 1)
   
-  grid.arrange(dissimilarity_all, divergence_all, ncol=2)
+  grid_diss_divergence <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2)
   
 
 }
+
+grid.arrange(joux_prediction, joux_deriv_plot, dissimilarity_all, divergence_all, nrow = 4)
