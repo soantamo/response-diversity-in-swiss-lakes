@@ -113,7 +113,7 @@ unsuccesful_model_predictions |>
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  scale_color_viridis(discrete=TRUE, guide = NULL)
   ylim(0,1)
 
 test <- unsuccesful_model_predictions |> 
@@ -127,11 +127,11 @@ success_model_predictions |>
   mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
+  geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  scale_color_viridis(discrete=TRUE, guide = NULL)
   ylim(0, 1)
 
 
@@ -208,23 +208,37 @@ for (i in lakes_list){
     mutate(sum_species = n_distinct(species)) |>
     group_by(fLake, species, sum_species) |>
     distinct(species) |>
-    relocate(sum_species, .after = species)
+    relocate(sum_species, .after = species) |> 
+    mutate(num_species = 1)
 
   species_overview <- bind_rows(species_overview, number_species)
   
-  
+
   # df_resp_div <- data |>
   #   pivot_wider(
   #     names_from = species,
   #     values_from = derivative)
-  # 
-  # 
+
+
   # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
   # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
   # df_resp_div$Med <- median(df_resp_div$rdiv)
   # saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
-  # 
+
 }
+
+
+species_overview |> 
+  group_by(species) |>
+  arrange(species) |> 
+  ungroup() |> 
+  ggplot(aes(x = fLake, y = num_species, fill = species)) +
+  geom_col(show.legend = TRUE) +
+  scale_fill_viridis(discrete = TRUE, option = "H") +
+  coord_polar()
+
+  
+
 
 
 resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
@@ -508,17 +522,24 @@ df_mean_all <- resp_div_all |>
 dissimilarity_all <- resp_div_all |> 
   ggplot(aes(x = temp, y = rdiv)) +
   geom_line(color = "#54008B") +
-  geom_hline(data = df_mean_all, aes(yintercept = median_rdiv), linewidth = 0.5,
+  geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
              lty = "dashed")+
   facet_wrap(~fLake) +
   theme_bw() +
-  ylim(0,7)
+  ggtitle("80 Species") +
+  ylim(0,7.5)
 
+df_mean_divergence_all <- resp_div_all |>
+  group_by(fLake) |> 
+  summarise(mean_sign = mean(sign))
 
 divergence_all <- resp_div_all|> 
   ggplot(aes(x = temp, y = sign, color = fLake)) +
   geom_line(color = "#54008B") +
+  geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
+             lty = "dashed")+
   facet_wrap(~fLake)  +
+  ggtitle("80 Species") +
   theme_bw()
 
 mean_non <- df_mean_all |> 
@@ -540,16 +561,24 @@ df_mean <- resp_div_succ |>
 dissimilarity_succ <- resp_div_succ |> 
   ggplot(aes(x = temp, y = rdiv)) +
   geom_line(color = "#54008B") +
-  geom_hline(data = df_median, aes(yintercept = median_rdiv), linewidth = 0.5,
+  geom_hline(data = df_mean, aes(yintercept = mean_rdiv), linewidth = 0.5,
              lty = "dashed")+
   facet_wrap(~fLake) +
   theme_bw() +
-  ylim(0, 7)
+  ggtitle("74 Species") +
+  ylim(0, 7.5)
+
+df_mean_divergence <- resp_div_succ |>
+  group_by(fLake) |> 
+  summarise(mean_sign = mean(sign))
 
 divergence_succ <- resp_div_succ  |> 
   ggplot(aes(x = temp, y = sign, color = fLake)) +
   geom_line(color = "#54008B") +
+  geom_hline(data = df_mean_divergence, aes(yintercept = mean_sign), linewidth = 0.5,
+             lty = "dashed")+
   facet_wrap(~fLake)  +
+  ggtitle("74 Species") +
   theme_bw()
 
 mean_succ <- df_mean |> 
@@ -565,6 +594,8 @@ sign_succ <- resp_div_succ |>
 sensitivity_divergence <- merge(sign_all, sign_succ)
 sensitivity <- merge(mean_succ, mean_non)
 
+diss_div <- merge(divergence_all, divergence_succ, dissimilarity_all, dissimilarity_succ)
+
 
 # only changes rdiv in geneva, maggiore and poschiavo 
 
@@ -573,6 +604,7 @@ sensitivity <- merge(mean_succ, mean_non)
 library(gridExtra)
 
 grid.arrange(dissimilarity_all, dissimilarity_succ, ncol=2)
+grid.arrange(divergence_all, divergence_succ, ncol = 2)
 
 
 mean_all_lakes <- merge(sensitivity, sensitivity_divergence) |> 
@@ -616,3 +648,44 @@ species_lake <-  species_overview |>
   group_by(fLake, species) |> 
   distinct() |> 
   pivot_wider(names_from = fLake, values_from = species)
+
+
+lake_list <- resp_div_all |> 
+  distinct(fLake) |> 
+  pull(fLake)
+
+i == "Zurich"
+
+for (i in lake_list){
+  data <- resp_div_all |> 
+    filter(fLake == i)
+  
+  df_mean_all <- data |>
+    group_by(fLake) |> 
+    summarise(mean_rdiv = mean(rdiv))
+  
+  dissimilarity_all <- data |> 
+    ggplot(aes(x = temp, y = rdiv)) +
+    geom_line(color = "#54008B") +
+    geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
+               lty = "dashed")+
+    facet_wrap(~fLake) +
+    theme_bw() +
+    ylim(0,7.5)
+  
+  df_mean_divergence_all <- data |>
+    group_by(fLake) |> 
+    summarise(mean_sign = mean(sign))
+  
+  divergence_all <- data |> 
+    ggplot(aes(x = temp, y = sign, color = fLake)) +
+    geom_line(color = "#54008B") +
+    geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
+               lty = "dashed")+
+    facet_wrap(~fLake)  +
+    theme_bw()
+  
+  grid.arrange(dissimilarity_all, divergence_all, ncol=2)
+  
+
+}
