@@ -531,6 +531,14 @@ all_lakes_tib |>
 #############################################################################3
 # interpretation:
 
+mod_1_pred <- readRDS("total_models/pred_model_1_total")
+mod_2_pred <- readRDS("total_models/pred_model_2_total")
+mod_3_pred <- readRDS("total_models/pred_model_3_total")
+mod_4_pred <- readRDS("total_models/pred_model_4_total")
+
+model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
+  select(-fProtocol)
+
 mod_1_deriv <- readRDS("total_models/deriv_model_1_total")
 mod_2_deriv <- readRDS("total_models/deriv_model_2_total")
 mod_3_deriv <- readRDS("total_models/deriv_model_3_total")
@@ -538,6 +546,7 @@ mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
 
 all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
 
+all_lakes_tib <- as_tibble(all_models_derivatives)
 
 resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
 resp_div_succ <- readRDS("total_models/lakes/resp_div_succ.rds")
@@ -579,6 +588,13 @@ sign_all <- resp_div_all |>
   summarise(mean_sign = mean(sign))
  
 
+
+df_means <- merge(df_mean_all, df_mean_divergence_all)
+
+# save as excle
+library(writexl)
+
+write_xlsx(df_means, "total_models/response_diversity_overview.xlsx")
 
 # successful ones
 
@@ -679,21 +695,62 @@ species_lake <-  species_overview |>
 
 
 lake_list <- resp_div_all |> 
-  filter(fLake == "Joux") |> 
+  # filter(fLake == "Joux") |> 
   distinct(fLake) |> 
   pull(fLake)
 
 
 
+# looop plotting
+
+library(gridExtra)
+
+
 for (i in lake_list){
-  data <- resp_div_all |> 
+  
+  species_list <- all_lakes_tib |> 
+    filter(fLake == i) |> 
+    distinct(species) |> 
+    pull(species)
+  
+  data_deriv <- all_lakes_tib |> 
     filter(fLake == i)
   
-  df_mean_all <- data |>
-    group_by(fLake) |> 
-    summarise(mean_rdiv = mean(rdiv))
+  minimum <- min(data_deriv$temp)
+  maximum <- max(data_deriv$temp)
   
-  dissimilarity_all <- data |> 
+  data_pred <- model_predictions |> 
+    filter(species %in% species_list) |> 
+    filter(temp > minimum & temp < maximum)
+  
+  data_resp_div <-resp_div_all |> 
+    filter(fLake == i)
+  
+  lake_prediction <- data_pred |>
+    mutate(upper_se = fit + se.fit, lower_se = fit - se.fit)  |>
+    ggplot(aes(temp, fit, color = factor(species))) +
+    geom_line() +
+    # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
+    theme_bw() +
+    theme(strip.background = element_rect(fill="lightgrey")) +
+    scale_color_viridis(discrete=TRUE, guide = NULL) +
+    ylab("Abundance") +
+    ggtitle(i)
+  
+  deriv_plot <- data_deriv |> 
+    ggplot(aes(temp, derivative, color = factor(species))) +
+    geom_line() +
+    theme_bw() +
+    theme(strip.background = element_rect(fill="lightgrey")) +
+    scale_color_viridis(discrete=TRUE, guide = NULL) +
+    ylab("Derivative")
+  
+  
+  df_mean_all <- data_resp_div |>
+    group_by(fLake) |>
+    summarise(mean_rdiv = mean(rdiv))
+
+  dissimilarity_all <- data_resp_div |>
     ggplot(aes(x = temp, y = rdiv)) +
     geom_line(color = "#54008B") +
     geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
@@ -702,12 +759,12 @@ for (i in lake_list){
     theme_bw() +
     ylab("Dissimilarity") +
     ylim(1,7.5)
-  
-  df_mean_divergence_all <- data |>
-    group_by(fLake) |> 
+
+  df_mean_divergence_all <- data_resp_div |>
+    group_by(fLake) |>
     summarise(mean_sign = mean(sign))
-  
-  divergence_all <- data |> 
+
+  divergence_all <- data_resp_div |>
     ggplot(aes(x = temp, y = sign, color = fLake)) +
     geom_line(color = "#54008B") +
     # geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
@@ -717,9 +774,28 @@ for (i in lake_list){
     ylab("Divergence") +
     ylim(0, 1)
   
-  grid_diss_divergence <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2)
+  # Opening the graphical device
+# 
+#   pdf(paste("total_models/plots/plot_lake_", i, ".pdf", sep = ""), width = 4, height = 8)
+# 
+#   grid_all <- grid.arrange(lake_prediction, deriv_plot,
+#                            dissimilarity_all, divergence_all, nrow = 4)
+# 
+#   # Closing the graphical device
+#   dev.off()
+  
+  tiff(paste("total_models/plots/response_diversity_", i, ".tiff"), compression = "lzw",  units = "cm",
+       width = 8, height = 13, pointsize = 18, res = 300)
+
+  grid_all <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2, 
+                           top = textGrob( i ,gp=gpar(fontsize=20,font=3)))
+
+  # Closing the graphical device
+  dev.off()
+  
   
 
 }
 
-grid.arrange(joux_prediction, joux_deriv_plot, dissimilarity_all, divergence_all, nrow = 4)
+library(grid)
+
