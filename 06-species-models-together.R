@@ -69,15 +69,17 @@ levels(success_model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  mutate(up = fit + se.fit, low = fit - se.fit) |> 
+  # mutate(upper_se = fit +  1*se.fit, lower_se = fit - 1*se.fit) |> 
+  # summarize(lower_se = mean(lower_se), upper_se = mean(upper_se),
+  #           across(se.fit), across(species), across(fit)) |> 
+  filter(species %in% c("Alosa_fallax", "Salmo_sp")) |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = low, ymax = up), alpha = 0.3) +
+  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE, guide = NULL) 
-  ylim(0,1)
 
 # plot se, not working both
 model_predictions |> 
