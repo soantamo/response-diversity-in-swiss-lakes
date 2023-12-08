@@ -69,10 +69,6 @@ levels(success_model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  # mutate(upper_se = fit +  1*se.fit, lower_se = fit - 1*se.fit) |> 
-  # summarize(lower_se = mean(lower_se), upper_se = mean(upper_se),
-  #           across(se.fit), across(species), across(fit)) |> 
-  filter(species %in% c("Alosa_fallax", "Salmo_sp")) |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -220,8 +216,11 @@ lakes_list <- sort(lakes_list)
 
 species_overview <- tibble()
 
-all_lakes_tib |> 
-  distinct(species)
+
+all_lakes_tib$species <- as.character(all_lakes_tib$species)
+
+all_lakes_tib <- all_lakes_tib |> 
+  arrange(species)
 
 str(all_lakes_tib)
 
@@ -229,17 +228,16 @@ str(all_lakes_tib)
 for (i in lakes_list){
   
   data <- all_lakes_tib |>
-    select(temp, fLake, derivative, species) |>
+    select(temp, fLake, derivative, species) |> 
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
   
   number_species <- data |>
-    group_by(fLake) |>
-    mutate(sum_species = n_distinct(species)) |>
-    group_by(fLake, species, sum_species) |>
-    distinct(species) |>
-    relocate(sum_species, .after = species) |> 
-    mutate(num_species = 1)
+    group_by(fLake, species) |>
+    distinct(species) |> 
+    mutate(num_species = 1) |> 
+    group_by(fLake) |> 
+    mutate(sum_species = sum(num_species))
 
   species_overview <- bind_rows(species_overview, number_species)
   
@@ -258,17 +256,84 @@ for (i in lakes_list){
 }
 
 
+library(forcats)
+
+species_overview$fLake <- as.factor(species_overview$fLake)
+
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- 80
+mycolors <- colorRampPalette(brewer.pal(11, "PuOr"))(nb.cols)
+
 species_overview |> 
-  group_by(species) |>
-  arrange(species) |> 
-  ungroup() |> 
-  ggplot(aes(x = fLake, y = num_species, fill = species)) +
+  # filter(fLake == "Biel") |>
+  # mutate(Lake = fct_reorder(fLake, media_IMDB, .desc=FALSE))  %>%
+  ggplot(aes(x = fct_reorder(fLake, sum_species), y = num_species, fill = factor(species))) +
   geom_col(show.legend = TRUE) +
   scale_fill_viridis(discrete = TRUE, option = "H") +
-  coord_polar()
+  # scale_fill_manual(values = mycolors) +
+  xlab("Lake") +
+  theme_bw()
+
+# i need another solution for the species composition. no sense like this
+
+# lollipop for better overview of number of species in model
+# change colors
+
+species_overview |> 
+  ggplot(aes(x = fct_reorder(fLake, sum_species), y = sum_species)) +
+  geom_segment(aes(x=fct_reorder(fLake, sum_species), xend=fct_reorder(fLake, sum_species), y=0, yend=sum_species), color="skyblue") +
+  geom_point( color="blue", size=3, alpha=0.6) +
+  coord_flip() +
+  xlab("") +
+  ylab("Number of species")
+
+  scale_fill_viridis(discrete = TRUE, option = "H") +
+  # scale_fill_manual(values = mycolors) +
+  xlab("Lake") +
+  theme_bw()
+
+# what do I want to visualize?
+# species per lake:lollipop
+# derivatives of each species in lakes to see which species drives the differences
+  # -> numerical derivatives, categorical species and lake
+  # boxplot probably best
+  
+# derivative and temp -> either geom_line or geom_area. geom_line definitely
+all_lakes_tib |> 
+  filter(fLake == "Biel") |> 
+  ggplot(aes(x = temp, y = derivative)) +
+  # geom_area(aes(color = factor(species), alpha = 0.5))
+  geom_line(aes(color = factor(species)), linewidth=1)
+  # facet_wrap(~species) +
+  scale_fill_viridis(discrete=TRUE, guide = NULL)
+  
+  # differences in derivatives per species
+  # boxplot is a possibility
+  
+  library(RColorBrewer)
+  # Define the number of colors you want
+  nb.cols <- 80
+  mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+  
+  
+  all_lakes_tib |> 
+    filter(species != "Gasterosteus_gymnurus") |> 
+    filter(fLake == "Thun") |>
+    # filter(fLake %in% c("Biel", "Thun", "Brienz", "Maggiore")) |>
+    # filter(!species %in% c("Gasterosteus_gymnurus")) |> 
+    ggplot(aes(x = fct_reorder(species, derivative), y = derivative, fill = factor(species))) +
+    geom_boxplot() +
+    coord_flip() +
+    facet_wrap(~fLake) +
+    xlab("") +
+    scale_fill_manual(values = mycolors, guide = NULL) 
+
+    
 
   
 
+  
 
 
 resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
@@ -591,7 +656,15 @@ sign_all <- resp_div_all |>
  
 
 
-df_means <- merge(df_mean_all, df_mean_divergence_all)
+df_means <- merge(df_mean_all, df_mean_divergence_all) |> 
+  rename(Lake = fLake, mean_dissimilarity = mean_rdiv, mean_divergence = mean_sign)
+
+
+library(gt)
+
+df_means |>
+  arrange(mean_divergence) |> 
+  gt()
 
 # save as excle
 library(writexl)
@@ -697,7 +770,7 @@ species_lake <-  species_overview |>
 
 
 lake_list <- resp_div_all |> 
-  # filter(fLake == "Joux") |> 
+  # filter(fLake == "Joux") |>
   distinct(fLake) |> 
   pull(fLake)
 
@@ -706,6 +779,7 @@ lake_list <- resp_div_all |>
 # looop plotting
 
 library(gridExtra)
+library(grid)
 
 
 for (i in lake_list){
@@ -776,28 +850,155 @@ for (i in lake_list){
     ylab("Divergence") +
     ylim(0, 1)
   
-  # Opening the graphical device
-# 
-#   pdf(paste("total_models/plots/plot_lake_", i, ".pdf", sep = ""), width = 4, height = 8)
-# 
-#   grid_all <- grid.arrange(lake_prediction, deriv_plot,
-#                            dissimilarity_all, divergence_all, nrow = 4)
-# 
-#   # Closing the graphical device
-#   dev.off()
-  
-  tiff(paste("total_models/plots/response_diversity_", i, ".tiff"), compression = "lzw",  units = "cm",
-       width = 8, height = 13, pointsize = 18, res = 300)
+# Opening the graphical device
 
-  grid_all <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2, 
-                           top = textGrob( i ,gp=gpar(fontsize=20,font=3)))
+  # pdf(paste("total_models/plots/plot_lake_", i, ".pdf", sep = ""), width = 4, height = 8)
+  # tiff(paste("total_models/plots/plot_lake_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
+  #      width = 6, height = 13, pointsize = 18, res = 300)
+  
+  tiff(paste("total_models/plots/plot_predictions_no_guide_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
+       width = 12, height = 8, pointsize = 18, res = 300)
+
+
+  grid_all <- grid.arrange(lake_prediction, deriv_plot,
+                           dissimilarity_all, divergence_all, nrow = 4)
+
+  grid_all <- grid.arrange(lake_prediction, nrow = 1)
 
   # Closing the graphical device
   dev.off()
-  
+# 
+#   tiff(paste("total_models/plots/response_diversity_", i, ".tiff"), compression = "lzw",  units = "cm",
+#        width = 8, height = 13, pointsize = 18, res = 300)
+# 
+#   grid_all <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2,
+#                            top = textGrob( i ,gp=gpar(fontsize=20,font=3)))
+# 
+#   # Closing the graphical device
+#   dev.off()
+
   
 
 }
 
-library(grid)
+
+lake_list <- all_lakes_tib |> 
+  # filter(fLake == "Joux") |>
+  distinct(fLake) |> 
+  pull(fLake)
+
+# boxplots of species and derivatives for each lake
+
+# differences in derivatives per species
+# boxplot is a possibility
+
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- 80
+mycolors <- colorRampPalette(brewer.pal(8, "Accent"))(nb.cols)
+
+
+for (i in lake_list){
+  data <- all_lakes_tib |> 
+    filter(fLake == i)
+  
+  boxplot_deriv <- data |> 
+    ggplot(aes(x = fct_reorder(species, derivative), y = derivative, fill = factor(species))) +
+    geom_boxplot() +
+    coord_flip() +
+    facet_wrap(~fLake) +
+    xlab("") +
+    scale_fill_manual(values = mycolors, guide = NULL) 
+  
+  
+  tiff(paste("total_models/plots/plot_derivatives_species_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
+       width = 12, height = 8, pointsize = 18, res = 300)
+  
+  plot(boxplot_deriv)
+  
+  # Closing the graphical device
+  dev.off()
+}
+
+
+
+data_test <- all_lakes_tib %>%
+  mutate(species2=species) |> 
+  select(-species)
+
+all_lakes_tib |>
+  filter(fLake %in% c("Biel")) |> 
+  ggplot( aes(x=temp, y=derivative, group = species, color = species)) +
+  # geom_line(data = data_test, aes(group=species2), color="grey", size=0.5, alpha=0.5)+
+  geom_line(aes(color=species, group = species), color="#69b3a2", size=1.2 ) +
+  scale_color_viridis(discrete = TRUE) +
+  # theme_bw() +
+  # theme(
+  #   legend.position="none",
+  #   plot.title = element_text(size=14),
+  #   panel.grid = element_blank()
+  # ) +
+  # ggtitle("A spaghetti chart of baby names popularity") +
+  facet_wrap(~species)
+
+
+data_test <- all_lakes_tib %>%
+  mutate(species2=species) |> 
+  select(-species)
+
+
+# highlight specific lines in one lake 
+# not working https://www.data-to-viz.com/caveat/spaghetti.html
+# https://www.datanovia.com/en/blog/gghighlight-easy-way-to-highlight-a-ggplot-in-r/
+# https://yutannihilation.github.io/gghighlight/articles/gghighlight.html
+library(gghighlight)
+
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- 80
+mycolors <- colorRampPalette(brewer.pal(8, "PiYG"))(nb.cols)
+
+str(all_lakes_tib)
+
+all_lakes_tib |> 
+  filter(fLake == "Biel") |> 
+  ggplot() +
+  geom_line(aes(x=temp, y=derivative, color = species)) +
+  gghighlight(use_direct_label = FALSE) +
+  scale_color_viridis(discrete = TRUE) +
+  # scale_color_manual(values = mycolors) +
+  facet_wrap(~species)
+
+
+
+lake_list <- all_lakes_tib |> 
+  # filter(fLake == "Joux") |>
+  distinct(fLake) |> 
+  pull(fLake)
+
+for (i in lake_list){
+  data <- all_lakes_tib |> 
+    arrange(species) |> 
+    filter(fLake == i)
+  
+  highlight_plot <- data |> 
+    ggplot() +
+    geom_line(aes(x=temp, y=derivative, color = species)) +
+    gghighlight(use_direct_label = FALSE) +
+    scale_color_viridis(discrete = TRUE, guide = NULL) +
+    # scale_color_manual(values = mycolors) +
+    facet_wrap(~species)
+  
+  
+  pdf(paste("total_models/plots/plot_highlight_line_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
+       width = 12, height = 12, pointsize = 18, res = 300)
+  
+  plot(highlight_plot)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+}
+
 
