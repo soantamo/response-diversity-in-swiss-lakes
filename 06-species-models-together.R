@@ -990,8 +990,7 @@ for (i in lake_list){
     facet_wrap(~species)
   
   
-  pdf(paste("total_models/plots/plot_highlight_line_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
-       width = 12, height = 12, pointsize = 18, res = 300)
+  tiff(paste("total_models/plots/plot_highlight_line_", i, ".tiff", sep = ""), units="in", width=5, height=5, res=300)
   
   plot(highlight_plot)
   
@@ -1000,5 +999,46 @@ for (i in lake_list){
   
   
 }
+
+
+# heatmap testing for Lake vs Species and derivative to look for outliers
+# https://www.data-to-viz.com/graph/heatmap.html
+# heatmap of lake, species and mean_derivative 
+library(plotly)
+
+data <- all_lakes_tib |> 
+  mutate(species = factor(species)) |> 
+  group_by(fLake, species) |> 
+  mutate(mean_derivative = mean(derivative)) |> 
+  mutate(mean_temp = mean(temp)) |> 
+  distinct(species, fLake, mean_temp, mean_derivative) |> 
+  ungroup() |> 
+  arrange(mean_derivative)
+  
+data |> 
+  filter(species != "Gasterosteus_gymnurus") |> 
+  ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= mean_derivative)) + 
+  geom_tile() +
+  scale_fill_distiller(palette = "BrBG")
+
+# heatmaps of response dievrsity 
+
+data <- all_lakes_tib |> 
+  mutate(species = factor(species)) |> 
+  group_by(fLake, species) |> 
+  mutate(mean_derivative = mean(derivative)) |> 
+  mutate(mean_temp = mean(temp)) |> 
+  distinct(species, fLake, mean_temp, mean_derivative) |> 
+  ungroup() |> 
+  arrange(mean_derivative)
+
+df_means |> 
+  ggplot(aes(Lake, y = mean_dissimilarity, fill= mean_divergence)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "BrBG")
+
+
+
+
 
 
