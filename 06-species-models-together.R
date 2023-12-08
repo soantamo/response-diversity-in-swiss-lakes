@@ -282,11 +282,12 @@ species_overview |>
 
 species_overview |> 
   ggplot(aes(x = fct_reorder(fLake, sum_species), y = sum_species)) +
-  geom_segment(aes(x=fct_reorder(fLake, sum_species), xend=fct_reorder(fLake, sum_species), y=0, yend=sum_species), color="skyblue") +
-  geom_point( color="blue", size=3, alpha=0.6) +
+  geom_segment(aes(x=fct_reorder(fLake, sum_species), xend=fct_reorder(fLake, sum_species), y=0, yend=sum_species), color ="darkgrey") +
+  geom_point(size=2) +
   coord_flip() +
   xlab("") +
-  ylab("Number of species")
+  ylab("Number of species") +
+  theme_classic()
 
   scale_fill_viridis(discrete = TRUE, option = "H") +
   # scale_fill_manual(values = mycolors) +
@@ -1000,6 +1001,51 @@ for (i in lake_list){
   
 }
 
+# same with predictions 
+
+lake_list <- all_lakes_tib |> 
+  # filter(fLake == "Joux") |>
+  distinct(fLake) |> 
+  pull(fLake)
+
+for (i in lake_list){
+  
+  species_list <- all_lakes_tib |> 
+    filter(fLake == i) |> 
+    distinct(species) |> 
+    pull(species)
+  
+  data_deriv <- all_lakes_tib |> 
+    filter(fLake == i)
+  
+  minimum <- min(data_deriv$temp)
+  maximum <- max(data_deriv$temp)
+  
+  data_pred <- model_predictions |> 
+    filter(species %in% species_list) |> 
+    filter(temp > minimum & temp < maximum)
+  
+  highlight_plot <- data_pred |> 
+    ggplot() +
+    geom_line(aes(x=temp, y=fit, color = species)) +
+    gghighlight(use_direct_label = FALSE) +
+    scale_color_viridis(discrete = TRUE, guide = NULL) +
+    # scale_color_manual(values = mycolors) +
+    facet_wrap(~species)
+  
+  
+  tiff(paste("total_models/plots/prediction_highlight_line_", i, ".tiff", sep = ""), units="in", width=5, height=5, res=300)
+  
+  plot(highlight_plot)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  
+  
+}
+
 
 # heatmap testing for Lake vs Species and derivative to look for outliers
 # https://www.data-to-viz.com/graph/heatmap.html
@@ -1016,12 +1062,12 @@ data <- all_lakes_tib |>
   arrange(mean_derivative)
   
 data |> 
-  filter(species != "Gasterosteus_gymnurus") |> 
+  filter(!species %in% c("Gasterosteus_gymnurus")) |> 
   ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= mean_derivative)) + 
   geom_tile() +
-  scale_fill_distiller(palette = "BrBG")
+  scale_fill_distiller(palette = "PRGn")
 
-# heatmaps of response dievrsity 
+# heatmaps of response dievrsity, does not make sense
 
 data <- all_lakes_tib |> 
   mutate(species = factor(species)) |> 
@@ -1036,6 +1082,53 @@ df_means |>
   ggplot(aes(Lake, y = mean_dissimilarity, fill= mean_divergence)) +
   geom_tile() +
   scale_fill_distiller(palette = "BrBG")
+
+# trying to do barplots or boxplots with all values not means
+
+head(resp_div_all)
+str(resp_div_all)
+# needs to be long again
+
+resp_div_long <- resp_div_all |> 
+  pivot_longer(cols = Coregonus_confusus:Coregonus_zuerichensis, names_to = "species",
+               values_to = "derivative") |> 
+  drop_na()
+
+# dissimilarity per lake
+resp_div_long |> 
+  ggplot(aes(x = fct_reorder(fLake, rdiv), rdiv)) +
+  geom_boxplot() +
+  coord_flip()
+
+# # divergence per lake
+resp_div_long |> 
+  ggplot(aes(x = fct_reorder(fLake, sign), sign)) +
+  geom_boxplot() +
+  coord_flip()
+
+# diss and divergence per lake
+
+library(gghighlight)
+library(forcats)
+
+resp_div_long |> 
+  ggplot(aes(temp, sign, color = fLake)) +
+  geom_line(color = "#2F1163") +
+  gghighlight(use_direct_label = FALSE) +
+  # scale_color_manual(values = mycolors) +
+  facet_wrap(facets = ~fct_reorder(fLake, sign, .desc = TRUE)) +
+  theme_bw()
+
+
+resp_div_long |> 
+  ggplot(aes(temp, y = rdiv, color = fLake)) +
+  geom_line(color = "#2F1163") +
+  gghighlight(use_direct_label = FALSE) +
+  # scale_color_viridis(discrete = TRUE, guide = NULL) +
+  # scale_color_manual(values = mycolors) +
+  facet_wrap(facets = ~fct_reorder(fLake, rdiv, .desc = TRUE)) +
+  theme_bw()
+
 
 
 
