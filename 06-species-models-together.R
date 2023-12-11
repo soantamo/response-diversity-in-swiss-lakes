@@ -231,23 +231,24 @@ for (i in lakes_list){
     select(temp, fLake, derivative, species) |> 
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
-  
+
   number_species <- data |>
     group_by(fLake, species) |>
-    distinct(species) |> 
-    mutate(num_species = 1) |> 
-    group_by(fLake) |> 
+    distinct(species) |>
+    mutate(num_species = 1) |>
+    group_by(fLake) |>
     mutate(sum_species = sum(num_species))
 
   species_overview <- bind_rows(species_overview, number_species)
+  saveRDS(species_overview, paste0("total_models/lakes_all_models/species_overview_", i, ".rds"))
   
 
   # df_resp_div <- data |>
   #   pivot_wider(
   #     names_from = species,
   #     values_from = derivative)
-
-
+  # 
+  # 
   # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
   # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
   # df_resp_div$Med <- median(df_resp_div$rdiv)
@@ -255,6 +256,11 @@ for (i in lakes_list){
 
 }
 
+# resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
+#   map_dfr(readRDS) |> 
+#   relocate(rdiv, Med, sign, .after = temp)
+
+saveRDS(resp_div_no_excl,"total_models/lakes_all_models/resp_div_all.rds")
 
 library(forcats)
 
@@ -617,7 +623,7 @@ all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4
 all_lakes_tib <- as_tibble(all_models_derivatives)
 
 resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
-resp_div_succ <- readRDS("total_models/lakes/resp_div_succ.rds")
+# resp_div_succ <- readRDS("total_models/lakes/resp_div_succ.rds")
 # all models
 
 df_mean_all <- resp_div_all |>
@@ -633,6 +639,8 @@ dissimilarity_all <- resp_div_all |>
   theme_bw() +
   ggtitle("80 Species") +
   ylim(0,7.5)
+
+dissimilarity_all
 
 df_mean_divergence_all <- resp_div_all |>
   group_by(fLake) |> 
