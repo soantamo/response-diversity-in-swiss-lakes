@@ -134,6 +134,7 @@ derivatives <- list()
 gam_output <- list()
 
 
+
 for (i in species_list) {
   data <- df_binomial_gam |> 
     filter(Species == i)
@@ -142,9 +143,11 @@ for (i in species_list) {
 
   lake_list <- distinct(data, Lake) |> 
     pull()
+  
   for (j in lake_list){
     
     data_lake <- df_binomial_gam |> 
+      filter(Species == i) |> 
       filter(fLake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
@@ -176,7 +179,7 @@ for (i in species_list) {
 #   summarize(observations = sum(Abundance))
 #prepare total df for derivatives
 
-# df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |> 
+# df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |>
 #   map_dfr(readRDS)
 
 # save total derivatives as RDS
