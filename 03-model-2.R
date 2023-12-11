@@ -33,7 +33,7 @@ head(df_abundance_gam)
 #all others work with k = 3
 
 species_list <- df_abundance_gam |>
-  filter(Species %in% c("Coregonus_profundus",
+  filter(!Species %in% c("Coregonus_profundus",
                         "Phoxinus_sp", "Coregonus_zugensis",
   "Telestes_muticellus")) |>
   # binomial species
@@ -67,36 +67,36 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-  #                          s(fProtocol, bs = 're'), family = ziP())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = ziP())
   
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = binomial())
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = binomial())
   # prepare residuals
-  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # Main plot function from DHARMa, which gives 
-  # Left: a qq-plot to detect overall deviations from the expected distribution
-  # Right: a plot of the residuals against the rank-transformed model predictions
-  tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff(tiff_filename, width = 800, height = 600)
-  print(plot(simulationOutput))
-  dev.off()
-  # get rid of NAs in temp datat
-  temp_data <- data |> 
-    drop_na(mean_last_7days)
-  # Plotting standardized residuals against predictors
-  tiff_file_2 <- paste("model_2/gam_check/predictor_", i, ".tiff", sep = "")
-  tiff(tiff_file_2, width = 800, height = 600)
-  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  dev.off()
-  print(glance(gam_output[[i]]))
-  
+  # simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # # Main plot function from DHARMa, which gives 
+  # # Left: a qq-plot to detect overall deviations from the expected distribution
+  # # Right: a plot of the residuals against the rank-transformed model predictions
+  # tiff_filename <- paste("model_2/gam_check/gam_check_", i, ".tiff", sep = "")
+  # tiff(tiff_filename, width = 800, height = 600)
+  # print(plot(simulationOutput))
+  # dev.off()
+  # # get rid of NAs in temp datat
+  # temp_data <- data |> 
+  #   drop_na(mean_last_7days)
+  # # Plotting standardized residuals against predictors
+  # tiff_file_2 <- paste("model_2/gam_check/predictor_", i, ".tiff", sep = "")
+  # tiff(tiff_file_2, width = 800, height = 600)
+  # print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+  # dev.off()
+  # print(glance(gam_output[[i]]))
+  # 
   model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
   model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    mutate(lower = fit - 1*se.fit, upper = fit + 1*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
               across(se.fit), across(fProtocol)) |>
     rename(temp = mean_last_7days) |>
@@ -132,7 +132,8 @@ df_pred_mod2 |>
 # telestes muticellsu derivative incredebibly strange
 
 species_list <- df_abundance_gam |> 
-  filter(Species %in% c("Coregonus_profundus",
+  # binomial ones
+  filter(!Species %in% c("Coregonus_profundus",
                          "Phoxinus_sp", "Coregonus_zugensis",
                          "Telestes_muticellus")) |>
   distinct(Species) |> 
@@ -154,14 +155,15 @@ gam_output <- list()
 for (i in species_list) {
   data <- df_abundance_gam |> 
     filter(Species == i)
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = binomial())
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
-  #                        family = ziP())
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = binomial())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
+                         family = ziP())
   lake_list <- distinct(data, Lake) |> 
     pull()
   for (j in lake_list){
     data_lake <- df_abundance_gam |> 
+      filter(Species == i) |> 
       filter(fLake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
