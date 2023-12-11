@@ -64,31 +64,31 @@ for (i in species_list) {
   gam_output[[i]]  <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = "re")
                           + s(fProtocol, bs = 're'), family = binomial)
   # prepare residuals
-  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # Main plot function from DHARMa, which gives 
-  # Left: a qq-plot to detect overall deviations from the expected distribution
-  # Right: a plot of the residuals against the rank-transformed model predictions
-  tiff_filename <- paste("model_3/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff(tiff_filename, width = 800, height = 600)
-  print(plot(simulationOutput))
-  dev.off()
-  # get rid of NAs in temp datat
-  temp_data <- data |> 
-    drop_na(mean_last_7days)
-  # Plotting standardized residuals against predictors
-  tiff_file_2 <- paste("model_3/gam_check/predictor_", i, ".tiff", sep = "")
-  tiff(tiff_file_2, width = 800, height = 600)
-  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  dev.off()
-  
-  print(glance(gam_output[[i]]))
-  
+  # simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # # Main plot function from DHARMa, which gives 
+  # # Left: a qq-plot to detect overall deviations from the expected distribution
+  # # Right: a plot of the residuals against the rank-transformed model predictions
+  # tiff_filename <- paste("model_3/gam_check/gam_check_", i, ".tiff", sep = "")
+  # tiff(tiff_filename, width = 800, height = 600)
+  # print(plot(simulationOutput))
+  # dev.off()
+  # # get rid of NAs in temp datat
+  # temp_data <- data |> 
+  #   drop_na(mean_last_7days)
+  # # Plotting standardized residuals against predictors
+  # tiff_file_2 <- paste("model_3/gam_check/predictor_", i, ".tiff", sep = "")
+  # tiff(tiff_file_2, width = 800, height = 600)
+  # print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+  # dev.off()
+  # 
+  # print(glance(gam_output[[i]]))
+  # 
   model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
   model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
   pred_df <- model_bind |>
     group_by(mean_last_7days) |>
     mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 2*se.fit, upper = fit + 2*se.fit) |>
+    mutate(lower = fit - 1*se.fit, upper = fit + 1*se.fit) |>
     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit)) |>
     rename(temp = mean_last_7days) |> 
     #with across() we can retain our column for se.fit
@@ -104,6 +104,7 @@ df_pred_mod3 <- list.files(path = "model_3/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
+
 # saveRDS(df_pred_mod3, "total_models/pred_model_3_total")
 
 
@@ -135,6 +136,7 @@ df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
 
 str(df_binomial_re)
 
+i <- "Squalius_cephalus"
 # we need to get the derivatives for every lake
 
 derivatives <- list()
@@ -151,6 +153,7 @@ for (i in species_list) {
   for (j in lake_list){
     
     data_lake <- df_binomial_re |> 
+      filter(Species == i) |> 
       filter(fLake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
@@ -165,9 +168,11 @@ for (i in species_list) {
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
-    saveRDS(derivatives, paste0("model_3/derivatives/derivatives_", i, "_",  j, ".rds"))
+    # saveRDS(derivatives, paste0("model_3/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
+
+
 
 #prepare total df for derivatives
 
