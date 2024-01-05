@@ -14,8 +14,9 @@ library(DHARMa)
 
 df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 
-
-
+# abu <- df_binomial_gam |> 
+#   group_by(Species, Lake) |> 
+#   summarize(tot_abu = sum(Abundance))
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
@@ -55,23 +56,23 @@ for (i in species_list) {
                       s(fProtocol, bs = 're'), family = binomial)
   # 
   # # prepare residuals
-  # simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # # Main plot function from DHARMa, which gives 
-  # # Left: a qq-plot to detect overall deviations from the expected distribution
-  # # Right: a plot of the residuals against the rank-transformed model predictions
-  # tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
-  # tiff(tiff_filename, width = 800, height = 600)
-  # print(plot(simulationOutput))
-  # dev.off()
-  # # get rid of NAs in temp datat
-  # temp_data <- data |> 
-  #   drop_na(mean_last_7days)
-  # # Plotting standardized residuals against predictors
-  # tiff_file_2 <- paste("model_1/gam_check/predictor_", i, ".tiff", sep = "")
-  # tiff(tiff_file_2, width = 800, height = 600)
-  # print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  # dev.off()
-  # print(glance(gam_output[[i]]))
+  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # Main plot function from DHARMa, which gives
+  # Left: a qq-plot to detect overall deviations from the expected distribution
+  # Right: a plot of the residuals against the rank-transformed model predictions
+  tiff_filename <- paste("model_1/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(plot(simulationOutput))
+  dev.off()
+  # get rid of NAs in temp datat
+  temp_data <- data |>
+    drop_na(mean_last_7days)
+  # Plotting standardized residuals against predictors
+  tiff_file_2 <- paste("model_1/gam_check/predictor_", i, ".tiff", sep = "")
+  tiff(tiff_file_2, width = 800, height = 600)
+  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+  dev.off()
+  print(glance(gam_output[[i]]))
   model_prediction[[i]] <- predict.gam(gam_output[[i]], grid, type = "response", se.fit = TRUE) #adding se, $fit
   model_bind <- cbind(model_prediction[[i]], grid)
   pred_df <- model_bind |>
@@ -85,16 +86,13 @@ for (i in species_list) {
   saveRDS(pred_df, paste0("model_1/predictions/predictions_",i,".rds"))
 }
 
-# warning for "Gasterosteus_gymnurus" 
-# 16: In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS,  ... :
-#                 Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig pr
 
 # predictions df
 df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
 df_pred_mod1 |> 
@@ -104,7 +102,7 @@ df_pred_mod1 |>
   theme_bw() +
   facet_wrap(~species, scales = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE) 
+  scale_color_viridis(discrete=TRUE, guide = NULL) 
 
 ###################derivatives
 
@@ -115,10 +113,6 @@ species_list <- df_binomial_gam |>
   # filter(Species == "Chondrostoma_nasus") |>
   distinct(Species) |> 
   pull(Species)
-
-# some derivatives look strange: both chondrostoma, Cottus_gobio_Profundal_Walen,
-# Rutilus_aula, Salmo_sp, Salvelinus_profundus -> the only problem is the scale of y axis
-
 
 species_list <- sort(species_list)
 
@@ -165,12 +159,6 @@ for (i in species_list) {
     saveRDS(derivatives, paste0("model_1/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
-
-
-# again Warnmeldung:
-# In newton(lsp = lsp, X = G$X, y = G$y, Eb = G$Eb, UrS = G$UrS, L = G$L,  :
-#             Iterationsgrenze erreicht ohne volle Konvergenz -- sorgfältig prüfen
-# probably for gasterosteus gymnurus
 
 
 # df_binomial_gam |> 
