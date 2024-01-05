@@ -12,9 +12,15 @@ library(DHARMa)
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
+# 
+# df_final <- readRDS("df_final.rds")
+# # testing if s.cephalus works if we only have one fish caught in brienz 
+# 
+# squalius <- df_final |> 
+#   filter(Species == "Squalius_cephalus")
 
-df_binomial_re <- readRDS("data_frame_models/df_binomial_re") |> 
-  filter(!Species == "Coregonus_brienzii")
+df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
+  # filter(!Species == "Coregonus_brienzii")
 
 table(df_binomial_re$Abundance) 
 str(df_binomial_re)
@@ -29,6 +35,7 @@ df_binomial_re |>
 #adding the manual margin effect calculation
 
 species_list <- df_binomial_re |> 
+  # filter(Species == "Squalius_cephalus") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -48,12 +55,15 @@ temp_data <- list()
 df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
 df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
 
+df_final$fLake <- as.factor(df_final$Lake)
+df_final$fProtocol <- as.factor(df_final$Protocol)
+
 str(df_binomial_re)
 #make new loop 
 ###predict.gam needs something else
 
 for (i in species_list) {
-  data <- df_binomial_re |> 
+  data <- df_final |> 
     filter(Species == i)
   unique_lakes <- distinct(data, fLake)
   unique_protocol <- distinct(data, fProtocol)
@@ -64,25 +74,25 @@ for (i in species_list) {
   gam_output[[i]]  <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = "re")
                           + s(fProtocol, bs = 're'), family = binomial)
   # prepare residuals
-  # simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # # Main plot function from DHARMa, which gives 
   # # Left: a qq-plot to detect overall deviations from the expected distribution
   # # Right: a plot of the residuals against the rank-transformed model predictions
-  # tiff_filename <- paste("model_3/gam_check/gam_check_", i, ".tiff", sep = "")
-  # tiff(tiff_filename, width = 800, height = 600)
-  # print(plot(simulationOutput))
-  # dev.off()
+  tiff_filename <- paste("model_3/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(plot(simulationOutput))
+  dev.off()
   # # get rid of NAs in temp datat
-  # temp_data <- data |> 
-  #   drop_na(mean_last_7days)
+  temp_data <- data |>
+    drop_na(mean_last_7days)
   # # Plotting standardized residuals against predictors
-  # tiff_file_2 <- paste("model_3/gam_check/predictor_", i, ".tiff", sep = "")
-  # tiff(tiff_file_2, width = 800, height = 600)
-  # print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  # dev.off()
-  # 
-  # print(glance(gam_output[[i]]))
-  # 
+  tiff_file_2 <- paste("model_3/gam_check/predictor_", i, ".tiff", sep = "")
+  tiff(tiff_file_2, width = 800, height = 600)
+  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+  dev.off()
+
+  print(glance(gam_output[[i]]))
+
   model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
   model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
   pred_df <- model_bind |>
@@ -99,18 +109,15 @@ for (i in species_list) {
 
 # predictions df
 
-
 df_pred_mod3 <- list.files(path = "model_3/predictions", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-
-# saveRDS(df_pred_mod3, "total_models/pred_model_3_total")
+saveRDS(df_pred_mod3, "total_models/pred_model_3_total")
 
 
 
 df_pred_mod3 |> 
-  filter(species == "Coregonus_brienzii") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -119,6 +126,10 @@ df_pred_mod3 |>
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE) 
 
+
+pred_df |> 
+  ggplot(aes(temp, fit)) +
+  geom_line()
 
 
 ###################derivatives
@@ -136,7 +147,6 @@ df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
 
 str(df_binomial_re)
 
-i <- "Squalius_cephalus"
 # we need to get the derivatives for every lake
 
 derivatives <- list()
@@ -168,7 +178,7 @@ for (i in species_list) {
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
-    # saveRDS(derivatives, paste0("model_3/derivatives/derivatives_", i, "_",  j, ".rds"))
+    saveRDS(derivatives, paste0("model_3/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
