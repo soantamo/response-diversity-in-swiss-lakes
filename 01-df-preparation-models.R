@@ -236,13 +236,15 @@ df_abundance_re <- df_models |>
 
 #What about the ones with only one occurence in one of the lakes?
 #10.11. here we could set a higher threshold
+# should those be included again? does code run with this data? 
 #3. 
 one_fish_in_lake <- df_models |> 
   group_by(Lake, Species) |> 
   summarize(TotalAbundance = sum(Abundance), .groups = 'drop') |> 
   filter(TotalAbundance == 1) |> 
-  distinct(Species) |> 
-  pull(Species) 
+  # distinct(Species) |>
+  # pull(Species)
+  distinct(Species, Lake)
 
 
 #18 species
