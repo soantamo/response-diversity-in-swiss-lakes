@@ -14,6 +14,10 @@ library(DHARMa)
 
 df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 
+df_abundance_re |> 
+  distinct(Lake) 
+  pull(Species)
+
 # we have to delete the observation of lepomis gibbosus at 7.132625 degrees
 
 df_abundance_re <- df_abundance_re |> 
@@ -88,25 +92,25 @@ for (i in species_list) {
   # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
   #                        +  s(fProtocol, bs = 're'), family = binomial)
   # prepare residuals
-  # simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # # Main plot function from DHARMa, which gives 
-  # # Left: a qq-plot to detect overall deviations from the expected distribution
-  # # Right: a plot of the residuals against the rank-transformed model predictions
-  # tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
-  # tiff(tiff_filename, width = 800, height = 600)
-  # print(plot(simulationOutput))
-  # dev.off()
-  # # get rid of NAs in temp datat
-  # temp_data <- data |> 
-  #   drop_na(mean_last_7days)
-  # # Plotting standardized residuals against predictors
-  # tiff_file_2 <- paste("model_4/gam_check/predictor_", i, ".tiff", sep = "")
-  # tiff(tiff_file_2, width = 800, height = 600)
-  # print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  # dev.off()
-  # 
-  # print(glance(gam_output[[i]]))
-  # 
+  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+  # Main plot function from DHARMa, which gives
+  # Left: a qq-plot to detect overall deviations from the expected distribution
+  # Right: a plot of the residuals against the rank-transformed model predictions
+  tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
+  tiff(tiff_filename, width = 800, height = 600)
+  print(plot(simulationOutput))
+  dev.off()
+  # get rid of NAs in temp datat
+  temp_data <- data |>
+    drop_na(mean_last_7days)
+  # Plotting standardized residuals against predictors
+  tiff_file_2 <- paste("model_4/gam_check/predictor_", i, ".tiff", sep = "")
+  tiff(tiff_file_2, width = 800, height = 600)
+  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+  dev.off()
+
+  print(glance(gam_output[[i]]))
+
   model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
   model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
   pred_df <- model_bind |>
@@ -117,8 +121,6 @@ for (i in species_list) {
     rename(temp = mean_last_7days) |> 
     mutate(species = factor(i))
   saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
-  # derivatives[[i]] <- derivatives(gam_output[[i]])
-  # saveRDS(derivatives[[i]], paste0("model_4/derivatives/derivatives_", i, ".rds"))
 }
 
 # combined df
@@ -127,10 +129,9 @@ df_pred_mod4 <- list.files(path = "model_4/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total predictions as RDS
-saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
+# saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 df_pred_mod4 |> 
-  filter(species == "Cottus_gobio_Profundal") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -183,15 +184,6 @@ str(df_abundance_re)
 
 derivatives <- list()
 gam_output <- list()
-
-data <- df_abundance_re |> 
-  filter(Species == "Perca_fluviatilis")
-
-gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                       +  s(fProtocol, bs = 're'), family = ziP())
-
-lake_list <- distinct(data, Lake) |> 
-  pull()
 
 
 for (i in species_list) {
