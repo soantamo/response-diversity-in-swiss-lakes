@@ -3,14 +3,21 @@ library(here)
 library(readr)
 library(viridis)
 library(lattice)
+library(gt)
 
 
 df_final <- readRDS("df_final.rds")
 
 
 species <- df_final |> 
+  filter(str_detect(Species, "Coregonus")) |> 
+  group_by(Species) |> 
+  summarize(tot_obs = sum(Presence))
   distinct(Species)
 
+species |> 
+  arrange(tot_obs) |> 
+  gt()
 
 str(df_final)
 head(df_final)
