@@ -34,6 +34,9 @@ mod_4_pred <- readRDS("total_models/pred_model_4_total")
 model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |> 
   select(-fProtocol)
 
+model_predictions$species <- as.factor(model_predictions$species)
+levels(model_predictions$species)
+
 # test1 <- mod_3_pred |> 
 #   filter(species == "Coregonus_brienzii")
 # 
@@ -45,30 +48,44 @@ model_predictions <- bind_rows(mod_1_pred, mod_2_pred, mod_3_pred, mod_4_pred) |
 
 #filter predictions in succesful models
 
-successful_models <- read_excel("model_1/model_success_final.xlsx")
-table(successful_models$model_success)
-
-
-success_list <- successful_models |> 
-  filter(model_success == 1) 
-
-no_success_list <- successful_models |> 
-  filter(model_success == 0)
-
-
-success_model_predictions <- model_predictions |> 
-  inner_join(success_list)
-
-unsuccesful_model_predictions <- model_predictions |> 
-  inner_join(no_success_list)
-
-
-str(success_model_predictions)
-success_model_predictions$species <- as.factor(success_model_predictions$species)
-levels(success_model_predictions$species)
+# successful_models <- read_excel("model_1/model_success_final.xlsx")
+# table(successful_models$model_success)
+# 
+# 
+# success_list <- successful_models |> 
+#   filter(model_success == 1) 
+# 
+# no_success_list <- successful_models |> 
+#   filter(model_success == 0)
+# 
+# 
+# success_model_predictions <- model_predictions |> 
+#   inner_join(success_list)
+# 
+# unsuccesful_model_predictions <- model_predictions |> 
+#   inner_join(no_success_list)
+# 
+# 
+# str(success_model_predictions)
+# success_model_predictions$species <- as.factor(success_model_predictions$species)
+# levels(success_model_predictions$species)
 
 # plots: all models
 model_predictions |> 
+  filter(str_detect(species, "Coregonus")) |>
+  # albeli
+  # filter(species %in% c("Coregonus_albellus", "Coregonus_candidus", "Coregonus_confusus",
+  #                       "Coregonus_heglingus", "Coregonus_zugensis")) |> 
+  # # balchen
+  # filter(species %in% c("Coregonus_alpinus", "Coregonus_arenicolus", "Coregonus_duplex",
+  #                       "Coregonus_helveticus", "Coregonus_litoralis", "Coregonus_palaea")) |>
+  # felchen
+  # filter(species %in% c("Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
+  #                       "Coregonus_macrophthalmus", "Coregonus_zuerichensis")) |>
+  # large pelagic
+  # filter(species %in% c("Coregonus_acrinasus", "Coregonus_wartmanni")) |>
+  # benthic profundal
+  # filter(species == "Coregonus_profundus") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
