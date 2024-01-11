@@ -15,7 +15,7 @@ library(grid)
 library(gghighlight)
 
 
-source(here("functions.R"))
+# source(here("functions.R"))
 
 # interpretation:
 
@@ -55,20 +55,6 @@ species_overview |>
 
 ###################Response diversity plots
 
-all_lakes_tib |> 
-  filter(species == "Coregonus_sp_balchen") |> 
-  # filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-  #                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |> 
-  ggplot(aes(temp, derivative)) +
-  geom_line() +
-  facet_wrap(~species)
-
-model_predictions |>
-  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |> 
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  facet_wrap(~species)
 
 resp_div_all |>
   ggplot(aes(temp, rdiv)) +
@@ -119,14 +105,37 @@ plot_means <- df_means |>
   ggplot(aes(mean_dissimilarity, mean_divergence)) +
   # geom_point(aes(color = Lake))
   # geom_label(aes(label = Lake))
+  # geom_point() +
   geom_text(aes(label = Lake)) +
+  # geom_text(aes(label = Lake), nudge_x = 0.01, nudge_y = 0.01,  check_overlap = T) +
+  #   check_overlap = T) +
   theme_bw()
 
 plot_means
 
-tiff("total_models/mean_overview_lakes.tiff")
-print(plot_means)
-dev.off()
+library(ggrepel)
+library(hrbrthemes)
+
+plot_means + 
+  # horizontal
+  geom_hline(yintercept=0.75, color="orange", linewidth=1) + 
+  # vertical
+  geom_vline(xintercept=1.9, color="orange", linewidth=1)
+
+p <- df_means |> 
+  ggplot(aes(mean_dissimilarity, mean_divergence)) +
+  geom_point(color = "red") +
+  theme_bw()
+
+p + geom_text_repel(aes(label = Lake),
+                    size = 3.5, 
+                    max.overlaps = 13)
+
+
+
+# tiff("total_models/.tiff")
+# print(plot_means)
+# dev.off()
 
 # save as excel 
 # write_xlsx(df_means, "total_models/response_diversity_overview.xlsx")
@@ -308,7 +317,6 @@ lake_list <- all_lakes_tib |>
   distinct(fLake) |> 
   pull(fLake)
 
-i <- "Walen"
 
 for (i in lake_list){
   data <- all_lakes_excl |> 
@@ -431,3 +439,66 @@ all_lakes_tib |>
 all_lakes_tib |> 
   filter(species == "Phoxinus_sp") |> 
   distinct(fLake)
+
+# ################################################################################
+# plots poster
+
+
+data <- all_lakes_excl |> 
+  arrange(species) |> 
+  filter(fLake == "Lucerne")
+  
+library(hrbrthemes)
+
+  highlight_plot_1 <- data |> 
+    arrange(species) |> 
+    ggplot() +
+    geom_line(aes(x=temp, y=derivative, color = species)) +
+    gghighlight(min(derivative) < -0.5 | max(derivative) > 2, use_direct_label = FALSE) +
+    # scale_color_viridis(discrete = TRUE, guide = NULL, option = "H") +
+    scale_color_manual(values = testcol, guide =  NULL) +
+    # facet_wrap(~species) +
+    facet_wrap(~factor(species, levels=c('Squalius_cephalus','Lota_lota','Coregonus_sp_felchen',
+                                         'Salvelinus_sp_Profundal', "Cottus_sp_Profundal"))) +
+    theme_ipsum() +
+    ggtitle("Lake Lucerne")
+  
+  
+  highlight_plot_1
+  
+  tiff(paste("total_models/plots/pposter_plot_lucerne.tiff", sep = ""), units="in", width=8, height=5, res=300)
+  
+  plot(highlight_plot_1)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  # plot morat
+  
+  data <- all_lakes_excl |> 
+    arrange(species) |> 
+    filter(fLake == "Morat")
+  
+  highlight_plot <- data |> 
+    arrange(species) |> 
+    ggplot() +
+    geom_line(aes(x=temp, y=derivative, color = species)) +
+    gghighlight(min(derivative) < -0.1 | max(derivative) > 1.3,use_direct_label = FALSE) +
+    # scale_color_viridis(discrete = TRUE, guide = NULL, option = "H") +
+    scale_color_manual(values = testcol, guide =  NULL) +
+    # facet_wrap(~species) 
+    facet_wrap(~factor(species, levels=c("Squalius_cephalus", "Cobitis_bilineata", "Coregonus_sp_balchen"))) +
+    # geom_label( x=15, y=0, label="Ecomorph Balchen is below 0", size=1.5, color="black") +
+    theme_ipsum() +
+    ggtitle("Lake Morat")
+  
+  
+  highlight_plot
+  
+  tiff(paste("total_models/plots/pposter_plot_morat.tiff", sep = ""), units="in", width=8, height=3, res=300)
+  
+  plot(highlight_plot)
+  
+  # Closing the graphical device
+  dev.off()
+  
