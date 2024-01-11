@@ -72,7 +72,10 @@ levels(model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  filter(str_detect(species, "Coregonus")) |>
+  filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
+                         "Cottus_sp_Profundal")) |> 
+  # filter(str_detect(species, "Coregonus")) |>
   # albeli
   # filter(species %in% c("Coregonus_albellus", "Coregonus_candidus", "Coregonus_confusus",
   #                       "Coregonus_heglingus", "Coregonus_zugensis")) |> 
@@ -88,11 +91,39 @@ model_predictions |>
   # filter(species == "Coregonus_profundus") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE, guide = NULL) 
+
+
+# plot poster
+
+library(RColorBrewer)
+library(ggthemes)
+
+tiff(paste("total_models/plots/poster_framwork.jpg", sep = ""), compression = "lzw",  units = "cm",
+     width = 12, height = 8, pointsize = 18, res = 300)
+
+
+model_predictions |> 
+  filter(species %in% c("Leuciscus_leuciscus", "Rutilus_rutilus",
+                        "Tinca_tinca")) |>
+  ggplot(aes(temp, fit, color = factor(species))) +
+  geom_line() +
+  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+  theme_classic() +
+  # theme(strip.background = element_rect(fill="lightgrey")) +
+  # scale_color_viridis(discrete=TRUE, guide = NULL) +
+  scale_color_manual(values = c("#3F007D", "#6A51A3", "#9E9AC8"), guide = NULL) +
+  ylab("Abundance (Performance)") +
+  xlab("Temperature (Environmental condition)") +
+  ggtitle("Performance-environment relationship")
+
+# Closing the graphical device
+dev.off()
+
 
 # plot se, not working both
 model_predictions |> 
@@ -196,6 +227,14 @@ all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4
 
 all_lakes_tib <- as_tibble(all_models_derivatives)
 str(all_lakes_tib)
+
+levels(all_lakes_tib$species)
+
+# all_lakes_tib <- all_lakes_tib |> 
+#   filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii", "Cottus_sp_Po_profundal"))
+
+# test rd without Barbatula_sp_Lineage_I and Phoxinus_csikii and cottus sp po profundal
+
 #filter predictions in succesful models
 # something is very off with these dataframes, I cannnot filter them
 # all species are coming
@@ -235,11 +274,18 @@ species_overview <- tibble()
 
 
 all_lakes_tib$species <- as.character(all_lakes_tib$species)
+all_lakes_tib$species <- as.factor(all_lakes_tib$species)
 
+# cottus_sp_profundal evtl exclude
 all_lakes_tib <- all_lakes_tib |> 
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"
+                         # "Cottus_sp_Profundal"
+                         )) |> 
   arrange(species)
 
 str(all_lakes_tib)
+
 
 # loop to get response diversity measures for each lake 
 for (i in lakes_list){
@@ -248,34 +294,34 @@ for (i in lakes_list){
     select(temp, fLake, derivative, species) |> 
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
-
-  number_species <- data |>
-    group_by(fLake, species) |>
-    distinct(species) |>
-    mutate(num_species = 1) |>
-    group_by(fLake) |>
-    mutate(sum_species = sum(num_species))
-
-  species_overview <- bind_rows(species_overview, number_species)
-  saveRDS(species_overview, paste0("total_models/lakes_all_models/species_overview_", i, ".rds"))
+# 
+#   number_species <- data |>
+#     group_by(fLake, species) |>
+#     distinct(species) |>
+#     mutate(num_species = 1) |>
+#     group_by(fLake) |>
+#     mutate(sum_species = sum(num_species))
+# 
+#   species_overview <- bind_rows(species_overview, number_species)
+  # saveRDS(species_overview, paste0("total_models/lakes_all_models/species_overview_", i, ".rds"))
   
 
-  # df_resp_div <- data |>
-  #   pivot_wider(
-  #     names_from = species,
-  #     values_from = derivative)
-  # 
-  # 
-  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  # df_resp_div$Med <- median(df_resp_div$rdiv)
-  # saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+
+
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
 
 }
 
-# resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
-#   map_dfr(readRDS) |> 
-#   relocate(rdiv, Med, sign, .after = temp)
+resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS) |>
+  relocate(rdiv, Med, sign, .after = temp)
 
 saveRDS(resp_div_no_excl,"total_models/lakes_all_models/resp_div_all.rds")
 
@@ -650,8 +696,8 @@ df_mean_all <- resp_div_all |>
 dissimilarity_all <- resp_div_all |> 
   ggplot(aes(x = temp, y = rdiv)) +
   geom_line(color = "#54008B") +
-  geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
-             lty = "dashed")+
+  # geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
+  #            lty = "dashed")+
   facet_wrap(~fLake) +
   theme_bw() +
   ggtitle("80 Species") +
