@@ -14,6 +14,14 @@ species <- df_final |>
   group_by(Species) |> 
   summarize(tot_obs = sum(Presence))
   distinct(Species)
+  
+possible_exclusion <- df_final |> 
+  filter(Species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
+                        "Cottus_sp_Profundal")) |> 
+  group_by(Species) |> 
+  summarize(tot_obs = sum(Presence))
+  distinct(Species)
 
 species |> 
   arrange(tot_obs) |> 
@@ -113,7 +121,8 @@ df_final <- df_final |>
 
 df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
-                                         "Coregonus_macrophthalmus", "Coregonus_zuerichensis"),
+                                         "Coregonus_macrophthalmus", "Coregonus_zuerichensis", 
+                                         "Coregonus_sarnensis"),
                           "Coregonus_sp_felchen", as.character(Species)))
 # large pelagic
 
@@ -139,7 +148,7 @@ species <- df_final |>
 exclusion <- df_final |> 
   group_by(Species) |> 
   summarize(tot_abu = sum(Presence)) |> 
-  filter(tot_abu < 10)
+  filter(tot_abu <= 10)
 
 # species with less than 10 total observations are excluded
 df_models <- df_final |> 
@@ -221,7 +230,7 @@ binomial_species <- df_models |>
 bi_one_occurence <- df_models |> 
   filter(Species %in% binomial_species) |>
   group_by(Species) |>
-  summarize(n_lake = n_distinct(Lake)) |>
+  summarize(n_lake = n_distinct(Lake)) |> 
   filter(n_lake == 1) |>
   pull(Species)
 
@@ -236,7 +245,7 @@ saveRDS(df_bi, "data_frame_models/df_binomial_gam")
 abu_one_occurence <- df_models |> 
   filter(Species %in% non_binomial_species) |> 
   group_by(Species) |> 
-  summarize(n_lake = n_distinct(Lake)) |>
+  summarize(n_lake = n_distinct(Lake)) |> 
   filter(n_lake == 1) |>
   pull(Species)
 
