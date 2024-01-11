@@ -36,7 +36,7 @@ all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4
 all_lakes_tib <- as_tibble(all_models_derivatives)
 
 resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
-species_overview <- readRDS("total_models/lakes_all_models/species_overview.rds")
+# species_overview <- readRDS("total_models/lakes_all_models/species_overview.rds")
 
 
 #################species overview
@@ -55,11 +55,36 @@ species_overview |>
 
 ###################Response diversity plots
 
+all_lakes_tib |> 
+  filter(species == "Coregonus_sp_balchen") |> 
+  # filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+  #                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line() +
+  facet_wrap(~species)
+
+model_predictions |>
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |> 
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  facet_wrap(~species)
+
+resp_div_all |>
+  ggplot(aes(temp, rdiv)) +
+  geom_line() +
+  facet_wrap(~fLake)
+
+resp_div_all |>
+  ggplot(aes(temp, sign)) +
+  geom_line() +
+  facet_wrap(~fLake)
+
 df_mean_all <- resp_div_all |>
   group_by(fLake) |> 
   summarise(mean_rdiv = mean(rdiv))
 
-# dissimilarity_all <- resp_div_all |> 
+# dissimilarity_all <- resp_div_all |>
 #   ggplot(aes(x = temp, y = rdiv)) +
 #   geom_line(color = "#54008B") +
 #   geom_hline(data = df_mean_all, aes(yintercept = mean_rdiv), linewidth = 0.5,
@@ -74,7 +99,7 @@ df_mean_divergence_all <- resp_div_all |>
   group_by(fLake) |> 
   summarise(mean_sign = mean(sign))
 
-# divergence_all <- resp_div_all|> 
+# divergence_all <- resp_div_all|>
 #   ggplot(aes(x = temp, y = sign, color = fLake)) +
 #   geom_line(color = "#54008B") +
 #   geom_hline(data = df_mean_divergence_all, aes(yintercept = mean_sign), linewidth = 0.5,
@@ -96,6 +121,8 @@ plot_means <- df_means |>
   # geom_label(aes(label = Lake))
   geom_text(aes(label = Lake)) +
   theme_bw()
+
+plot_means
 
 tiff("total_models/mean_overview_lakes.tiff")
 print(plot_means)
@@ -188,26 +215,26 @@ for (i in lake_list){
   # tiff(paste("total_models/plots/plot_lake_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
   #      width = 6, height = 13, pointsize = 18, res = 300)
   
-  tiff(paste("total_models/plots/plot_predictions_no_guide_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
-       width = 12, height = 8, pointsize = 18, res = 300)
-  
-  
-  grid_all <- grid.arrange(lake_prediction, deriv_plot,
-                           dissimilarity_all, divergence_all, nrow = 4)
-  
-  grid_all <- grid.arrange(lake_prediction, nrow = 1)
-  
-  # Closing the graphical device
-  dev.off()
+  # tiff(paste("total_models/plots/plot_predictions_no_guide_", i, ".tiff", sep = ""), compression = "lzw",  units = "cm",
+  #      width = 12, height = 8, pointsize = 18, res = 300)
   # 
-  #   tiff(paste("total_models/plots/response_diversity_", i, ".tiff"), compression = "lzw",  units = "cm",
-  #        width = 8, height = 13, pointsize = 18, res = 300)
   # 
-  #   grid_all <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2,
-  #                            top = textGrob( i ,gp=gpar(fontsize=20,font=3)))
+  # grid_all <- grid.arrange(lake_prediction, deriv_plot,
+  #                          dissimilarity_all, divergence_all, nrow = 4)
   # 
-  #   # Closing the graphical device
-  #   dev.off()
+  # grid_all <- grid.arrange(lake_prediction, nrow = 1)
+  # 
+  # # Closing the graphical device
+  # dev.off()
+  # # 
+    tiff(paste("total_models/plots/response_diversity_", i, ".tiff"), compression = "lzw",  units = "cm",
+         width = 8, height = 13, pointsize = 18, res = 300)
+
+    grid_all <- grid.arrange(dissimilarity_all, divergence_all, nrow = 2,
+                             top = textGrob( i ,gp=gpar(fontsize=20,font=3)))
+
+    # Closing the graphical device
+    dev.off()
   
   
   
@@ -272,14 +299,19 @@ testcol <- colorRampPalette("#54008B")(nb.cols)
 
 # nb.cols <- 80
 # test_colors <- colorRampPalette(c("#150E39", "#FA9107"))(nb.cols)
+all_lakes_excl <- all_lakes_tib |> 
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"))
 
-lake_list <- all_lakes_tib |> 
+lake_list <- all_lakes_tib |>
   # filter(fLake == "Joux") |>
   distinct(fLake) |> 
   pull(fLake)
 
+i <- "Walen"
+
 for (i in lake_list){
-  data <- all_lakes_tib |> 
+  data <- all_lakes_excl |> 
     arrange(species) |> 
     filter(fLake == i)
   
@@ -323,6 +355,8 @@ for (i in lake_list){
   
   data_pred <- model_predictions |> 
     filter(species %in% species_list) |> 
+    filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                           "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"))
     filter(temp > minimum & temp < maximum)
   
   highlight_plot <- data_pred |> 
@@ -368,7 +402,7 @@ min(data$mean_derivative)
 
 data_new <- data                                      # Duplicate data
 data_new$groups <- cut(data_new$mean_derivative,               # Add group column
-                       breaks = c(-7.634168, -1, 0, 1, 4, 6, 8, 10, 1045.769))
+                       breaks = c(-7.634168, -1, 0, 1, 2, 3, 4, 10, 1045.769))
 head(data_new)   
 
 data_new |> 
