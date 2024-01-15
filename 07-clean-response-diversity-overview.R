@@ -15,7 +15,9 @@ library(grid)
 library(gghighlight)
 
 
-# source(here("functions.R"))
+source(here("functions.R"))
+
+df_final <- readRDS("df_final.rds")
 
 # interpretation:
 
@@ -124,12 +126,20 @@ plot_means +
 
 p <- df_means |> 
   ggplot(aes(mean_dissimilarity, mean_divergence)) +
-  geom_point(color = "red") +
-  theme_bw()
+  geom_point(color = "#007ED3") +
+  theme_ipsum()
 
-p + geom_text_repel(aes(label = Lake),
+plot_means <- p + geom_text_repel(aes(label = Lake),
                     size = 3.5, 
                     max.overlaps = 13)
+
+
+tiff(paste("total_models/plots/poster_fig_3.tiff", sep = ""), units="in", width=5, height=5, res=300)
+
+plot(plot_means)
+
+# Closing the graphical device
+dev.off()
 
 
 
@@ -443,62 +453,311 @@ all_lakes_tib |>
 # ################################################################################
 # plots poster
 
+library(RColorBrewer)
+# Define the number of colors you want
+nb.cols <- 25
+mycolors <- colorRampPalette(brewer.pal(9, "Purples"))(nb.cols)
+
+all_lakes_excl <- all_lakes_tib |> 
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"))
+
+library(RColorBrewer)
+# Define the number of colors you want
+# nb.cols <- 80
+# mycolors_lakes <- colorRampPalette(brewer.pal(9, "Purples"))(nb.cols)
+
+nb.cols <- 80
+testcol <- colorRampPalette("#2C738E")(nb.cols)
+"#3C508B"
 
 data <- all_lakes_excl |> 
   arrange(species) |> 
   filter(fLake == "Lucerne")
   
 library(hrbrthemes)
+library(svglite)
 
   highlight_plot_1 <- data |> 
     arrange(species) |> 
     ggplot() +
     geom_line(aes(x=temp, y=derivative, color = species)) +
-    gghighlight(min(derivative) < -0.5 | max(derivative) > 2, use_direct_label = FALSE) +
-    # scale_color_viridis(discrete = TRUE, guide = NULL, option = "H") +
     scale_color_manual(values = testcol, guide =  NULL) +
-    # facet_wrap(~species) +
-    facet_wrap(~factor(species, levels=c('Squalius_cephalus','Lota_lota','Coregonus_sp_felchen',
-                                         'Salvelinus_sp_Profundal', "Cottus_sp_Profundal"))) +
-    theme_ipsum() +
-    ggtitle("Lake Lucerne")
+    geom_hline(yintercept=0, color = "black") +
+    ggtitle("High response diversity: Lake Lucerne") +
+    xlab("temperature") +
+    ylim(-2, 3.5)
   
-  
-  highlight_plot_1
+   
+  q <- highlight_plot_1 + theme_bw(base_size = 20)
+  q
   
   tiff(paste("total_models/plots/pposter_plot_lucerne.tiff", sep = ""), units="in", width=8, height=5, res=300)
+  # svglite("total_models/plots/poster_plot_lucerne.svg", width = 4, height = 4)
   
-  plot(highlight_plot_1)
+  plot(q)
   
   # Closing the graphical device
   dev.off()
   
   # plot morat
+  # 
+  # data <- all_lakes_excl |> 
+  #   arrange(species) |> 
+  #   filter(fLake == "Morat")
+  # 
+  # highlight_plot <- data |> 
+  #   arrange(species) |> 
+  #   ggplot() +
+  #   geom_line(aes(x=temp, y=derivative, color = species)) +
+  #   scale_color_manual(values = testcol, guide =  NULL) +
+  #   geom_hline(yintercept=0, color = "#8B0E00") +
+  #   ggtitle("High response diversity: Lake Morat") +
+  #   xlab("temperature") +
+  #   ylim(-2, 3.5)
+  # 
+  # 
+  # p <- highlight_plot + theme_bw(base_size = 20)
+  # 
+  # tiff(paste("total_models/plots/pposter_plot_morat.tiff", sep = ""), units="in", width=8, height=3, res=300)
+  # 
+  # plot(p)
+  # 
+  # # Closing the graphical device
+  # dev.off()
+  # 
+  
+  # plot biel
   
   data <- all_lakes_excl |> 
     arrange(species) |> 
-    filter(fLake == "Morat")
+    filter(fLake == "Zurich")
   
-  highlight_plot <- data |> 
+  highlight_plot_2 <- data |> 
     arrange(species) |> 
     ggplot() +
     geom_line(aes(x=temp, y=derivative, color = species)) +
-    gghighlight(min(derivative) < -0.1 | max(derivative) > 1.3,use_direct_label = FALSE) +
-    # scale_color_viridis(discrete = TRUE, guide = NULL, option = "H") +
     scale_color_manual(values = testcol, guide =  NULL) +
-    # facet_wrap(~species) 
-    facet_wrap(~factor(species, levels=c("Squalius_cephalus", "Cobitis_bilineata", "Coregonus_sp_balchen"))) +
-    # geom_label( x=15, y=0, label="Ecomorph Balchen is below 0", size=1.5, color="black") +
-    theme_ipsum() +
-    ggtitle("Lake Morat")
+    geom_hline(yintercept=0, color = "black") +
+    ggtitle("Medium response diversity: Lake Zurich") +
+    xlab("temperature") +
+    ylim(-2, 3.5)
   
   
-  highlight_plot
   
-  tiff(paste("total_models/plots/pposter_plot_morat.tiff", sep = ""), units="in", width=8, height=3, res=300)
+ qrs <-  highlight_plot_2 + theme_bw(base_size = 20)
+ qrs
   
-  plot(highlight_plot)
+  tiff(paste("total_models/plots/pposter_plot_biel.tiff", sep = ""), units="in", width=8, height=5, res=300)
+  
+  plot(qrs)
   
   # Closing the graphical device
   dev.off()
   
+  
+  
+  # plot joux
+  
+  data <- all_lakes_excl |> 
+    arrange(species) |> 
+    filter(fLake == "Joux")
+  
+  highlight_plot_3 <- data |> 
+    arrange(species) |> 
+    ggplot() +
+    geom_line(aes(x=temp, y=derivative, color = species)) +
+    scale_color_manual(values = testcol, guide =  NULL) +
+    geom_hline(yintercept=0, color = "black") +
+    ggtitle("Low response diversity: Lake Joux") +
+    xlab("temperature") +
+    ylim(-2, 3.5)
+  
+  
+  tus <- highlight_plot_3 + theme_bw(base_size = 20)
+  
+  tiff(paste("total_models/plots/pposter_plot_Joux.tiff", sep = ""), units="in", width=8, height=5, res=300)
+  
+  plot(tus)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  library(ggpubr)
+  
+  
+  tiff(paste("total_models/plots/poster_plot_three_lakes.tiff", sep = ""), units="in", width=20, height=5, res=300)
+  
+  plot(ggarrange(q, qrs, tus, ncol = 3))
+  
+  # Closing the graphical device
+  dev.off()
+  
+  # dissimilarity vs divergence
+  
+  
+  df_mean_all <- resp_div_all |>
+    group_by(fLake) |> 
+    summarise(mean_rdiv = mean(rdiv))
+
+  
+  df_mean_divergence_all <- resp_div_all |>
+    group_by(fLake) |> 
+    summarise(mean_sign = mean(sign))
+  
+  
+  df_means <- merge(df_mean_all, df_mean_divergence_all) |> 
+    rename(Lake = fLake, mean_dissimilarity = mean_rdiv, mean_divergence = mean_sign)
+  
+  
+  #plotting means
+  
+  plot_means <- df_means |> 
+    ggplot(aes(mean_dissimilarity, mean_divergence)) +
+    geom_point(color = "#26AD81") +
+    theme_bw(base_size = 18)
+ plot_means
+ 
+ library(ggrepel)
+ library(hrbrthemes)
+ plot_means_2 <- plot_means + geom_text_repel(aes(label = Lake),
+                                   size = 3.5, 
+                                   max.overlaps = 15)
+ plot_means_2
+
+  tiff(paste("total_models/plots/poster_fig_3.tiff", sep = ""), units="in", width=5, height=5, res=300)
+  
+  plot(plot_means_2)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  
+  # response diversity explanation 
+  
+  fig_a <- model_predictions |> 
+    filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
+                          "Lota_lota")) |>
+    ggplot(aes(temp, fit, color = factor(species))) +
+    geom_line() +
+    # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+    # theme(strip.background = element_rect(fill="lightgrey")) +
+    # scale_color_viridis(discrete=TRUE, guide = NULL) +
+    scale_color_manual(values = c("#481B6D", "#FDE725", "#26AD81"), guide = NULL) +
+    ylab("Abundance (Performance)") +
+    xlab("Temperature") +
+    # ggtitle("Abundance-Temperature relationship") +
+    theme_bw(base_size = 20)
+  
+  
+  fig_b <- all_lakes_tib |> 
+    filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
+                          "Lota_lota")) |>
+    ggplot(aes(temp, derivative, color = factor(species))) +
+    geom_line() +
+    # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+    # theme(strip.background = element_rect(fill="lightgrey")) +
+    # scale_color_viridis(discrete=TRUE, guide = NULL) +
+    scale_color_manual(values = c("#481B6D", "#FDE725", "#26AD81"), guide = NULL) +
+    ylab("Derivative") +
+    xlab("Temperature") +
+    # ggtitle("Abundance-Temperature relationship") +
+    theme_bw(base_size = 20)
+  fig_b
+  
+# resp div
+  
+  data <- all_lakes_tib |>
+    filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
+                          "Lota_lota")) |>
+    select(temp, derivative, species)
+  
+  
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative) |> 
+    drop_na()
+  
+  
+  df_resp_div$rdiv <- apply(df_resp_div[,-1, drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-1,drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  
+  
+  fig_c <- df_resp_div |> 
+    ggplot() +
+    geom_line(aes(temp, rdiv)) +
+    ylab("Dissimilarity") +
+    xlab("Temperature") +
+    # ggtitle("Abundance-Temperature relationship") +
+    theme_bw(base_size = 20)
+  
+  fig_d <- df_resp_div |> 
+    ggplot() +
+    geom_line(aes(temp, sign)) +
+    ylab("Divergence") +
+    xlab("Temperature") +
+    # ggtitle("Abundance-Temperature relationship") +
+    theme_bw(base_size = 20)
+
+  
+  ggarrange(fig_a, fig_b, ncol = 2)    
+  ggarrange(fig_c, fig_d, nrow = 2)
+  
+  
+  tiff(paste("total_models/plots/poster_concet_a.tiff", sep = ""), units="in", width=10, height=4, res=300)
+  
+  plot(ggarrange(fig_a, fig_b, ncol = 2)  )
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  tiff(paste("total_models/plots/poster_concet_b.tiff", sep = ""), units="in", width=5, height=8, res=300)
+  
+  plot(ggarrange(fig_c, fig_d, nrow = 2))
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  # figure 1
+  
+  
+  # balchen
+  df_final <- df_final |>
+    mutate(Species = ifelse(Species %in% c("Coregonus_sp", "Coregonus_alpinus", "Coregonus_arenicolus", "Coregonus_duplex",
+                                           "Coregonus_helveticus", "Coregonus_litoralis", "Coregonus_palaea",
+                                           "Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
+                                           "Coregonus_macrophthalmus", "Coregonus_zuerichensis", 
+                                           "Coregonus_sarnensis", "Coregonus_acrinasus", "Coregonus_wartmanni", "Coregonus_profundus",
+                                           "Coregonus_nobilis", "Coregonus_albellus", "Coregonus_candidus", "Coregonus_confusus",
+                                           "Coregonus_heglingus", "Coregonus_zugensis"),
+                            "Coregonus_ssp", as.character(Species)))
+ 
+  
+  nb.cols <- 30
+  mycolors <- colorRampPalette(brewer.pal(9, "PuBuGn"))(nb.cols)
+  
+  plot_species_comp <- df_final |> 
+    filter(Lake %in% c("Lucerne", "Biel", "Joux")) |> 
+    ggplot( aes(x=Lake, fill=Species)) +
+    geom_bar(position = "fill", width = 0.3) +
+    scale_fill_viridis(discrete=TRUE, name="", guide = NULL) +
+    # scale_fill_manual(values = mycolors, guide =  NULL) +
+    ylab("Abundance") +
+    xlab("") +
+    ggtitle("Species composition") +
+    theme_bw(base_size = 20)
+
+  
+  tiff(paste("total_models/plots/poster_species_com.tiff", sep = ""), units="in", width=8, height=5, res=300)
+  
+  plot(plot_species_comp)
+  
+  # Closing the graphical device
+  dev.off()
+    
