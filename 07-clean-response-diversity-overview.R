@@ -483,14 +483,21 @@ library(svglite)
     ggplot() +
     geom_line(aes(x=temp, y=derivative, color = species)) +
     scale_color_manual(values = testcol, guide =  NULL) +
-    geom_hline(yintercept=0, color = "black") +
+    geom_hline(yintercept=0, color = "red") +
     ggtitle("High response diversity: Lake Lucerne") +
     xlab("temperature") +
     ylim(-2, 3.5)
   
-   
-  q <- highlight_plot_1 + theme_bw(base_size = 20)
-  q
+  
+  library(ggthemes)
+  library(envalysis)
+  
+  # highlight_plot_1 + theme_publish(base_size = 20, base_family = "", base_linewidth = 1)
+  # 
+  # q <- highlight_plot_1 + theme_publish(base_size = 20, base_family = "", base_linewidth = 1)
+    
+  q <- highlight_plot_1 + theme_bw(base_size = 20) + theme(panel.border = element_rect(size = 2.5))
+  q 
   
   tiff(paste("total_models/plots/pposter_plot_lucerne.tiff", sep = ""), units="in", width=8, height=5, res=300)
   # svglite("total_models/plots/poster_plot_lucerne.svg", width = 4, height = 4)
@@ -538,16 +545,16 @@ library(svglite)
     ggplot() +
     geom_line(aes(x=temp, y=derivative, color = species)) +
     scale_color_manual(values = testcol, guide =  NULL) +
-    geom_hline(yintercept=0, color = "black") +
+    geom_hline(yintercept=0, color = "red") +
     ggtitle("Medium response diversity: Lake Zurich") +
     xlab("temperature") +
     ylim(-2, 3.5)
   
   
   
- qrs <-  highlight_plot_2 + theme_bw(base_size = 20)
- qrs
-  
+ # qrs <-  highlight_plot_2 + theme_publish(base_size = 20, base_family = "", base_linewidth = 1)
+ qrs <- highlight_plot_2 + theme_bw(base_size = 20) + theme(panel.border = element_rect(size = 2.5))
+
   tiff(paste("total_models/plots/pposter_plot_biel.tiff", sep = ""), units="in", width=8, height=5, res=300)
   
   plot(qrs)
@@ -568,13 +575,13 @@ library(svglite)
     ggplot() +
     geom_line(aes(x=temp, y=derivative, color = species)) +
     scale_color_manual(values = testcol, guide =  NULL) +
-    geom_hline(yintercept=0, color = "black") +
+    geom_hline(yintercept=0, color = "red") +
     ggtitle("Low response diversity: Lake Joux") +
     xlab("temperature") +
     ylim(-2, 3.5)
   
   
-  tus <- highlight_plot_3 + theme_bw(base_size = 20)
+  tus <-highlight_plot_3 + theme_bw(base_size = 20) + theme(panel.border = element_rect(size = 2.5))
   
   tiff(paste("total_models/plots/pposter_plot_Joux.tiff", sep = ""), units="in", width=8, height=5, res=300)
   
@@ -587,7 +594,7 @@ library(svglite)
   library(ggpubr)
   
   
-  tiff(paste("total_models/plots/poster_plot_three_lakes.tiff", sep = ""), units="in", width=20, height=5, res=300)
+  tiff(paste("total_models/plots/poster_plot_three_lakes.tiff", sep = ""), units="in", width=20, height=6, res=300)
   
   plot(ggarrange(q, qrs, tus, ncol = 3))
   
@@ -616,7 +623,9 @@ library(svglite)
   plot_means <- df_means |> 
     ggplot(aes(mean_dissimilarity, mean_divergence)) +
     geom_point(color = "#26AD81") +
-    theme_bw(base_size = 18)
+    # theme_publish(base_size = 18, base_family = "", base_linewidth = 1)
+    theme_bw(base_size = 18) + 
+    theme(panel.border = element_rect(size = 1.5))
  plot_means
  
  library(ggrepel)
@@ -649,7 +658,8 @@ library(svglite)
     ylab("Abundance (Performance)") +
     xlab("Temperature") +
     # ggtitle("Abundance-Temperature relationship") +
-    theme_bw(base_size = 20)
+    theme_bw(base_size = 20) +
+    theme(panel.border = element_rect(size = 2))
   
   
   fig_b <- all_lakes_tib |> 
@@ -664,7 +674,8 @@ library(svglite)
     ylab("Derivative") +
     xlab("Temperature") +
     # ggtitle("Abundance-Temperature relationship") +
-    theme_bw(base_size = 20)
+    theme_bw(base_size = 20) +
+    theme(panel.border = element_rect(size = 2))
   fig_b
   
 # resp div
@@ -693,7 +704,8 @@ library(svglite)
     ylab("Dissimilarity") +
     xlab("Temperature") +
     # ggtitle("Abundance-Temperature relationship") +
-    theme_bw(base_size = 20)
+    theme_bw(base_size = 20) +
+    theme(panel.border = element_rect(size = 2))
   
   fig_d <- df_resp_div |> 
     ggplot() +
@@ -701,7 +713,8 @@ library(svglite)
     ylab("Divergence") +
     xlab("Temperature") +
     # ggtitle("Abundance-Temperature relationship") +
-    theme_bw(base_size = 20)
+    theme_bw(base_size = 20) +
+    theme(panel.border = element_rect(size = 2))
 
   
   ggarrange(fig_a, fig_b, ncol = 2)    
@@ -722,42 +735,3 @@ library(svglite)
   
   # Closing the graphical device
   dev.off()
-  
-  
-  # figure 1
-  
-  
-  # balchen
-  df_final <- df_final |>
-    mutate(Species = ifelse(Species %in% c("Coregonus_sp", "Coregonus_alpinus", "Coregonus_arenicolus", "Coregonus_duplex",
-                                           "Coregonus_helveticus", "Coregonus_litoralis", "Coregonus_palaea",
-                                           "Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
-                                           "Coregonus_macrophthalmus", "Coregonus_zuerichensis", 
-                                           "Coregonus_sarnensis", "Coregonus_acrinasus", "Coregonus_wartmanni", "Coregonus_profundus",
-                                           "Coregonus_nobilis", "Coregonus_albellus", "Coregonus_candidus", "Coregonus_confusus",
-                                           "Coregonus_heglingus", "Coregonus_zugensis"),
-                            "Coregonus_ssp", as.character(Species)))
- 
-  
-  nb.cols <- 30
-  mycolors <- colorRampPalette(brewer.pal(9, "PuBuGn"))(nb.cols)
-  
-  plot_species_comp <- df_final |> 
-    filter(Lake %in% c("Lucerne", "Biel", "Joux")) |> 
-    ggplot( aes(x=Lake, fill=Species)) +
-    geom_bar(position = "fill", width = 0.3) +
-    scale_fill_viridis(discrete=TRUE, name="", guide = NULL) +
-    # scale_fill_manual(values = mycolors, guide =  NULL) +
-    ylab("Abundance") +
-    xlab("") +
-    ggtitle("Species composition") +
-    theme_bw(base_size = 20)
-
-  
-  tiff(paste("total_models/plots/poster_species_com.tiff", sep = ""), units="in", width=8, height=5, res=300)
-  
-  plot(plot_species_comp)
-  
-  # Closing the graphical device
-  dev.off()
-    
