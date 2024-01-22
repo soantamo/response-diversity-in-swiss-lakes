@@ -8,6 +8,9 @@ library(gt)
 
 df_final <- readRDS("df_final.rds")
 
+species <- df_final |> 
+  group_by(Species) |> 
+  summarize(tot_obs = sum(Abundance))
 
 species <- df_final |> 
   filter(str_detect(Species, "Coregonus")) |> 
@@ -114,15 +117,14 @@ df_final <- df_final |>
 # balchen
 df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Coregonus_alpinus", "Coregonus_arenicolus", "Coregonus_duplex",
-                        "Coregonus_helveticus", "Coregonus_litoralis", "Coregonus_palaea"),
+                        "Coregonus_helveticus", "Coregonus_palaea"),
                           "Coregonus_sp_balchen", as.character(Species)))
 
 # felchen
 
 df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
-                                         "Coregonus_macrophthalmus", "Coregonus_zuerichensis", 
-                                         "Coregonus_sarnensis"),
+                                         "Coregonus_litoralis", "Coregonus_macrophthalmus", "Coregonus_zuerichensis"),
                           "Coregonus_sp_felchen", as.character(Species)))
 # large pelagic
 
@@ -139,6 +141,7 @@ df_final <- df_final |>
   mutate(Species = ifelse(Species == "Coregonus_nobilis",
                           "Coregonus_sp_pelagic_profundal", as.character(Species)))
 
+# "Coregonus_sarnensis": albeli or felchen
 
 # check species
 species <- df_final |> 
