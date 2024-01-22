@@ -72,30 +72,18 @@ levels(model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
-                         "Cottus_sp_Profundal")) |> 
-  # filter(str_detect(species, "Coregonus")) |>
-  # albeli
-  # filter(species %in% c("Coregonus_albellus", "Coregonus_candidus", "Coregonus_confusus",
-  #                       "Coregonus_heglingus", "Coregonus_zugensis")) |> 
-  # # balchen
-  # filter(species %in% c("Coregonus_alpinus", "Coregonus_arenicolus", "Coregonus_duplex",
-  #                       "Coregonus_helveticus", "Coregonus_litoralis", "Coregonus_palaea")) |>
-  # felchen
-  # filter(species %in% c("Coregonus_brienzii", "Coregonus_fatioi", "Coregonus_intermundia",
-  #                       "Coregonus_macrophthalmus", "Coregonus_zuerichensis")) |>
-  # large pelagic
-  # filter(species %in% c("Coregonus_acrinasus", "Coregonus_wartmanni")) |>
-  # benthic profundal
-  # filter(species == "Coregonus_profundus") |> 
+  # filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+  #                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
+  #                        "Cottus_sp_Profundal")) |>
+  filter(str_detect(species, "Coregonus")) |>
+
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
   # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL) 
+  scale_color_viridis(discrete=TRUE, guide = NULL)
 
 
 # plot poster
@@ -230,39 +218,23 @@ str(all_lakes_tib)
 
 levels(all_lakes_tib$species)
 
-# all_lakes_tib <- all_lakes_tib |> 
-#   filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii", "Cottus_sp_Po_profundal"))
+# four species are excluded from the analysis
 
-# test rd without Barbatula_sp_Lineage_I and Phoxinus_csikii and cottus sp po profundal
+all_deriv <- all_lakes_tib |>
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii", "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"))
 
-#filter predictions in succesful models
-# something is very off with these dataframes, I cannnot filter them
-# all species are coming
-# it is not a tibble!!
-
-joux_deriv_plot <- all_models_derivatives |> 
-  filter(fLake == "Joux") |> 
-  ggplot(aes(temp, derivative, color = factor(species))) +
-  geom_line() +
-  theme_bw() +
-  theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL) +
-  ylab("Derivative")
-  ylim(0, 0.5)
-
-joux_deriv_plot
 ######resp div with all models 
 
-lakes_list <- all_lakes_tib |> 
+lakes_list <- all_deriv  |> 
   distinct(fLake) |> 
   pull(fLake)
 
 str(lakes_list)
 
-all_lakes_tib$fLake <- as.character(all_lakes_tib$fLake)
+all_all_deriv $fLake <- as.character(all_all_deriv $fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
 
-lakes_list <- all_lakes_tib |> 
+lakes_list <- all_deriv |> 
   distinct(fLake) |> 
   pull(fLake)
 
@@ -273,24 +245,17 @@ lakes_list <- sort(lakes_list)
 species_overview <- tibble()
 
 
-all_lakes_tib$species <- as.character(all_lakes_tib$species)
-all_lakes_tib$species <- as.factor(all_lakes_tib$species)
+all_deriv$species <- as.character(all_deriv$species)
+all_deriv$species <- as.factor(all_deriv$species)
 
-# cottus_sp_profundal evtl exclude
-all_lakes_tib <- all_lakes_tib |> 
-  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"
-                         # "Cottus_sp_Profundal"
-                         )) |> 
-  arrange(species)
 
-str(all_lakes_tib)
+str(all_deriv )
 
 
 # loop to get response diversity measures for each lake 
 for (i in lakes_list){
   
-  data <- all_lakes_tib |>
+  data <- all_deriv |>
     select(temp, fLake, derivative, species) |> 
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
@@ -450,91 +415,6 @@ resp_div_no_excl |>
   facet_wrap(~fLake)  +
   theme_bw()
 
-
-###################resp div for successful models
-
-
-
-successful_models <- read_excel("model_1/model_success_final.xlsx")
-table(successful_models$model_success)
-
-
-success_list <- successful_models |> 
-  filter(model_success == 1) 
-
-success_model_deriv <- all_lakes_tib |> 
-  inner_join(success_list)
-
-success_model_deriv$species <- as.factor(success_model_deriv$species)
-levels(success_model_deriv$species)
-
-# plotting derivatives
-
-# success_model_deriv |> 
-#   filter(fLake %in% c("Biel", "Brienz", "Thun")) |> 
-#   ggplot(aes(temp, derivative, color = factor(species))) +
-#   geom_line() +
-#   # geom_ribbon(aes(ymin = lower_se, ymax = upper_se), alpha = 0.3) +
-#   theme_bw() +
-#   facet_wrap(~fLake, scale = "free") +
-#   theme(strip.background = element_rect(fill="lightgrey")) +
-#   scale_color_viridis(discrete=TRUE)
-
-
-# to be able to sort the pulled values fLake needs to be a character
-success_model_deriv$fLake <- as.character(success_model_deriv$fLake)
-# model_derivatives$fLake <- as.character(model_derivatives$fLake)
-
-
-lakes_list <- success_model_deriv |> 
-  distinct(fLake) |> 
-  pull(fLake)
-
-str(lakes_list)
-
-lakes_list <- sort(lakes_list)
-
-species_overview <- tibble()
-
-# loop to get response diversity measures for each lake 
-
-
-for (i in lakes_list){
-  
-  # data <- success_model_deriv |>
-  #   select(temp, fLake, derivative, species) |> 
-  #   filter(fLake == i)
-  # would be nice to get a tibble for each Lake and number of species
-  
-  number_species <- data |>
-    group_by(fLake) |>
-    mutate(sum_species = n_distinct(species)) |>
-    group_by(fLake, species, sum_species) |>
-    distinct(species) |>
-    relocate(sum_species, .after = species)
-
-  # species_overview <- bind_rows(species_overview, number_species)
-
-
-  # df_resp_div <- data |>
-  #   pivot_wider(
-  #     names_from = species,
-  #     values_from = derivative)
-  # 
-  # 
-  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  # df_resp_div$Med <- median(df_resp_div$rdiv)
-  # saveRDS(df_resp_div, paste0("total_models/lakes/df_resp_div_", i, ".rds"))
-
-}
-
-
-resp_div_succ_models <- list.files(path = "total_models/lakes", pattern = ".rds", full.names = TRUE) |> 
-  map_dfr(readRDS) |> 
-  relocate(rdiv, Med, sign, .after = temp)
-
-# saveRDS(resp_div_succ_models,"total_models/lakes/resp_div_succ.rds")
 
 ##################################################### plotting
 # all models
