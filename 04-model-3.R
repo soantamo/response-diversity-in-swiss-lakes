@@ -55,15 +55,16 @@ temp_data <- list()
 df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
 df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
 
-df_final$fLake <- as.factor(df_final$Lake)
-df_final$fProtocol <- as.factor(df_final$Protocol)
+df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
+df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
+
 
 str(df_binomial_re)
 #make new loop 
 ###predict.gam needs something else
 
 for (i in species_list) {
-  data <- df_final |> 
+  data <- df_binomial_re |> 
     filter(Species == i)
   unique_lakes <- distinct(data, fLake)
   unique_protocol <- distinct(data, fProtocol)
@@ -189,8 +190,8 @@ for (i in species_list) {
 df_deriv_mod3 <- list.files(path = "model_3/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
-# save total derivatives as RDS
-# saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
+# # save total derivatives as RDS
+saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
 
 
 #prepare for all df
