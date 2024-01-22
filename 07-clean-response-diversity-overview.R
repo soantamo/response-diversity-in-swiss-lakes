@@ -18,6 +18,7 @@ library(gghighlight)
 source(here("functions.R"))
 
 df_final <- readRDS("df_final.rds")
+  
 
 # interpretation:
 
@@ -39,6 +40,25 @@ all_lakes_tib <- as_tibble(all_models_derivatives)
 
 resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
 # species_overview <- readRDS("total_models/lakes_all_models/species_overview.rds")
+
+################ overview table for models and success
+
+success_models <- read_excel("model_1/model_success_final.xlsx") |> 
+  select(-2)
+
+library(gt)
+
+success_models |> 
+  arrange(species) |> 
+  gt()
+
+success_models |> 
+  arrange(tot_obs) |> 
+  gt()
+
+
+successful <- success_models |> 
+  filter(success == 1)
 
 
 #################species overview
@@ -420,11 +440,12 @@ min(data$mean_derivative)
 
 data_new <- data                                      # Duplicate data
 data_new$groups <- cut(data_new$mean_derivative,               # Add group column
-                       breaks = c(-7.634168, -1, 0, 1, 2, 3, 4, 10, 1045.769))
+                       breaks = c(-7.634168, -3, 0, 1, 2, 3, 4, 10, 1045.769))
 head(data_new)   
 
 data_new |> 
-  # filter(!species %in% c("Gasterosteus_gymnurus")) |> 
+  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
   ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= groups)) + 
   geom_tile() +
   # scale_fill_distiller(palette = "PRGn")
@@ -554,6 +575,7 @@ library(svglite)
   
  # qrs <-  highlight_plot_2 + theme_publish(base_size = 20, base_family = "", base_linewidth = 1)
  qrs <- highlight_plot_2 + theme_bw(base_size = 20) + theme(panel.border = element_rect(size = 2.5))
+ qrs
 
   tiff(paste("total_models/plots/pposter_plot_biel.tiff", sep = ""), units="in", width=8, height=5, res=300)
   
@@ -648,7 +670,7 @@ library(svglite)
   
   fig_a <- model_predictions |> 
     filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
-                          "Lota_lota")) |>
+                          "Coregonus_sp")) |>
     ggplot(aes(temp, fit, color = factor(species))) +
     geom_line() +
     # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
@@ -660,12 +682,13 @@ library(svglite)
     # ggtitle("Abundance-Temperature relationship") +
     theme_bw(base_size = 20) +
     theme(panel.border = element_rect(size = 2))
+  fig_a
   
   
   fig_b <- all_lakes_tib |> 
     filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
-                          "Lota_lota")) |>
-    ggplot(aes(temp, derivative, color = factor(species))) +
+                          "Coregonus_sp")) |>
+    ggplot(aes(temp, derivative, color = species)) +
     geom_line() +
     # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
     # theme(strip.background = element_rect(fill="lightgrey")) +
@@ -682,7 +705,7 @@ library(svglite)
   
   data <- all_lakes_tib |>
     filter(species %in% c("Perca_fluviatilis", "Rutilus_rutilus",
-                          "Lota_lota")) |>
+                          "Coregonus_sp")) |>
     select(temp, derivative, species)
   
   
@@ -721,9 +744,17 @@ library(svglite)
   ggarrange(fig_c, fig_d, nrow = 2)
   
   
-  tiff(paste("total_models/plots/poster_concet_a.tiff", sep = ""), units="in", width=10, height=4, res=300)
+  tiff(paste("total_models/plots/poster_concet_a.tiff", sep = ""), units="in", width=5, height=4, res=300)
   
-  plot(ggarrange(fig_a, fig_b, ncol = 2)  )
+  plot(fig_a)
+  
+  # Closing the graphical device
+  dev.off()
+  
+  
+  tiff(paste("total_models/plots/poster_concept_a1.tiff", sep = ""), units="in", width=5, height=4, res=300)
+  
+  plot(fig_b)
   
   # Closing the graphical device
   dev.off()
