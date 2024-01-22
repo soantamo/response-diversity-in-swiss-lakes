@@ -167,11 +167,11 @@ for (i in species_list) {
 #   summarize(observations = sum(Abundance))
 #prepare total df for derivatives
 
-# df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |>
-#   map_dfr(readRDS)
+df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
+saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
 
