@@ -30,10 +30,8 @@ head(df_abundance_gam)
 #all others work with k = 3
 
 species_list <- df_abundance_gam |>
-  # filter(!Species %in% c("Coregonus_profundus",
-  #                       "Phoxinus_sp", "Coregonus_zugensis",
-  # "Telestes_muticellus")) |>
   # binomial species
+  filter(!Species == "Coregonus_sp_benthic_profundal") |>
   distinct(Species) |> 
   pull(Species)
 
@@ -68,10 +66,10 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
     fProtocol = unique_method$fProtocol)
-  # gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-  #                          s(fProtocol, bs = 're'), family = ziP())
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
-                           s(fProtocol, bs = 're'), family = binomial())
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                           s(fProtocol, bs = 're'), family = ziP())
+  # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
+  #                          s(fProtocol, bs = 're'), family = binomial())
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # # Main plot function from DHARMa, which gives 
@@ -110,7 +108,7 @@ df_pred_mod2 <- list.files(path = "model_2/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
+saveRDS(df_pred_mod2, "total_models/pred_model_2_total")
 
 df_pred_mod2 |>  
   # filter(species ==  "Cottus_gobio_Profundal_Lucerne") |> 
@@ -133,9 +131,7 @@ df_pred_mod2 |>
 
 species_list <- df_abundance_gam |> 
   # binomial ones
-  # filter(!Species %in% c("Coregonus_profundus",
-  #                        "Phoxinus_sp", "Coregonus_zugensis",
-  #                        "Telestes_muticellus")) |>
+  filter(!Species == "Coregonus_sp_benthic_profundal") |>
   distinct(Species) |> 
   pull(Species)
 
