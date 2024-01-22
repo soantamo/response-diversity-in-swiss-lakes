@@ -12,6 +12,9 @@ species <- df_final |>
   group_by(Species) |> 
   summarize(tot_obs = sum(Abundance))
 
+test <- df_final |> 
+  filter(Species == "Cottus_sp_Po_profundal")
+
 species <- df_final |> 
   filter(str_detect(Species, "Coregonus")) |> 
   group_by(Species) |> 
@@ -160,9 +163,12 @@ df_models <- df_final |>
   ungroup() |> 
   filter(tot_abu >= 10) 
 
-
 df_models$Species <- as.factor(df_models$Species)
 levels(df_models$Species)
+
+species <- df_models |> 
+  group_by(Species) |> 
+  summarize(tot_obs = sum(Abundance))
 
 # can be deleted because less than 10 observations are excluded anyway
 
