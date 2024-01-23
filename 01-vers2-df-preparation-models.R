@@ -15,6 +15,12 @@ species <- df_final |>
 test <- df_final |> 
   filter(Species == "Cottus_sp_Po_profundal")
 
+df_coregonzus <- df_final |> 
+  filter(str_detect(Species, "Coregonus")) |> 
+  group_by(Species, Lake) |> 
+  distinct(Lake)
+
+
 species <- df_final |> 
   filter(str_detect(Species, "Coregonus")) |> 
   group_by(Species) |> 
@@ -293,4 +299,23 @@ df_abundance_re <- df_models |>
 
 saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
+# prepare excel to add all the species based on Projet LAc matrix
 
+mod1 <- readRDS("data_frame_models/df_binomial_re")
+mod2 <- readRDS("data_frame_models/df_binomial_gam")
+mod3 <- readRDS("data_frame_models/df_abundance_re")
+mod4 <- readRDS("data_frame_models/df_abundance_gam")
+
+model_all <- bind_rows(mod1, mod2, mod3, mod4)
+
+
+# all species with lakes they were caught in
+library(writexl)
+
+df_species_lake <- model_all |> 
+  group_by(Species, Lake) |> 
+  distinct(Lake)
+
+
+
+write_xlsx(df_species_lake, 'species_lake.xlsx')
