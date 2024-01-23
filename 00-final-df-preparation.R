@@ -4,6 +4,22 @@ library(tidyverse)
 
 projet_lac_data <- read.csv("~/Downloads/PLDB_final_short_depth_climate_cleantaxa_20052022(2).csv")
 
+df_species_electro <- projet_lac_data |> 
+  filter(Protocol == "electro") |> 
+  group_by(Taxa_latin, Lake) |> 
+  distinct(Lake)
+
+test <- projet_lac_data |> 
+  filter(Taxa_latin_FINAL == "Coregonus_palaea") |> 
+  select(Taxa_latin, Final_identification, Lake)
+  filter(Lake %in% c("Lugano"))
+  distinct(Protocol)
+
+  test <- projet_lac_data |> 
+    filter(Final_identification == "Coregonus_palaea") |> 
+    select(Taxa_latin, Final_identification, Lake)
+  filter(Lake %in% c("Lugano"))
+
 
 abundance_data <- projet_lac_data |> 
   # take out no fish
