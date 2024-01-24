@@ -8,6 +8,10 @@ library(gt)
 
 df_final <- readRDS("df_final.rds")
 
+test <- df_final |> 
+  filter(Species == "Scardinius_hesperidicus") |> 
+  filter(Lake == "Morat")
+
 species <- df_final |> 
   group_by(Species) |> 
   summarize(tot_obs = sum(Abundance))
@@ -43,13 +47,28 @@ str(df_final)
 head(df_final)
 
 
-# only include Coregonus brienzii from lake brienz
+################refining mistakes in taxa
 
-# df_final <- df_final |>
-#   filter(!(Species == "Coregonus_brienzii" & Lake == "Thun"))
-# 
-# df_final$Species <- as.factor(df_final$Species)
-# levels(df_final$Species)
+# c. brienzii should not be in lake thun
+
+df_final <- df_final |>
+  mutate(Species = ifelse(Species %in% c("Coregonus_brienzii") & Lake %in% c("Thun"),
+                          "Coregonus_sp", as.character(Species)))
+
+
+
+# salvelinus umbla in lake thun is salvelinus sp. 
+
+df_final <- df_final |>
+  mutate(Species = ifelse(Species %in% c("Salvelinus_umbla") & Lake %in% c("Thun"),
+                          "Salvelinus_sp", as.character(Species)))
+
+# rename squalius squalus in biel and neuchatel to squalius cephalus
+
+df_final <- df_final |>
+  mutate(Species = ifelse(Species %in% c("Squalius_squalus") & Lake %in% c("Biel", 
+                                                                           "Neuchatel"),
+                          "Squalius_cephalus", as.character(Species)))
 
 # cottus_gobio_profundal lucerne, thun and walen put together 
 
