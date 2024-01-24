@@ -8,40 +8,16 @@ library(gt)
 
 df_final <- readRDS("df_final.rds")
 
-test <- df_final |> 
-  filter(Species == "Scardinius_hesperidicus") |> 
-  filter(Lake == "Morat")
-
 species <- df_final |> 
   group_by(Species) |> 
   summarize(tot_obs = sum(Abundance))
 
-test <- df_final |> 
-  filter(Species == "Cottus_sp_Po_profundal")
 
-df_coregonzus <- df_final |> 
-  filter(str_detect(Species, "Coregonus")) |> 
-  group_by(Species, Lake) |> 
-  distinct(Lake)
+# df_coregonus <- df_final |> 
+#   filter(str_detect(Species, "Coregonus")) |> 
+#   group_by(Species, Lake) |> 
+#   distinct(Lake)
 
-
-species <- df_final |> 
-  filter(str_detect(Species, "Coregonus")) |> 
-  group_by(Species) |> 
-  summarize(tot_obs = sum(Presence))
-  distinct(Species)
-  
-possible_exclusion <- df_final |> 
-  filter(Species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
-                        "Cottus_sp_Profundal")) |> 
-  group_by(Species) |> 
-  summarize(tot_obs = sum(Presence))
-  distinct(Species)
-
-species |> 
-  arrange(tot_obs) |> 
-  gt()
 
 str(df_final)
 head(df_final)
@@ -55,7 +31,8 @@ df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Coregonus_brienzii") & Lake %in% c("Thun"),
                           "Coregonus_sp", as.character(Species)))
 
-
+test <- df_final |> 
+  filter(Species == "Coregonus_brienzii" & Lake == "Thun")
 
 # salvelinus umbla in lake thun is salvelinus sp. 
 
@@ -63,12 +40,17 @@ df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Salvelinus_umbla") & Lake %in% c("Thun"),
                           "Salvelinus_sp", as.character(Species)))
 
+
+test <- df_final |> 
+  filter(Species == "Salvelinus_umbla" & Lake == "Thun")
+
 # rename squalius squalus in biel and neuchatel to squalius cephalus
 
 df_final <- df_final |>
   mutate(Species = ifelse(Species %in% c("Squalius_squalus") & Lake %in% c("Biel", 
                                                                            "Neuchatel"),
                           "Squalius_cephalus", as.character(Species)))
+
 
 # cottus_gobio_profundal lucerne, thun and walen put together 
 
@@ -114,26 +96,7 @@ df_final <- df_final |>
 # 6. large_pelagic: u.a. c.wartmanii c.acrinasu and c. suspensus. Large-bodies, high
 # gill-raker count and feed on zooplankton
 
-# problems:
-# coregonus helveticus: balchen based on publication from 1982 Svarvar and Müller
-
-# coregonus zugensis: ????? extinct.
-# not found c.sp. zugeralbeli and zugeralbock see. sehaausen page 44.
-# only caught in lake lucerne, 99 individuals
-# discuss in science discussion
-# https://boris.unibe.ch/177154/
-# The whitefish populations previously referred to as C. suidteri and C. zugensis 
-# from Lake Lucerne are described as C. litoralis sp. nov. and C. muelleri sp. nov., respectively
-# c.zugensis as c-muelleri?????
-# https://zookeys.pensoft.net/article/67747/
-# coregonus sarnensis: Translocated from northern to southern lakes, newly described
-# ask Ole
-# medium sized, 
-# https://publication.plazi.org/GgServer/html/BA3CB832F9F2546AAF696C8564F07BDD
-# spawning at 20m to lake bottom 50m
-# evtl albeli
-
-
+# and new grouping based on Ole and Oliver Selz
 # coregonus groups
 
 # albeli
@@ -194,45 +157,6 @@ levels(df_models$Species)
 species <- df_models |> 
   group_by(Species) |> 
   summarize(tot_obs = sum(Abundance))
-
-# can be deleted because less than 10 observations are excluded anyway
-
-#0. species that occur only once in one lake are excluded
-#only caught once in a lake
-# one_occurence <- df_final |>
-#   group_by(Species) |>
-#   summarize(Lakes = n_distinct(Lake)) |> 
-#   filter(Lakes == 1) |>
-#   pull(Species)
-# 
-# #all species that were only caught once across whole projet lac are excluded
-# df_final$Species <- as.character(df_final$Species)
-# 
-# exclude <- df_final |>
-#   group_by(Lake, Species) |>
-#   summarize(TotalAbundance = sum(Abundance)) |>
-#   filter(TotalAbundance == 1) |>
-#   filter(Species %in% one_occurence) |>
-#   distinct(Species)
-#   pull(Species)
-
-
-#double-check
-# 
-# double_check <- df_final |> 
-#   filter(Species %in% "Salaria_fluviatilis_Italian")
-# 
-# table(double_check$Abundance)
-
-
-
-#these 10 species can be excluded from the whole analysis -> 80 total species
-# df_models <- df_final |> 
-#   filter(!Species %in% exclude)
-# 
-# df_models |>
-#   distinct(Species) |> 
-#   pull(Species)
 
 
 ###OVERVIEW
@@ -318,23 +242,23 @@ df_abundance_re <- df_models |>
 
 saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
-# prepare excel to add all the species based on Projet LAc matrix
+# prepare excel to add all the species based on Projet Lac matrix
 
-mod1 <- readRDS("data_frame_models/df_binomial_re")
-mod2 <- readRDS("data_frame_models/df_binomial_gam")
-mod3 <- readRDS("data_frame_models/df_abundance_re")
-mod4 <- readRDS("data_frame_models/df_abundance_gam")
-
-model_all <- bind_rows(mod1, mod2, mod3, mod4)
+# mod1 <- readRDS("data_frame_models/df_binomial_re")
+# mod2 <- readRDS("data_frame_models/df_binomial_gam")
+# mod3 <- readRDS("data_frame_models/df_abundance_re")
+# mod4 <- readRDS("data_frame_models/df_abundance_gam")
+# 
+# model_all <- bind_rows(mod1, mod2, mod3, mod4)
 
 
 # all species with lakes they were caught in
-library(writexl)
-
-df_species_lake <- model_all |> 
-  group_by(Species, Lake) |> 
-  distinct(Lake)
-
-
-
-write_xlsx(df_species_lake, 'species_lake.xlsx')
+# library(writexl)
+# 
+# df_species_lake <- model_all |> 
+#   group_by(Species, Lake) |> 
+#   distinct(Lake)
+# 
+# 
+# 
+# write_xlsx(df_species_lake, 'species_lake.xlsx')
