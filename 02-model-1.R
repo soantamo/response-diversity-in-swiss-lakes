@@ -14,9 +14,7 @@ library(DHARMa)
 
 df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
 
-# abu <- df_binomial_gam |> 
-#   group_by(Species, Lake) |> 
-#   summarize(tot_abu = sum(Abundance))
+
 #####Loop Model 1 ######
 
 species_list <- df_binomial_gam |> 
@@ -92,17 +90,9 @@ df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.
   map_dfr(readRDS)
 
 # save total derivatives as RDS
-# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
-df_pred_mod1 |> 
-  ggplot(aes(temp, fit, color = factor(species))) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
-  theme_bw() +
-  facet_wrap(~species, scales = "free") +
-  theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL) 
 
 ###################derivatives
 
@@ -174,24 +164,24 @@ df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full
 saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
 
 # prepare mean values of se.fit 
-
-mean_se_model_1 <- df_pred_mod1 |> 
-  group_by(species) |> 
-  mutate(mean_se = mean(se.fit)) |> 
-  mutate(max_se = max(se.fit)) |> 
-  mutate(min_se = min(se.fit)) |> 
-  distinct(mean_se, max_se, min_se)
-
-
-test1 <- df_binomial_gam |> 
-  group_by(Species, Presence) |> 
-  summarize(n_observations = sum(Presence)) |> 
-  select(Species, n_observations) |> 
-  filter(n_observations != 0) |> 
-  rename(species = Species) |> 
-  mutate(n_lake = factor("1"))
-
-
-bind_1 <- merge(mean_se_model_1, test1) #ready
-saveRDS(bind_1, "model_1/bind_1.rds")
+# 
+# mean_se_model_1 <- df_pred_mod1 |> 
+#   group_by(species) |> 
+#   mutate(mean_se = mean(se.fit)) |> 
+#   mutate(max_se = max(se.fit)) |> 
+#   mutate(min_se = min(se.fit)) |> 
+#   distinct(mean_se, max_se, min_se)
+# 
+# 
+# test1 <- df_binomial_gam |> 
+#   group_by(Species, Presence) |> 
+#   summarize(n_observations = sum(Presence)) |> 
+#   select(Species, n_observations) |> 
+#   filter(n_observations != 0) |> 
+#   rename(species = Species) |> 
+#   mutate(n_lake = factor("1"))
+# 
+# 
+# bind_1 <- merge(mean_se_model_1, test1) #ready
+# saveRDS(bind_1, "model_1/bind_1.rds")
 
