@@ -9,6 +9,7 @@ library(lattice)
 library(broom)
 library(mgcViz)
 library(DHARMa)
+library(readxl)
 
 #this model is for species with abundance data and random effects
 
@@ -23,12 +24,6 @@ df_abundance_re |>
 df_abundance_re <- df_abundance_re |> 
   filter(!(mean_last_7days == 7.132625 & Species == "Lepomis_gibbosus" & Presence == 1))
 
-# df_abundance_re <- df_abundance_re |>
-#   filter(!(Species == "Phoxinus_csikii" & Abundance %in% c(8, 3)))
-
-# tskhd <- df_abundance_re |> 
-#   filter(Species == "Phoxinus_csikii") |> 
-#   filter(mean_last_7days > 15)
 
 table(df_abundance_re$Abundance) 
 str(df_abundance_re)
@@ -227,27 +222,39 @@ str(df_abundance_re)
 derivatives <- list()
 gam_output <- list()
 
+species_lake <- read_xlsx("species_lake.xlsx") 
+
+species_lake$fLake <- as.factor(species_lake$Lake)
+species_lake$fProtocol <- as.factor(species_lake$Protocol)
+
+str(species_lake)
+
 
 for (i in species_list) {
+  
   data <- df_abundance_re |> 
     filter(Species == i)
   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = binomial)
-  lake_list <- distinct(data, Lake) |> 
+  
+  lake_data <- species_lake |>
+    filter(Species == i)
+  
+  lake_list <- distinct(lake_data, Lake) |>
     pull()
   
   for (j in lake_list){
     
-    data_lake <- df_abundance_re |> 
-      filter(Species == i) |> 
-      filter(fLake == j)
+    data_lake <- species_lake |>
+      filter(Species == i) |>
+      filter(Lake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
     unique_protocol <- distinct(data_lake, fProtocol)
     
     newdata <- tibble(mean_last_7days = seq(
-      from = min(data_lake$mean_last_7days, na.rm = TRUE),
-      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
       fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
@@ -285,27 +292,40 @@ str(df_abundance_re)
 derivatives <- list()
 gam_output <- list()
 
+species_lake <- read_xlsx("species_lake.xlsx") 
+
+species_lake$fLake <- as.factor(species_lake$Lake)
+species_lake$fProtocol <- as.factor(species_lake$Protocol)
+
+str(species_lake)
+
 
 for (i in species_list) {
+  
   data <- df_abundance_re |> 
     filter(Species == i)
+  
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = ziP())
-  lake_list <- distinct(data, Lake) |> 
+
+  lake_data <- species_lake |>
+    filter(Species == i)
+  
+  lake_list <- distinct(lake_data, Lake) |>
     pull()
   
   for (j in lake_list){
     
-   data_lake <- df_abundance_re |> 
-     filter(Species == i) |> 
-      filter(fLake == j)
+    data_lake <- species_lake |>
+      filter(Species == i) |>
+      filter(Lake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
     unique_protocol <- distinct(data_lake, fProtocol)
     
-     newdata <- tibble(mean_last_7days = seq(
-      from = min(data_lake$mean_last_7days, na.rm = TRUE),
-      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
       fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
@@ -328,31 +348,31 @@ saveRDS(df_deriv_mod4, "total_models/deriv_model_4_total")
 
 # df for later
 
-mean_se_model_4 <- df_pred_mod4 |> 
-  group_by(species) |> 
-  mutate(mean_se = mean(se.fit)) |> 
-  mutate(max_se = max(se.fit)) |> 
-  mutate(min_se = min(se.fit)) |> 
-  distinct(mean_se, max_se, min_se)
-
-
-
-test4 <- df_abundance_re |> 
-  group_by(Species, Presence) |> 
-  summarize(n_observations = sum(Presence)) |> 
-  select(Species, n_observations) |> 
-  filter(n_observations != 0) |> 
-  rename(species = Species)
-
-
-n_lake4 <- df_abundance_re |>
-  group_by(Species) |>
-  summarize(n_lake = n_distinct(Lake)) |>
-  rename(species = Species)
-
-two_bind4 <- merge(test4, n_lake4, by.x = "species")
-
-bind_4 <- merge(two_bind4, mean_se_model_4)
+# mean_se_model_4 <- df_pred_mod4 |> 
+#   group_by(species) |> 
+#   mutate(mean_se = mean(se.fit)) |> 
+#   mutate(max_se = max(se.fit)) |> 
+#   mutate(min_se = min(se.fit)) |> 
+#   distinct(mean_se, max_se, min_se)
+# 
+# 
+# 
+# test4 <- df_abundance_re |> 
+#   group_by(Species, Presence) |> 
+#   summarize(n_observations = sum(Presence)) |> 
+#   select(Species, n_observations) |> 
+#   filter(n_observations != 0) |> 
+#   rename(species = Species)
+# 
+# 
+# n_lake4 <- df_abundance_re |>
+#   group_by(Species) |>
+#   summarize(n_lake = n_distinct(Lake)) |>
+#   rename(species = Species)
+# 
+# two_bind4 <- merge(test4, n_lake4, by.x = "species")
+# 
+# bind_4 <- merge(two_bind4, mean_se_model_4)
 
 # saveRDS(bind_4, "model_4/bind_4.rds")
 
