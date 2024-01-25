@@ -9,6 +9,10 @@ library(lattice)
 library(broom)
 library(mgcViz)
 library(DHARMa)
+library(readxl)
+
+# species that were recorded with electro, fishbase or eawag
+species_lake <- read_xlsx("species_lake.xlsx")
 
 #loading subset of df for model 1
 
@@ -119,12 +123,61 @@ gam_output <- list()
 
 
 
+species_lake <- read_xlsx("species_lake.xlsx") 
+str(species_lake)
+
+species_lake$fLake <- as.factor(species_lake$Lake)
+species_lake$fProtocol <- as.factor(species_lake$Protocol)
+
+str(species_lake)
+
 for (i in species_list) {
   data <- df_binomial_gam |> 
     filter(Species == i)
   
+  lake_data <- species_lake |> 
+    filter(Species == i)
+  
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
 
+  lake_list <- distinct(lake_data, Lake) |> 
+    pull()
+  
+  for (j in lake_list){
+  
+    data_lake <- species_lake |> 
+      filter(Species == i) |> 
+      filter(Lake == j)
+    
+    unique_lakes <- distinct(data_lake, fLake)
+    unique_protocol <- distinct(data_lake, fProtocol)
+    
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+    
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+      mutate(fLake = factor(j)) |>
+      mutate(species = factor(i)) |>
+      rename(temp = data)
+    saveRDS(derivatives, paste0("model_1/derivatives/derivatives_", i, "_",  j, ".rds"))
+  }
+}
+
+
+
+##############with additional species
+
+species_lake <- read_xlsx("species_lake.xlsx") 
+
+for (i in species_list) {
+  data <- df_binomial_gam |> 
+    filter(Species == i)
+
+  
+  gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
+  
   lake_list <- distinct(data, Lake) |> 
     pull()
   
@@ -132,7 +185,7 @@ for (i in species_list) {
     
     data_lake <- df_binomial_gam |> 
       filter(Species == i) |> 
-      filter(fLake == j)
+      filter(Lake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
     unique_protocol <- distinct(data_lake, fProtocol)
@@ -150,7 +203,6 @@ for (i in species_list) {
   }
 }
 
-
 # df_binomial_gam |> 
 #   filter(Species == "Salmo_marmoratus") |> 
 #   group_by(Lake) |> 
@@ -162,6 +214,11 @@ df_deriv_mod1 <- list.files(path = "model_1/derivatives", pattern = ".rds", full
 
 # save total derivatives as RDS
 saveRDS(df_deriv_mod1, "total_models/deriv_model_1_total")
+
+df_deriv_mod1 |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line() +
+  facet_wrap(~species)
 
 # prepare mean values of se.fit 
 # 
