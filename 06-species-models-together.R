@@ -12,6 +12,7 @@ library(readxl)
 
 source(here("functions.R"))
 
+
 # the filtering of the dfs is not working
 # some problem with the type of df. when you change it to a tibble and innerjoin with
 # success lsit -> works
@@ -72,10 +73,9 @@ levels(model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  # filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-  #                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II",
-  #                        "Cottus_sp_Profundal")) |>
-  filter(str_detect(species, "Coregonus")) |>
+  filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
+  # filter(str_detect(species, "Coregonus")) |>
 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
@@ -231,7 +231,7 @@ lakes_list <- all_deriv  |>
 
 str(lakes_list)
 
-all_all_deriv $fLake <- as.character(all_all_deriv $fLake)
+all_deriv$fLake <- as.character(all_deriv $fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
 
 lakes_list <- all_deriv |> 
@@ -260,27 +260,27 @@ for (i in lakes_list){
     filter(fLake == i)
   # would be nice to get a tibble for each Lake and number of species
 # 
-#   number_species <- data |>
-#     group_by(fLake, species) |>
-#     distinct(species) |>
-#     mutate(num_species = 1) |>
-#     group_by(fLake) |>
-#     mutate(sum_species = sum(num_species))
+  number_species <- data |>
+    group_by(fLake, species) |>
+    distinct(species) |>
+    mutate(num_species = 1) |>
+    group_by(fLake) |>
+    mutate(sum_species = sum(num_species))
 # 
-#   species_overview <- bind_rows(species_overview, number_species)
+  species_overview <- bind_rows(species_overview, number_species)
   # saveRDS(species_overview, paste0("total_models/lakes_all_models/species_overview_", i, ".rds"))
   
+# 
+#   df_resp_div <- data |>
+#     pivot_wider(
+#       names_from = species,
+#       values_from = derivative)
 
-  df_resp_div <- data |>
-    pivot_wider(
-      names_from = species,
-      values_from = derivative)
 
-
-  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  df_resp_div$Med <- median(df_resp_div$rdiv)
-  saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
+  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  # df_resp_div$Med <- median(df_resp_div$rdiv)
+  # saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
 
 }
 
@@ -288,7 +288,7 @@ resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern =
   map_dfr(readRDS) |>
   relocate(rdiv, Med, sign, .after = temp)
 
-saveRDS(resp_div_no_excl,"total_models/lakes_all_models/resp_div_all.rds")
+saveRDS(resp_div_no_excl,"total_models/resp_div_all.rds")
 
 library(forcats)
 
@@ -363,20 +363,7 @@ all_lakes_tib |>
     facet_wrap(~fLake) +
     xlab("") +
     scale_fill_manual(values = mycolors, guide = NULL) 
-
-    
-
   
-
-  
-
-
-resp_div_no_excl <- list.files(path = "total_models/lakes_all_models", pattern = ".rds", full.names = TRUE) |> 
-  map_dfr(readRDS) |> 
-  relocate(rdiv, Med, sign, .after = temp)
-
-# saveRDS(resp_div_no_excl,"total_models/lakes_all_models/resp_div_all.rds")
-
 # resp_div_long <- resp_div_no_excl |> 
 #   pivot_longer(cols = Coregonus_confusus:Coregonus_zuerichensis,
 #                names_to = "species", values_to = "derivative")
