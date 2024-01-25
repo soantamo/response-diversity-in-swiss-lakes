@@ -8,19 +8,14 @@ library(lattice)
 library(broom)
 library(mgcViz)
 library(DHARMa)
+library(readxl)
 #https://cran.r-project.org/web/packages/mgcViz/vignettes/mgcviz.html
 
 #####continue with df_one prediction
 #this model for species with binomial data and random effects
-# 
-# df_final <- readRDS("df_final.rds")
-# # testing if s.cephalus works if we only have one fish caught in brienz 
-# 
-# squalius <- df_final |> 
-#   filter(Species == "Squalius_cephalus")
+
 
 df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
-  # filter(!Species == "Coregonus_brienzii")
 
 table(df_binomial_re$Abundance) 
 str(df_binomial_re)
@@ -117,20 +112,20 @@ df_pred_mod3 <- list.files(path = "model_3/predictions", pattern = ".rds", full.
 saveRDS(df_pred_mod3, "total_models/pred_model_3_total")
 
 
-
-df_pred_mod3 |> 
-  ggplot(aes(temp, fit, color = factor(species))) +
-  geom_line() +
-  geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
-  theme_bw() +
-  facet_wrap(~species) +
-  theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE) 
-
-
-pred_df |> 
-  ggplot(aes(temp, fit)) +
-  geom_line()
+# 
+# df_pred_mod3 |> 
+#   ggplot(aes(temp, fit, color = factor(species))) +
+#   geom_line() +
+#   geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
+#   theme_bw() +
+#   facet_wrap(~species) +
+#   theme(strip.background = element_rect(fill="lightgrey")) +
+#   scale_color_viridis(discrete=TRUE) 
+# 
+# 
+# pred_df |> 
+#   ggplot(aes(temp, fit)) +
+#   geom_line()
 
 
 ###################derivatives
@@ -147,34 +142,43 @@ df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
 df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
 
 str(df_binomial_re)
-
-# we need to get the derivatives for every lake
-
 derivatives <- list()
 gam_output <- list()
+
+species_lake <- read_xlsx("species_lake.xlsx") 
+
+species_lake$fLake <- as.factor(species_lake$Lake)
+species_lake$fProtocol <- as.factor(species_lake$Protocol)
+
+str(species_lake)
 
 for (i in species_list) {
   data <- df_binomial_re |> 
     filter(Species == i)
+  
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = "re")
                     + s(fProtocol, bs = 're'), family = binomial)
-  lake_list <- distinct(data, Lake) |> 
+  
+  lake_data <- species_lake |>
+    filter(Species == i)
+  
+  lake_list <- distinct(lake_data, Lake) |>
     pull()
   
   for (j in lake_list){
     
-    data_lake <- df_binomial_re |> 
-      filter(Species == i) |> 
-      filter(fLake == j)
+    data_lake <- species_lake |>
+      filter(Species == i) |>
+      filter(Lake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
     unique_protocol <- distinct(data_lake, fProtocol)
     
     newdata <- tibble(mean_last_7days = seq(
-      from = min(data_lake$mean_last_7days, na.rm = TRUE),
-      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
       fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
-
+ 
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
@@ -195,30 +199,30 @@ saveRDS(df_deriv_mod3, "total_models/deriv_model_3_total")
 
 
 #prepare for all df
-mean_se_model_3 <- df_pred_mod3 |> 
-  group_by(species) |> 
-  mutate(mean_se = mean(se.fit)) |> 
-  mutate(max_se = max(se.fit)) |> 
-  mutate(min_se = min(se.fit)) |> 
-  distinct(mean_se, max_se, min_se)
-
-
-test3 <- df_binomial_re |> 
-  group_by(Species, Presence) |> 
-  summarize(n_observations = sum(Presence)) |> 
-  select(Species, n_observations) |> 
-  filter(n_observations != 0) |> 
-  rename(species = Species)
-
-
-n_lake3 <- df_binomial_re |>
-  group_by(Species) |>
-  summarize(n_lake = n_distinct(Lake)) |>
-  rename(species = Species)
-
-two_bind <- merge(test3, n_lake3, by.x = "species")
-
-bind_3 <- merge(two_bind, mean_se_model_3)
+# mean_se_model_3 <- df_pred_mod3 |> 
+#   group_by(species) |> 
+#   mutate(mean_se = mean(se.fit)) |> 
+#   mutate(max_se = max(se.fit)) |> 
+#   mutate(min_se = min(se.fit)) |> 
+#   distinct(mean_se, max_se, min_se)
+# 
+# 
+# test3 <- df_binomial_re |> 
+#   group_by(Species, Presence) |> 
+#   summarize(n_observations = sum(Presence)) |> 
+#   select(Species, n_observations) |> 
+#   filter(n_observations != 0) |> 
+#   rename(species = Species)
+# 
+# 
+# n_lake3 <- df_binomial_re |>
+#   group_by(Species) |>
+#   summarize(n_lake = n_distinct(Lake)) |>
+#   rename(species = Species)
+# 
+# two_bind <- merge(test3, n_lake3, by.x = "species")
+# 
+# bind_3 <- merge(two_bind, mean_se_model_3)
 
 # saveRDS(bind_3, "model_3/bind_3.rds")
 
