@@ -73,8 +73,8 @@ levels(model_predictions$species)
 
 # plots: all models
 model_predictions |> 
-  filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                         "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
+  # filter(species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+  #                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
   # filter(str_detect(species, "Coregonus")) |>
 
   ggplot(aes(temp, fit, color = factor(species))) +
@@ -218,10 +218,10 @@ str(all_lakes_tib)
 
 levels(all_lakes_tib$species)
 
-# four species are excluded from the analysis
 
-all_deriv <- all_lakes_tib |>
-  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii", "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II"))
+all_deriv <- all_lakes_tib
+  # filter(!species %in% c("Barbatula_sp_Lineage_I", "Barbatula_sp_Lineage_II",
+  #                        "Cottus_sp_Po", "Phoxinus_csikii"))
 
 ######resp div with all models 
 
@@ -270,17 +270,14 @@ for (i in lakes_list){
   species_overview <- bind_rows(species_overview, number_species)
   # saveRDS(species_overview, paste0("total_models/lakes_all_models/species_overview_", i, ".rds"))
   
-# 
-#   df_resp_div <- data |>
-#     pivot_wider(
-#       names_from = species,
-#       values_from = derivative)
-
-
-  # df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
-  # df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
-  # df_resp_div$Med <- median(df_resp_div$rdiv)
-  # saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/lakes_all_models/df_resp_div_", i, ".rds"))
 
 }
 
