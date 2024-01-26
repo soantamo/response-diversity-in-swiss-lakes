@@ -14,9 +14,6 @@ library(readxl)
 #this model is for species with abundance data and random effects
 
 df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
-
-test <- df_abundance_re |> 
-  filter(Species == "Alburnus_arborella")
   
 df_abundance_re |> 
   distinct(Lake) 
@@ -39,11 +36,16 @@ df_abundance_re |>
 ###CONTINUE here
 
 ###################binomial
-
+# 
+# "Alburnus_arborella"??
+#   "Lepomis_gibbosus"??
+#   "Blicca_bjoerkna"??
+#   , "Salmo_trutta"??
+#   "Cyprinus_carpio"??
+# "Phoxinus_csikii"??
 
 species_list <- df_abundance_re |> 
-  # binomial ones
-  filter(Species %in% c("Lota_lota", "Salmo_trutta")) |> 
+  filter(Species %in% c("Lota_lota")) |> 
   distinct(Species) |> 
   pull(Species)
 
