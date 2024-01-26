@@ -11,89 +11,127 @@ library(mgcViz)
 library(DHARMa)
 library(readxl)
 
-# gam for divergence, dissimilarity
-
 # lake properties df
-
-
 lake_info <- read_xlsx("lake_info.xlsx")
 
 eutroph <- lake_info |> 
   select(Lake, Phos_max)
 
 # resp diversity per lake df
-resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds") |> 
+resp_div_all <- readRDS("total_models/resp_div_all.rds") |> 
   select(temp:fLake)
 
 
 # dissimilarity and max phosporus
-
-rdiv <- resp_div_all |> 
-  select(temp, fLake, rdiv) |>
+# no info for poschiavo in phos max, needs to go
+rdiv <- resp_div_all |>  
+  filter(fLake != "Poschiavo") |> 
+  select(temp, fLake, rdiv, sign) |>
   rename(Lake = fLake)
 
-eutroph_dissimilarity <- merge(eutroph, rdiv) |> 
-  drop_na(Phos_max)#get rid of duplications in rows 
+eutroph_dissimilarity <- merge(eutroph, rdiv)
 
-new <- eutroph_dissimilarity[duplicated(eutroph_dissimilarity), ]
-# gam testing 
-new$fLake <- as.factor(new$Lake)
-new$fPhos <- as.factor(new$Phos_max)
-str(new)
+str(eutroph_dissimilarity)
 
-biel <- new |> 
-  filter(fLake == "Biel")
+eutroph_dissimilarity$Phos_max <- as.numeric(eutroph_dissimilarity$Phos_max)
 
-thun <- new |> 
-  filter(fLake == "Thun")
+levels(eutroph_dissimilarity$fPhos)
+
+# eutroph_dissimilarity$fPhos <- factor(eutroph_dissimilarity$fPhos, levels=c("21", "23", '25', '29', "35.3", '37', 
+#                                         "53", "59", "89.6", "140", "147", "176",
+#                                         "210"))
+
+#display factor levels for region
+# levels(eutroph_dissimilarity$fPhos)
+
+# categorize oligrotrophy
+
+eutroph_dissimilarity <- eutroph_dissimilarity |> 
+  mutate(eutroph = case_when(Phos_max < 38 ~ "never",
+                                     Phos_max < 60 ~ 'moderately',
+                           Phos_max < 105 ~ "strongly",
+                                     Phos_max < 220 ~ 'hyper'))
+
+str(eutroph_dissimilarity)
+
+eutroph_dissimilarity$eutroph <- as.factor(eutroph_dissimilarity$eutroph)
+eutroph_dissimilarity$eutroph <- factor(eutroph_dissimilarity$eutrop, levels=c("never", "moderately",
+                                                                               "strongly", "hyper"))
+# aanova
+
+one.way <- aov(rdiv ~ eutroph, data = eutroph_dissimilarity)
+
+TukeyHSD(one.way)
+
+summary(one.way)
+
+# par(mfrow=c(2,2))
+# plot(one.way)
+# par(mfrow=c(1,1))
+
+two.way.plot <- ggplot(eutroph_dissimilarity, aes(x = eutroph , y = rdiv)) +
+  geom_boxplot()
+
+two.way.plot
 
 
-model <- gam(data = new, rdiv ~ fPhos + s(temp, by = fPhos, k = 10), method = "REML")
-model2 <- gam(data = new, rdiv ~ fLake + s(temp, by = fLake, k = 10), method = "REML")
+mean.data <- eutroph_diss
+imilarity %>%
+  group_by(eutroph) %>%
+  summarise(
+    rdiv = mean(rdiv)
+  )
+
+plot <- two.way.plot + stat_summary(fun.data = 'mean_se', geom = 'errorbar', width = 0.2, color = "red") +
+  stat_summary(fun.data = 'mean_se', geom = 'pointrange', color = "red") +
+  geom_boxplot(data=mean.data, aes(x=eutroph, y=rdiv))
+
+plot
 
 
-model3 <- gam(data = new, rdiv ~ interaction(fLake, fPhos) +
-                s(temp, k = 3) +
-                s(temp, by = interaction(fLake, fPhos)))
+# anova divergence
 
-summary(model3)$s.table
+sign <- aov(sign ~ eutroph, data = eutroph_dissimilarity)
 
-par(mfrow = c(2, 2))
-plot(model3)
+summary(sign)
+
+# par(mfrow=c(2,2))
+# plot(one.way)
+# par(mfrow=c(1,1))
+
+two.way.plot2 <- ggplot(eutroph_dissimilarity, aes(x = eutroph , y = sign)) +
+  geom_boxplot()
+
+two.way.plot2
+
+mean.data2 <- eutroph_dissimilarity %>%
+  group_by(eutroph) %>%
+  summarise(
+    sign = mean(sign)
+  )
+
+plot2 <- two.way.plot2 + stat_summary(fun.data = 'mean_se', geom = 'errorbar', width = 0.2, color = "red") +
+  stat_summary(fun.data = 'mean_se', geom = 'pointrange', color = "red") +
+  geom_boxplot(data=mean.data2, aes(x=eutroph, y=sign))
+
+plot2
 
 
+# regression
 
-model_prediction1 <- predict.gam(model3, type = "response", se.fit = TRUE)
-model_prediction2 <- predict.gam(model2, type = "response", se.fit = TRUE)
-
-
-grid <- expand.grid(temp = seq(
-  from = min(eutroph_dissimilarity$temp, na.rm = TRUE),
-  to = max(eutroph_dissimilarity$temp, na.rm = TRUE), length = 3800))
-
-model_bind1 <- cbind(model_prediction1, grid)
-model_bind2 <- cbind(model_prediction2, grid)
-
-pred_df1 <- model_bind1 |>
-  group_by(temp) |>
-  mutate(fit = mean(fit)) |>
-  mutate(lower = fit - 1*se.fit, upper = fit + 1*se.fit) |>
-  summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
-            across(se.fit))
-
-pred_df2 <- model_bind2 |>
-  group_by(temp) |>
-  mutate(fit = mean(fit)) |>
-  mutate(lower = fit - 1*se.fit, upper = fit + 1*se.fit) |>
-  summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper),
-            across(se.fit))
-
-pred_df1 |> 
-  ggplot(aes(temp, fit)) +
-  geom_line()
-  ylim(0,3)
-
-pred_df2 |> 
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  ylim(0,3)
+# lm with rdiv along phos_max
+# model <- lm(rdiv ~ eutroph , data=eutroph_dissimilarity)
+# #view model summary
+# summary(model)
+# plot(model)
+# plot(eutroph_dissimilarity$eutroph, eutroph_dissimilarity$rdiv, col='red', main='Summary of Regression Model', xlab='x', ylab='y')
+# #add fitted regression line
+# abline(model)
+# # impossible, not working like this. forget lm
+# model <- lm(rdiv ~ Phos_max, data=eutroph_dissimilarity)
+# summary(model)$coef
+# plot(eutroph_dissimilarity$Phos_max, eutroph_dissimilarity$rdiv, col='red', main='Summary of Regression Model', xlab='x', ylab='y')
+# abline(model)
+# # i dont know how to do this shit
+# model2 <- gam(rdiv ~ Phos_max, data = eutroph_dissimilarity)
+# plot(model2)
