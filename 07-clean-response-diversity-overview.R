@@ -38,7 +38,17 @@ mod_4_deriv <- readRDS("total_models/deriv_model_4_total")
 all_models_derivatives <- bind_rows(mod_1_deriv, mod_2_deriv, mod_3_deriv, mod_4_deriv)
 all_lakes_tib <- as_tibble(all_models_derivatives)
 
-resp_div_all <- readRDS("total_models/lakes_all_models/resp_div_all.rds")
+all_lakes_tib |> 
+  filter(fLake == "Maggiore") |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line() +
+  facet_wrap(~species)
+  ylim(-2, 2)
+
+resp_div_all <- readRDS("total_models/resp_div_all.rds")
+
+resp_div_all |> 
+  distinct(species)
 # species_overview <- readRDS("total_models/lakes_all_models/species_overview.rds")
 
 ################ overview table for models and success
@@ -146,20 +156,20 @@ plot_means +
 
 p <- df_means |> 
   ggplot(aes(mean_dissimilarity, mean_divergence)) +
-  geom_point(color = "#007ED3") +
-  theme_ipsum()
+  geom_point(color = "#007ED3")
+  # theme_ipsum()
 
 plot_means <- p + geom_text_repel(aes(label = Lake),
                     size = 3.5, 
                     max.overlaps = 13)
 
-
-tiff(paste("total_models/plots/poster_fig_3.tiff", sep = ""), units="in", width=5, height=5, res=300)
-
-plot(plot_means)
-
-# Closing the graphical device
-dev.off()
+plot_means
+# tiff(paste("total_models/plots/poster_fig_3.tiff", sep = ""), units="in", width=5, height=5, res=300)
+# 
+# plot(plot_means)
+# 
+# # Closing the graphical device
+# dev.off()
 
 
 
@@ -440,12 +450,12 @@ min(data$mean_derivative)
 
 data_new <- data                                      # Duplicate data
 data_new$groups <- cut(data_new$mean_derivative,               # Add group column
-                       breaks = c(-7.634168, -3, 0, 1, 2, 3, 4, 10, 1045.769))
+                       breaks = c(-7.634168, -3, 0, 1, 2, 3, 4, 10, 131.2406))
 head(data_new)   
 
 data_new |> 
-  filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-                        "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
+  # filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
+  #                       "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
   ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= groups)) + 
   geom_tile() +
   # scale_fill_distiller(palette = "PRGn")
@@ -647,7 +657,8 @@ library(svglite)
     geom_point(color = "#26AD81") +
     # theme_publish(base_size = 18, base_family = "", base_linewidth = 1)
     theme_bw(base_size = 18) + 
-    theme(panel.border = element_rect(size = 1.5))
+    theme(panel.border = element_rect(size = 1.5)) +
+    ylim(0.2, 1)
  plot_means
  
  library(ggrepel)
@@ -657,7 +668,7 @@ library(svglite)
                                    max.overlaps = 15)
  plot_means_2
 
-  tiff(paste("total_models/plots/poster_fig_3.tiff", sep = ""), units="in", width=5, height=5, res=300)
+  tiff(paste("total_models/plots/new_version_all_species.tiff", sep = ""), units="in", width=5, height=5, res=300)
   
   plot(plot_means_2)
   
