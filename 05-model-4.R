@@ -17,7 +17,6 @@ df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
   
 df_abundance_re |> 
   distinct(Lake) 
-  pull(Species)
 
 # we have to delete the observation of lepomis gibbosus at 7.132625 degrees
 
@@ -45,7 +44,7 @@ df_abundance_re |>
 # "Phoxinus_csikii"??
 
 species_list <- df_abundance_re |> 
-  filter(Species %in% c("Lota_lota")) |> 
+  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -123,7 +122,7 @@ for (i in species_list) {
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota")) |> 
+  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -207,7 +206,7 @@ saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(Species %in% c("Lota_lota")) |>
+  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -275,7 +274,7 @@ for (i in species_list) {
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota")) |>
+  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |>
   distinct(Species) |> 
   pull(Species)
 
