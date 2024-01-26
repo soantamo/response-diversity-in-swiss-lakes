@@ -15,14 +15,17 @@ library(readxl)
 
 df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 
+test <- df_abundance_re |> 
+  filter(Species == "Alburnus_arborella")
+  
 df_abundance_re |> 
   distinct(Lake) 
   pull(Species)
 
 # we have to delete the observation of lepomis gibbosus at 7.132625 degrees
 
-df_abundance_re <- df_abundance_re |> 
-  filter(!(mean_last_7days == 7.132625 & Species == "Lepomis_gibbosus" & Presence == 1))
+# df_abundance_re <- df_abundance_re |> 
+#   filter(!(mean_last_7days == 7.132625 & Species == "Lepomis_gibbosus" & Presence == 1))
 
 
 table(df_abundance_re$Abundance) 
@@ -37,11 +40,10 @@ df_abundance_re |>
 
 ###################binomial
 
+
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
-                         "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
-                         "Phoxinus_csikii")) |> 
+  filter(Species %in% c("Lota_lota", "Salmo_trutta")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -77,8 +79,10 @@ for (i in species_list) {
     from = min(data$mean_last_7days, na.rm = TRUE),
     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
   ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
+  
   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = binomial)
+  
   # prepare residuals
   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
   # Main plot function from DHARMa, which gives
@@ -117,9 +121,7 @@ for (i in species_list) {
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
-                        "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
-                        "Phoxinus_csikii")) |> 
+  filter(!Species %in% c("Lota_lota")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -203,9 +205,7 @@ saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
-                        "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
-                        "Phoxinus_csikii")) |>
+  filter(Species %in% c("Lota_lota")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -273,9 +273,7 @@ for (i in species_list) {
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Alburnus_arborella",
-                        "Lepomis_gibbosus", "Blicca_bjoerkna", "Cyprinus_carpio",
-                        "Phoxinus_csikii")) |>
+  filter(!Species %in% c("Lota_lota")) |>
   distinct(Species) |> 
   pull(Species)
 
