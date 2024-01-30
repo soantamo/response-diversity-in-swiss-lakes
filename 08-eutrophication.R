@@ -10,6 +10,11 @@ library(broom)
 library(mgcViz)
 library(DHARMa)
 library(readxl)
+library(ggpubr)
+
+
+# You should think long and hard about removing any data point(s) 
+# and if you do you should always report this and justify your reasoning.
 
 # lake properties df
 lake_info <- read_xlsx("lake_info.xlsx")
@@ -25,8 +30,9 @@ resp_div_all <- readRDS("total_models/resp_div_all.rds") |>
 # dissimilarity and max phosporus
 # no info for poschiavo in phos max, needs to go
 rdiv <- resp_div_all |>  
-  filter(fLake != "Poschiavo") |> 
+  filter(!fLake %in% c("Poschiavo")) |> 
   select(temp, fLake, rdiv, sign) |>
+  drop_na() |> 
   rename(Lake = fLake)
 
 eutroph_dissimilarity <- merge(eutroph, rdiv)
@@ -55,10 +61,12 @@ str(eutroph_dissimilarity)
 
 eutroph_dissimilarity$eutroph <- as.factor(eutroph_dissimilarity$eutroph)
 eutroph_dissimilarity$eutroph <- factor(eutroph_dissimilarity$eutrop, levels=c("never", "moderately",
-                                                                               "strongly", "hyper"))
+   
+                                                                               
+eutroph_dissimilarity$fPhos <- as.factor(eutroph_dissimilarity$Phos_max)                                                                                                                                                     "strongly", "hyper"))
 # aanova
 
-one.way <- aov(rdiv ~ Phos_max, data = eutroph_dissimilarity)
+one.way <- aov(rdiv ~ fPhos, data = eutroph_dissimilarity)
 
 
 summary(one.way)
@@ -69,21 +77,21 @@ plot(one.way)
 # plot(one.way)
 # par(mfrow=c(1,1))
 
-two.way.plot <- ggplot(eutroph_dissimilarity, aes(x = Phos_max , y = rdiv)) +
+two.way.plot <- ggplot(eutroph_dissimilarity, aes(x = fPhos , y = rdiv)) +
   geom_boxplot()
 
 two.way.plot
 
 
 mean.data <- eutroph_dissimilarity %>%
-  group_by(Phos_max) %>%
+  group_by(fPhos) %>%
   summarise(
     rdiv = mean(rdiv)
   )
 
 plot <- two.way.plot + stat_summary(fun.data = 'mean_se', geom = 'errorbar', width = 0.2, color = "red") +
   stat_summary(fun.data = 'mean_se', geom = 'pointrange', color = "red") +
-  geom_boxplot(data=mean.data, aes(x=Phos_max, y=rdiv))
+  geom_boxplot(data=mean.data, aes(x=fPhos, y=rdiv))
 
 plot
 
@@ -272,23 +280,152 @@ kruskal.test(rdiv ~ Max_depth, data = eutroph_dissimilarity)
 # x as phos_max is discrete, not a factor. use it as numerical
 # y is dependent?? LMM?
 
+# dissimilarity 
+
+ggplot(mapping = aes(x = Phos_max, y = rdiv), data = eutroph_dissimilarity) +
+  geom_point()
+# suggests a negative relationship
+
+
 hist(eutroph_dissimilarity$rdiv)
 
 eutroph_dissimilarity$Phos_max <- as.numeric(eutroph_dissimilarity$Phos_max)
 
-fit <- lm(rdiv ~ as.numeric(as.character(Phos_max)), data = eutroph_dissimilarity)
-plot(rdiv ~ as.numeric(as.character(Phos_max)), data = eutroph_dissimilarity)
+fit <- lm(rdiv ~ Phos_max, data = eutroph_dissimilarity)
+plot(rdiv ~ Phos_max, data = eutroph_dissimilarity)
 abline(fit)
-     
+
 summary(fit)
+anova(fit)
 
+
+ggplot(mapping = aes(x = Phos_max, y = rdiv), data = eutroph_dissimilarity) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE)
+     
+
+
+# check assumptions
+# Two of the most important assumption are equal variances 
+# (homogeneity of variance) and normality of residuals. 
+# To check for equal variances we can construct a graph of 
+# residuals versus fitted values. We can do this by first extracting 
+# the residuals and fitted values from our model object using the resid() 
+# and fitted() functions.
 # residuals
-summary(eutroph_dissimilarity$rdiv - fit$fitted.values)
-# our median is close to zero -> good
-# 7 percent of variation are explained by phos max
+
+# equal variance
+
+# not at all
+
+phos_res <- resid(fit)
+phos_fit <- fitted(fit)
+
+ggplot(mapping = aes(x = phos_fit, y = phos_res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+# qq
+
+ggplot(mapping = aes(sample = phos_res)) +
+  stat_qq() + 
+  stat_qq_line()
+
+# 
+library(ggfortify)
+autoplot(fit, which = 1:6, ncol = 2, label.size = 3)
+
+# homogeneity of variance not given at all. it is depending on the Lake, Phos_max
+# is not independent.
+
+# add mixed effects
 
 
-plot(fit)
+gls<- gls(rdiv ~ Phos_max, data = eutroph_dissimilarity, method = "ML")
+summary(gls)
+
+
+# adding Lake as random effect 
+lmm1 <- lme(rdiv ~ Phos_max, data = eutroph_dissimilarity, method = "ML",
+            random = ~1|Lake)
+summary(lmm1)
+
+anova(gls, lmm1)
+
+# lmm1 way better
+
+# comapre them 
+
+# QQ plots (drawn to the same scale!)
+glm_res <- resid(gls)
+lmm1_res <- resid(lmm1)
+
+# qq
+
+a <- ggplot(mapping = aes(sample = glm_res)) +
+  stat_qq() + 
+  stat_qq_line()
+
+
+b <- ggplot(mapping = aes(sample = lmm1_res)) +
+  stat_qq() + 
+  stat_qq_line()
+
+library(ggpubr)
+
+ggarrange(a, b, ncol = 1)
+
+summary(lmm1) #phos_max is not significant
+
+finalModel <- update(lmm1, .~., method = "REML")
+summary(finalModel)
+
+plot(finalModel)
+
+resid <- resid(finalModel)
+fitted <- fitted(finalModel)
+
+ggplot(mapping = aes(x = fitted, y = resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+
+# lm with factor 
+
+
+eutroph_dissimilarity$fPhos <- as.factor(eutroph_dissimilarity$Phos_max)
+
+lm_f <- lm(rdiv ~ fPhos, data = eutroph_dissimilarity)
+
+summary(lm_f)
+
+anova(fit, lm_f)
+
+
+# testing
+
+fphos_res <- resid(lm_f)
+fphos_fit <- fitted(lm_f)
+
+ggplot(mapping = aes(x = fphos_fit, y = fphos_res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+# qq
+
+ggplot(mapping = aes(sample = fphos_res)) +
+  stat_qq() + 
+  stat_qq_line()
+
+# 
+library(ggfortify)
+autoplot(lm_f, which = 1:6, ncol = 2, label.size = 3)
+
+test <- eutroph_dissimilarity |> 
+  select(Phos_max, rdiv, Lake)
+
+
+plot(eutroph_dissimilarity$fPhos, eutroph_dissimilarity$rdiv, xlab = "Phos_max", ylab = "rdiv", main = "Scatter Plot with Regression Line")
+abline(lm_f, col = "blue")
+##################################################################################
+
 # check for normality etc.
 
 d<-density(fit[['residuals']])
@@ -318,7 +455,37 @@ f <- eutroph_dissimilarity |>
 
 f
 
+f2 <- eutroph_dissimilarity |> 
+  ggplot(aes(Phos_max, sign)) +
+  stat_summary(fun.data=mean_cl_normal, geom = "pointrange") + 
+  geom_smooth(method='lm') +
+  theme_bw() +
+  stat_regline_equation(label.y = 3.5, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 3.2, aes(label = ..rr.label..))
+
+f2
 # r square is very bad
+
+g <- eutroph_dissimilarity |> 
+  ggplot(aes(Max_depth, rdiv)) +
+  stat_summary(fun.data=mean_cl_normal, geom = "pointrange") + 
+  geom_smooth(method='lm') +
+  theme_bw() +
+  stat_regline_equation(label.y = 3.5, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 3.2, aes(label = ..rr.label..))
+
+g
+
+
+g2 <- eutroph_dissimilarity |> 
+  ggplot(aes(Max_depth, sign)) +
+  stat_summary(fun.data=mean_cl_normal, geom = "pointrange") + 
+  geom_smooth(method='lm') +
+  theme_bw() +
+  stat_regline_equation(label.y = 3.5, aes(label = ..eq.label..)) +
+  stat_regline_equation(label.y = 3.2, aes(label = ..rr.label..))
+
+g2
 # or 
 
 ggplot(eutroph_dissimilarity, aes(x = as.character(Phos_max), y = rdiv)) + 
