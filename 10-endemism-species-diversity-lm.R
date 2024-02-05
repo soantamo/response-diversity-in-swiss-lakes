@@ -9,22 +9,41 @@ library(ggpubr)
 library(ggfortify)
 library(car)
 library(writexl)
+library(readxl)
 
 # lake properties df
 lake_info <- read_xlsx("lake_info.xlsx")
 
 # species overview 
 
-export <- species_overview <- readRDS("total_models/species_overview/species_overview_Zurich.rds")
 
+species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
+  select(-6) |> 
+  rename(endemism = details)
 
-# write_xlsx(export, "species_endemism_richness.xlsx")
+species_endemism$endemism <- as.factor(species_endemism$endemism)
 
+str(species_endemism)
 
-species_overview <- readRDS("total_models/species_overview/species_overview_Zurich.rds") |>
-  distinct(fLake, sum_species) |> 
+# adding number of endemic and native etc species.
+df_species_endemism <- species_endemism |> 
+  select(-species, - num_species) |> 
+  add_count(fLake, endemism) |> 
+  rename(count = n) |> 
+  distinct(fLake, count, sum_species, endemism)
+
+str(df_species_endemism)
+
+df_species_endemism$count <- as.numeric(df_species_endemism$count)
+
+df_species_endemism_long <- df_species_endemism |> 
+  pivot_wider(names_from = endemism, values_from = count) |> 
+  mutate_if(is.numeric, ~replace(., is.na(.), 0)) |> 
   rename(Lake = fLake)
+
+str(df_species_endemism_long)
   
+# ready df !!!!
 
 # resp diversity per lake df
 resp_div_all <- readRDS("total_models/resp_div_all.rds") |> 
@@ -44,8 +63,8 @@ df_rdiv <- rdiv |>
   distinct(fLake, mean_rdiv, max_rdiv, mean_sign, max_sign) |> 
   rename(Lake = fLake)
 
-species_richness <- merge(species_overview, df_rdiv)
-str(species_richness)
+df_endemism_rdiv <- merge(df_species_endemism_long, df_rdiv) 
+str(df_endemism_rdiv)
 
 # plot lm
 
@@ -193,5 +212,13 @@ ggplotRegression(srdiv_fix)
 # is endemism etc relevant?
 
 #################################################################################3
+test <- df_endemism_rdiv |> 
+  group_by(Lake) |> 
+  mutate(non = sum(non_native + exotic))
 
+native <- lm(mean_rdiv ~ non, data = test)
+summary(native)
+plot(native)
+
+ggplotRegression(native)
 
