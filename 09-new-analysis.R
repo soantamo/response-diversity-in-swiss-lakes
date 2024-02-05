@@ -28,17 +28,88 @@ resp_div_all <- readRDS("total_models/resp_div_all.rds") |>
 
 # no info for poschiavo in phos max, needs to go
 rdiv <- resp_div_all |>  
-  filter(!fLake %in% c("Poschiavo")) |> 
   select(temp, fLake, rdiv, sign) |>
-  drop_na() |> 
+  drop_na()
+
+df_rdiv <- rdiv |> 
+  group_by(fLake) |> 
+  mutate(mean_rdiv = mean(rdiv)) |> 
+  mutate(max_rdiv = max(rdiv)) |> 
+  mutate(mean_sign = mean(sign)) |> 
+  mutate(max_sign = max(sign)) |> 
+  distinct(fLake, mean_rdiv, max_rdiv, mean_sign, max_sign) |> 
   rename(Lake = fLake)
 
-eutroph_dissimilarity <- merge(eutroph, rdiv)
+eutroph_dissimilarity <- merge(eutroph, df_rdiv)
 
 eutroph_dissimilarity$Phos_max <- as.numeric(eutroph_dissimilarity$Phos_max)
 eutroph_dissimilarity$fPhos <- as.factor(eutroph_dissimilarity$Phos_max)
 
 str(eutroph_dissimilarity)
+
+eutroph_dissimilarity |> 
+  select(Lake, fPhos) |> 
+  distinct(Lake, fPhos)
+
+#################### regression: eutrophication and mean_rdiv
+
+mrdiv1 <- lm(mean_rdiv ~ Phos_max, data = eutroph_dissimilarity)
+summary(mrdiv1)
+plot(mrdiv1)
+
+plot(eutroph_dissimilarity$Phos_max, eutroph_dissimilarity$mean_rdiv, col='red', main='Summary of Regression Model', xlab='x', ylab='y')
+#add fitted regression line
+abline(mrdiv1)
+
+summary(mrdiv1)
+anova(mrdiv1)
+
+# analysis 
+# dissimilarity 
+ggplot(mapping = aes(x = Phos_max, y = mean_rdiv), data = eutroph_dissimilarity) +
+  geom_point()
+# suggests a negative relationship
+
+hist(eutroph_dissimilarity$mean_rdiv)
+
+ggplot(mapping = aes(x = Phos_max, y = mean_rdiv), data = eutroph_dissimilarity) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE)
+
+
+
+# check assumptions
+# Two of the most important assumption are equal variances 
+# (homogeneity of variance) and normality of residuals. 
+# To check for equal variances we can construct a graph of 
+# residuals versus fitted values. We can do this by first extracting 
+# the residuals and fitted values from our model object using the resid() 
+# and fitted() functions.
+# residuals
+
+# equal variance
+
+phos_res <- resid(mrdiv1)
+phos_fit <- fitted(mrdiv1)
+
+ggplot(mapping = aes(x = phos_fit, y = phos_res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+# qq
+
+ggplot(mapping = aes(sample = phos_res)) +
+  stat_qq() + 
+  stat_qq_line()
+
+# 
+library(ggfortify)
+autoplot(mrdiv1, which = 1:6, ncol = 2, label.size = 3)
+
+# homogeneity of variance not given at all. it is depending on the Lake, Phos_max
+# is not independent.
+
+################################################################################
+
 # phos_max: anova
 # depth_max: lm
 
