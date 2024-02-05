@@ -166,6 +166,8 @@ summary(mrdiv2)
 anova(mrdiv2)
 
 # analysis 
+par(mfrow=c(2,2))
+plot(mrdiv2, pch = 16, col = "blue")
 # dissimilarity 
 ggplot(mapping = aes(x = Phos_max, y = max_rdiv), data = eutroph_dissimilarity) +
   geom_point()
