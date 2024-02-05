@@ -87,7 +87,9 @@ ggplot(mapping = aes(x = Phos_max, y = mean_rdiv), data = eutroph_dissimilarity)
 # and fitted() functions.
 # residuals
 
-# equal variance
+par(mfrow=c(2,2))
+plot(mrdiv1, pch = 16, col = "blue")
+# equal variance: no patterns should be there
 
 phos_res <- resid(mrdiv1)
 phos_fit <- fitted(mrdiv1)
@@ -105,66 +107,92 @@ ggplot(mapping = aes(sample = phos_res)) +
 library(ggfortify)
 autoplot(mrdiv1, which = 1:6, ncol = 2, label.size = 3)
 
-# homogeneity of variance not given at all. it is depending on the Lake, Phos_max
-# is not independent.
+# 1:
+# 2: 
+# 3: 
+# 4: 
+
+
+
+# 1:  Residuals vs Fitted: is used to check the assumptions of linearity. 
+# If the residuals are spread equally around a horizontal line without
+# distinct patterns (red line is approximately horizontal at zero),
+# that is a good indication of having a linear relationship.
+
+# 2:  Normal Q-Q: is used to check the normality of residuals assumption. 
+# If the majority of the residuals follow the 
+# straight dashed line, then the assumption is fulfilled.
+
+# 3: Scale-Location: is used to check the homoscedasticity of residuals 
+# (equal variance of residuals). If the residuals are spread randomly
+# and the see a horizontal line with equally (randomly) spread points, 
+# then the assumption is fulfilled.
+
+# 4: Residuals vs Leverage: is used to identify any influential
+# value in our dataset. Influential values are extreme values 
+# that might influence the regression results when included or 
+# excluded from the analysis. Look for cases outside of a dashed line.
+
+# 1
+# ideally a horizontal line across zero
+plot(mrdiv1,1)
+
+# 2
+# histogram of residuals
+hist(mrdiv1$residuals)
+
+# qqplot
+plot(mrdiv1, 2)
+
+# Using pre-installed library(MASS)
+# get distribution of studentized residuals (i.e. transform residuals for test)
+sresid <- MASS::studres(mrdiv1) #using MASS package function to transform data easily
+shapiro.test(sample(sresid)) # p value non-sign: normal distribution of residuals
+
+# 3
+plot(mrdiv1, 3)
+# some deviation there
 
 ################################################################################
+mrdiv2 <- lm(max_rdiv ~ Phos_max, data = eutroph_dissimilarity)
+summary(mrdiv2)
+plot(mrdiv2)
 
-# phos_max: anova
-# depth_max: lm
+plot(eutroph_dissimilarity$Phos_max, eutroph_dissimilarity$max_rdiv, col='red', main='Summary of Regression Model', xlab='x', ylab='y')
+#add fitted regression line
+abline(mrdiv2)
 
-# anova phos_max
-# https://statsandr.com/blog/anova-in-r/
+summary(mrdiv2)
+anova(mrdiv2)
 
-ggplot(eutroph_dissimilarity) +
-  aes(x = fPhos, y = rdiv, color = Lake) +
-  geom_jitter() +
-  theme(legend.position = "none")
+# analysis 
+# dissimilarity 
+ggplot(mapping = aes(x = Phos_max, y = max_rdiv), data = eutroph_dissimilarity) +
+  geom_point()
+# suggests a negative relationship
 
-# anova 
-res_aov <- aov(rdiv ~ fPhos,
-               data = eutroph_dissimilarity)
+hist(eutroph_dissimilarity$max_rdiv)
 
-# check normality 
+ggplot(mapping = aes(x = Phos_max, y = max_rdiv), data = eutroph_dissimilarity) +
+  geom_point() +
+  geom_smooth(method = "lm", se = TRUE)
 
-par(mfrow = c(1, 2)) # combine plots
+# equal variance
 
-# histogram
-hist(res_aov$residuals)
+phos_res <- resid(mrdiv2)
+phos_fit <- fitted(mrdiv2)
 
-# QQ-plot
-library(car)
-qqPlot(res_aov$residuals,
-       id = FALSE)
+ggplot(mapping = aes(x = phos_fit, y = phos_res)) +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed")
+# qq
 
-shapiro.test(res_aov$residuals) #not normally distributed
-# -> kruskal wallis test
+ggplot(mapping = aes(sample = phos_res)) +
+  stat_qq() + 
+  stat_qq_line()
 
+# 
+library(ggfortify)
+autoplot(mrdiv2, which = 1:6, ncol = 2, label.size = 3)
 
-# check equality of variances
-# Equality of variances - homogeneity
-
-library("lattice")
-
-dotplot(rdiv ~ fPhos,
-        data = eutroph_dissimilarity)
-
-# Levene's test for homogeneity
-library(car)
-
-leveneTest(rdiv ~ fPhos,
-           data = eutroph_dissimilarity)
-
-# visual interpretation of normality and homogenetiy
-
-par(mfrow = c(1, 2)) # combine plots
-
-# 1. Homogeneity of variances
-plot(res_aov, which = 3)
-
-# 2. Normality
-plot(res_aov, which = 2)
-
-
-kruskal.test(rdiv ~ fPhos, data = eutroph_dissimilarity)
 
