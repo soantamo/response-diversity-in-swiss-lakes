@@ -1,14 +1,8 @@
 library(tidyverse)
-library(mgcv)
-library(gratia)
 library(here)
 library(readr)
 library(viridis)
-library(gamm4)
 library(lattice)
-library(broom)
-library(mgcViz)
-library(DHARMa)
 library(readxl)
 library(ggpubr)
 library(ggfortify)
@@ -533,27 +527,74 @@ dsign2_add[large_dsign2_add]
 # 3: okay
 # 4: okay
 
-##################################### overview
-# plot lm
-ggplotRegression(dsign2)
+################################################################################lm
+lm_analysis <- function(y, x, df) {
+  
+  mod <- lm(y ~ x, data = df)
+  print(summary(mod))
+  print(shapiro.test(resid(mod)))
+  print(lmtest::bptest(mod))
+  par(mfrow=c(2,2))
+  print(plot(mod))
+  
+  ggplot(mod$model, aes_string(x = names(mod$model)[2], y = names(mod$model)[1])) + 
+    geom_point() +
+    geom_smooth(method = "lm", col = "red",  fill = "#CDC9C9") +
+    # stat_smooth(method = "lm", col = "#FF3030", fill = "#CDC9C9") +
+    labs(title = paste("R^2 = ",signif(summary(mod)$r.squared, 2),
+                       # "adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                       # "Intercept =",signif(fit$coef[[1]],5 ),
+                       # " Slope =",signif(fit$coef[[2]], 5),
+                       " p-value =", signif(summary(mod)$coef[2,4], 2))) +
+    theme_bw()
+}
 
-a <- ggplotRegression(drdiv1) #model ok
-b <- ggplotRegression(drdiv2) #model ok
-c <- ggplotRegression(dsign1)  +
-  geom_smooth(method = "lm", col = "#4876FF",  fill = "#CDC9C9")
-#model ok
-d <- ggplotRegression(dsign2) +
-  geom_smooth(method = "lm", col = "#4876FF",  fill = "#CDC9C9")
-#model not ok
+# maximum_depth:
 
+depth1 <- lm_analysis(eutroph_dissimilarity$mean_rdiv, eutroph_dissimilarity$Max_depth, eutroph_dissimilarity)  +
+  geom_smooth(method = "lm", col = "#66CD00",  fill = "#CDC9C9") +
+  labs(x = "maximum_depth", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+depth2 <- lm_analysis(eutroph_dissimilarity$max_rdiv, eutroph_dissimilarity$Max_depth, eutroph_dissimilarity) +
+  geom_smooth(method = "lm", col = "#66CD00",  fill = "#CDC9C9") +
+  labs(x = "maximum_depth", y = "max_dissimilarity")
+# 1: naja, 2: ok, 3: naja mit pattern, test ok, 4: ok -> ?
+# depth3 <-lm_analysis(eutroph_dissimilarity$mean_sign, eutroph_dissimilarity$Max_depth, eutroph_dissimilarity) +
+#   geom_smooth(method = "lm", col = "#EE1289",  fill = "#CDC9C9") +
+#   labs(x = "maximum_depth", y = "mean_divergence")
+# 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
+# depth4 <- lm_analysis(eutroph_dissimilarity$max_sign, eutroph_dissimilarity$Max_depth, eutroph_dissimilarity) +
+#   geom_smooth(method = "lm", col = "#EE1289",  fill = "#CDC9C9") +
+#   labs(x = "maximum_depth", y = "mean_divergence")
+# 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
 
+ggarrange(depth1, depth2, depth3, depth4, ncol = 2, nrow = 2)
 
-max_depth <- ggarrange(a, b, c, d, nrow = 2, ncol = 2)
+tiff(paste("total_models/plots/lm_depth_max.tiff", sep = ""), units="in", width=8, height=4, res=300)
 
+plot(ggarrange(depth1, depth2, ncol = 2))
 
-tiff(paste("total_models/plots/lm_depth_max.tiff", sep = ""), units="in", width=9, height=6, res=300)
+# Closing the graphical device
+dev.off()
 
-plot(max_depth)
+# eutrophication
+
+phos1 <- lm_analysis(eutroph_dissimilarity$mean_rdiv, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)  +
+  labs(x = "maximum_phosphorus", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: ok, 4: ok -> 1
+phos2 <- lm_analysis(eutroph_dissimilarity$max_rdiv, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity) +
+  labs(x = "maximum_phosphorus", y = "max_dissimilarity")
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+# phos3 <- lm_analysis(eutroph_dissimilarity$mean_sign, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)
+# # 1: ok, 2: no, 3: naja, test ok, 4: ok -> 0
+# phos4 <- lm_analysis(eutroph_dissimilarity$max_sign, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)
+# # 1: no, 2: no, 3: naja, test ok, 4: ok -> 0
+
+ggarrange(phos1, phos2, ncol = 2)
+
+tiff(paste("total_models/plots/lm_max_phos.tiff", sep = ""), units="in", width=8, height=4, res=300)
+
+plot(ggarrange(phos1, phos2, ncol = 2))
 
 # Closing the graphical device
 dev.off()
