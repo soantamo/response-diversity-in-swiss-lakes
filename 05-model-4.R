@@ -18,6 +18,11 @@ df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 df_abundance_re |> 
   distinct(Lake) 
 
+test <- df_abundance_re |> 
+  filter(Species == "Lepomis_gibbosus")
+
+plot(test$mean_last_7days, test$Abundance)
+
 # we have to delete the observation of lepomis gibbosus at 7.132625 degrees
 
 # df_abundance_re <- df_abundance_re |> 
@@ -35,16 +40,18 @@ df_abundance_re |>
 ###CONTINUE here
 
 ###################binomial
-# 
+# PHoxinus csikiss, salmo trutta, lepomis gibbosus, and cyprinus_carpio have predictions higher than 1, 5
+
+# i need a real begründung
 # "Alburnus_arborella"??
-#   "Lepomis_gibbosus"??
+#   "Lepomis_gibbosus"
 #   "Blicca_bjoerkna"??
-#   , "Salmo_trutta"??
-#   "Cyprinus_carpio"??
+#   , "Salmo_trutta": has one data point with 2
+#   "Cyprinus_carpio": two data points with 2
 # "Phoxinus_csikii"??
 
 species_list <- df_abundance_re |> 
-  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |> 
+  filter(Species %in% c("Lota_lota")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -70,59 +77,63 @@ df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
 str(df_abundance_re)
 #make new loop 
 ###predict.gam needs something else
-
-for (i in species_list) {
-  data <- df_abundance_re |> 
-    filter(Species == i)
-  unique_lakes <- distinct(data, fLake)
-  unique_protocol <- distinct(data, fProtocol)
-  grid <- expand.grid(mean_last_7days = seq(
-    from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
-  ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
-  
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = binomial)
-  
-  # prepare residuals
-  simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
-  # Main plot function from DHARMa, which gives
-  # Left: a qq-plot to detect overall deviations from the expected distribution
-  # Right: a plot of the residuals against the rank-transformed model predictions
-  tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
-  tiff(tiff_filename, width = 800, height = 600)
-  print(plot(simulationOutput))
-  dev.off()
-  # get rid of NAs in temp datat
-  temp_data <- data |>
-    drop_na(mean_last_7days)
-  # Plotting standardized residuals against predictors
-  tiff_file_2 <- paste("model_4/gam_check/predictor_", i, ".tiff", sep = "")
-  tiff(tiff_file_2, width = 800, height = 600)
-  print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
-  dev.off()
-  
-  print(glance(gam_output[[i]]))
-  
-  model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-  model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
-  pred_df <- model_bind |>
-    group_by(mean_last_7days) |>
-    mutate(fit = mean(fit)) |>
-    mutate(lower = fit - 1 * se.fit, upper = fit +  1 * se.fit) |>
-    summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit), across(fLake)) |>
-    rename(temp = mean_last_7days) |> 
-    mutate(species = factor(i))
-  saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
-}
-
+# 
+# for (i in species_list) {
+#   data <- df_abundance_re |> 
+#     filter(Species == i)
+#   unique_lakes <- distinct(data, fLake)
+#   unique_protocol <- distinct(data, fProtocol)
+#   grid <- expand.grid(mean_last_7days = seq(
+#     from = min(data$mean_last_7days, na.rm = TRUE),
+#     to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
+#   ), fLake = unique_lakes$fLake, fProtocol = unique_protocol$fProtocol)
+#   
+#   # gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#   #                        +  s(fProtocol, bs = 're'), family = binomial)
+#   # 
+#   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                          +  s(fProtocol, bs = 're'), family = ziP())
+#   
+#   # prepare residuals
+#   simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+#   # Main plot function from DHARMa, which gives
+#   # Left: a qq-plot to detect overall deviations from the expected distribution
+#   # Right: a plot of the residuals against the rank-transformed model predictions
+#   tiff_filename <- paste("model_4/gam_check/gam_check_", i, ".tiff", sep = "")
+#   tiff(tiff_filename, width = 800, height = 600)
+#   print(plot(simulationOutput))
+#   dev.off()
+#   # get rid of NAs in temp datat
+#   temp_data <- data |>
+#     drop_na(mean_last_7days)
+#   # Plotting standardized residuals against predictors
+#   tiff_file_2 <- paste("model_4/gam_check/predictor_", i, ".tiff", sep = "")
+#   tiff(tiff_file_2, width = 800, height = 600)
+#   print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+#   dev.off()
+#   
+#   print(glance(gam_output[[i]]))
+#   
+#   model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+#   model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+#   pred_df <- model_bind |>
+#     group_by(mean_last_7days) |>
+#     mutate(fit = mean(fit)) |>
+#     mutate(lower = fit - 1 * se.fit, upper = fit +  1 * se.fit) |>
+#     summarize(fit = mean(fit), lower = mean(lower), upper = mean(upper), across(se.fit), across(fLake)) |>
+#     rename(temp = mean_last_7days) |> 
+#     mutate(species = factor(i))
+#   saveRDS(pred_df, paste0("model_4/predictions/predictions_",i,".rds"))
+# }
+# 
 
 
 #####Loop Model 4 ######ZIP
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |> 
+  # filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii",
+  #                       "Cyprinus_carpio", "Lepomis_gibbosus")) |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -202,71 +213,72 @@ saveRDS(df_pred_mod4, "total_models/pred_model_4_total")
 
 
 ###################derivatives: binomial
-
-
-species_list <- df_abundance_re |> 
-  # binomial ones
-  filter(Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |>
-  distinct(Species) |> 
-  pull(Species)
-
-species_list <- sort(species_list)
-
-
-df_abundance_re$fLake <- as.factor(df_abundance_re$Lake)
-df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
-
-str(df_abundance_re)
-
-# we need to get the derivatives for every lake
-
-derivatives <- list()
-gam_output <- list()
-
-species_lake <- read_xlsx("species_lake.xlsx") 
-
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
-
-str(species_lake)
-
-
-for (i in species_list) {
-  
-  data <- df_abundance_re |> 
-    filter(Species == i)
-  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                         +  s(fProtocol, bs = 're'), family = binomial)
-  
-  lake_data <- species_lake |>
-    filter(Species == i)
-  
-  lake_list <- distinct(lake_data, Lake) |>
-    pull()
-  
-  for (j in lake_list){
-    
-    data_lake <- species_lake |>
-      filter(Species == i) |>
-      filter(Lake == j)
-    
-    unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
-    
-    newdata <- tibble(mean_last_7days = seq(
-      from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
-    
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("model_4/derivatives/derivatives_", i, "_",  j, ".rds"))
-  }
-}
-
-
+# 
+# 
+# species_list <- df_abundance_re |> 
+#   # binomial ones
+#   filter(Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii",
+#                         "Cyprinus_carpio", "Lepomis_gibbosus")) |>
+#   distinct(Species) |> 
+#   pull(Species)
+# 
+# species_list <- sort(species_list)
+# 
+# 
+# df_abundance_re$fLake <- as.factor(df_abundance_re$Lake)
+# df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
+# 
+# str(df_abundance_re)
+# 
+# # we need to get the derivatives for every lake
+# 
+# derivatives <- list()
+# gam_output <- list()
+# 
+# species_lake <- read_xlsx("species_lake.xlsx") 
+# 
+# species_lake$fLake <- as.factor(species_lake$Lake)
+# species_lake$fProtocol <- as.factor(species_lake$Protocol)
+# 
+# str(species_lake)
+# 
+# 
+# for (i in species_list) {
+#   
+#   data <- df_abundance_re |> 
+#     filter(Species == i)
+#   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                          +  s(fProtocol, bs = 're'), family = binomial)
+#   
+#   lake_data <- species_lake |>
+#     filter(Species == i)
+#   
+#   lake_list <- distinct(lake_data, Lake) |>
+#     pull()
+#   
+#   for (j in lake_list){
+#     
+#     data_lake <- species_lake |>
+#       filter(Species == i) |>
+#       filter(Lake == j)
+#     
+#     unique_lakes <- distinct(data_lake, fLake)
+#     unique_protocol <- distinct(data_lake, fProtocol)
+#     
+#     newdata <- tibble(mean_last_7days = seq(
+#       from = min(data_lake$temp, na.rm = TRUE),
+#       to = max(data_lake$temp, na.rm = TRUE), length = 200),
+#       fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+#     
+#     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+#       mutate(fLake = factor(j)) |>
+#       mutate(species = factor(i)) |>
+#       rename(temp = data)
+#     saveRDS(derivatives, paste0("model_4/derivatives/derivatives_", i, "_",  j, ".rds"))
+#   }
+# }
+# 
+# 
 
 ###################derivatives: ZIP
 
@@ -274,7 +286,8 @@ for (i in species_list) {
 
 species_list <- df_abundance_re |> 
   # binomial ones
-  filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii")) |>
+  # filter(!Species %in% c("Lota_lota", "Salmo_trutta", "Phoxinus_csikii",
+  #                        "Cyprinus_carpio", "Lepomis_gibbosus")) |>
   distinct(Species) |> 
   pull(Species)
 
