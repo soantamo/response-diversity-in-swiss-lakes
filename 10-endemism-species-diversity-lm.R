@@ -217,51 +217,6 @@ endemism_groupings <- df_endemism_rdiv |>
   group_by(Lake) |> 
   mutate(non = sum(non_native + exotic))
 
-native <- lm(mean_rdiv ~ native, data = endemism_groupings)
-summary(native)
-plot(native)
-shapiro.test(resid(native)) #ok
-lmtest::bptest(native) #ok
-# 1: not fully horizontal, 2: ok, 3: ok, 4: some leverage
-
-p_native <- ggplotRegression(native)
-
-
-exotic <- lm(mean_rdiv ~ exotic, data = endemism_groupings)
-summary(exotic)
-plot(exotic)
-shapiro.test(resid(exotic)) #ok
-lmtest::bptest(exotic) #knapp, evtl homodeicasicisty 
-# 1: ok, 2: ok, 3: ok, 4: some leverage
-
-p_exotic <- ggplotRegression(exotic)
-
-
-non_native <- lm(mean_rdiv ~ non_native, data = endemism_groupings)
-summary(non_native)
-plot(non_native)
-shapiro.test(resid(non_native)) #ok
-lmtest::bptest(non_native) #ok
-# 1: ok, 2: ok, 3: ok, 4: some leverage
-
-p_non_native <- ggplotRegression(non_native)
-
-
-endemic <- lm(mean_rdiv ~ endemic, data = endemism_groupings)
-summary(endemic)
-plot(endemic)
-shapiro.test(resid(endemic)) #ok
-lmtest::bptest(endemic) #ok
-# 1: not fully horizontal, 2: ok, 3: not horizontal, has a shape, residuals bigger
-# with low endemism and high endemism
-# , 4: some leverage
-
-p_endemic <- ggplotRegression(endemic)
-
-ggarrange(p_native, p_exotic, p_non_native, p_endemic, ncol = 2, nrow = 2)
-
-################################################################################
-
 # Regional endemism is often characterised by the proportion of endemics: 
 #   the number of endemic taxa (E) divided by the total number 
 # of taxa (S) [as a percentage: (E × 100 %)/S]. 
@@ -274,37 +229,8 @@ endemism_percents <- endemism_groupings|>
   mutate(perc_non_native = sum(non_native * 100 / sum_species)) |> 
   mutate(perc_native = sum(native * 100 / sum_species))
 
-end_percent <- lm(mean_rdiv ~ perc_endemism, data = endemism_percents)
-summary(end_percent)
-plot(end_percent)
-shapiro.test(resid(end_percent)) #ok
-lmtest::bptest(end_percent) #ok
-# 1: ok, 2: ok, 3: naja, 4: 5 , 8 and 13
 
-ggplotRegression(end_percent)
-
-
-end_exotic <- lm(mean_rdiv ~ perc_exotic, data = endemism_percents)
-summary(end_exotic)
-plot(end_exotic)
-shapiro.test(resid(end_exotic)) #ok
-lmtest::bptest(end_exotic) #ok
-# 1: ok, 2: ok, 3: naja, 4: 5 , 8 and 13
-
-ggplotRegression(end_exotic)
-
-
-end_nonnative <- lm(mean_rdiv ~ perc_non_native, data = endemism_percents)
-summary(end_nonnative)
-plot(end_nonnative)
-shapiro.test(resid(end_nonnative)) #ok
-lmtest::bptest(end_nonnative) #ok
-# 1: ok, 2: ok, 3: naja, 4: 5 , 8 and 13
-
-ggplotRegression(end_nonnative)
-
-
-
+# function for analysis
 lm_analysis <- function(y, x, df) {
   
   mod <- lm(y ~ x, data = df)
@@ -316,21 +242,174 @@ lm_analysis <- function(y, x, df) {
   
   ggplot(mod$model, aes_string(x = names(mod$model)[2], y = names(mod$model)[1])) + 
     geom_point() +
-    stat_smooth(method = "lm", col = "#FF3030", fill = "#CDC9C9") +
+    geom_smooth(method = "lm", col = "red",  fill = "#CDC9C9") +
+    # stat_smooth(method = "lm", col = "#FF3030", fill = "#CDC9C9") +
     labs(title = paste("R^2 = ",signif(summary(mod)$r.squared, 2),
                        # "adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
                        # "Intercept =",signif(fit$coef[[1]],5 ),
                        # " Slope =",signif(fit$coef[[2]], 5),
-                       " p-value =",signif(summary(mod)$coef[2,4], 2))) +
+                       " p-value =", signif(summary(mod)$coef[2,4], 2))) +
     theme_bw()
 }
 
+# non_native and percentages non native and rdiv
+
+a1 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$non_native, endemism_percents) +
+  labs(x = "non_native", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+b1 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$non_native, endemism_percents) +
+  labs(x = "non_native", y = "max_dissimilarity")
+# 1: ok, 2: naja, shapiro ok, 3: naja, test ok, 4: ok -> 1
+c1 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$perc_non_native, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+  labs(x = "percentage_non_native", y = "mean_dissimilarity")
+# 1: ok, 2:  ok, 3: naja, test ok, 4: ok -> 1
+d1 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$perc_non_native, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+  labs(x = "percentage_non_native", y = "max_dissimilarity")
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+
+# ggarrange(a1,b1,c1,d1,ncol = 2, nrow = 2)
+
+tiff(paste("total_models/plots/lm_rdiv_non_native.tiff", sep = ""), units="in", width=10, height=9, res=300)
+
+plot(ggarrange(a1,b1,c1,d1,ncol = 2, nrow = 2))
+
+# Closing the graphical device
+dev.off()
+
+a2 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$native, endemism_percents) +
+  labs(x = "native", y = "mean_dissimilarity")
+# 1: naja, 2: ok, 3: naja, 4: ok -> 1
+b2 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$native, endemism_percents) +
+  labs(x = "native", y = "max_dissimilarity")
+# 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
+c2 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$perc_native, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")+
+  labs(x = "percentage_native", y = "mean_dissimilarity")
+# 1: naja, 2: ok, 3: naja, 4: ok -> 1
+# d2 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$perc_native, endemism_percents) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+# # 1: no, 2: ok, 3: no, test ok, 4: ok -> 0 
+
+# ggarrange(a2,b2,c2,d2,ncol = 2, nrow = 2)
+ggarrange(a2,b2,c2,ncol = 2, nrow = 2)
+
+tiff(paste("total_models/plots/lm_rdiv_native.tiff", sep = ""), units="in", width=12, height=4, res=300)
+
+plot(ggarrange(a2,b2,c2,ncol = 3))
+
+# Closing the graphical device
+dev.off()
 
 
-lm_analysis(endemism_percents$mean_rdiv, endemism_percents$non_native, endemism_percents)
-lm_analysis(endemism_percents$perc_native)
-lm_analysis(endemism_percents$perc_exotic)
-lm_analysis(endemism_percents$perc_endemism)
+a3 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$exotic, endemism_percents) +
+  labs(x = "exotic", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: kanpp unter 0.05, test ok, 4: ok -> 1
+b3 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$exotic, endemism_percents) +
+  labs(x = "exotic", y = "max_dissimilarity")
+# 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
+c3 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$perc_exotic, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+  labs(x = "percentage_exotic", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: ok, test ok, 4: ok -> 1
+d3 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$perc_exotic, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+  labs(x = "percentage_exotic", y = "max_dissimilarity")
+# 1: ok, 2: ok, 3: ok, 4: ok -> 1
+
+
+ggarrange(a3,b3,c3,d3,ncol = 2, nrow = 2)
+
+tiff(paste("total_models/plots/lm_rdiv_exotic.tiff", sep = ""), units="in", width=10, height=9, res=300)
+
+plot(ggarrange(a3,b3,c3,d3,ncol = 2, nrow = 2))
+
+# Closing the graphical device
+dev.off()
+
+a4 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$endemic, endemism_percents) +
+  labs(x = "endemic", y = "mean_dissimilarity")
+# 1: naja, 2: ok, 3: naja mit pattern, test ok, 4: ok -> 1
+# b4 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$endemic, endemism_percents)
+# # 1: no, 2: ok, 3: no, test ok, 4: ok -> 0
+c4 <- lm_analysis(endemism_percents$mean_rdiv, endemism_percents$perc_endemism, endemism_percents) +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+  labs(x = "percentage_endemic", y = "mean_dissimilarity")
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+# d4 <- lm_analysis(endemism_percents$max_rdiv, endemism_percents$perc_endemism, endemism_percents) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+# # 1: naja, 2: ok, 3: naja, test ok, 4: ok -> ?
+
+# ggarrange(a4,b4,c4,d4,ncol = 2, nrow = 2)
+ggarrange(a4,c4,ncol = 2)
+
+tiff(paste("total_models/plots/lm_rdiv_endemic.tiff", sep = ""), units="in", width=8, height=4, res=300)
+
+plot(ggarrange(a4,c4,ncol = 2))
+
+# Closing the graphical device
+dev.off()
 
 
 
+# tiff(paste("total_models/plots/lm_rdiv_native.tiff", sep = ""), units="in", width=6, height=9, res=300)
+# 
+# plot(rdiv_native)
+# 
+# # Closing the graphical device
+# dev.off()
+
+
+# i <- lm_analysis(endemism_percents$mean_sign, endemism_percents$non_native, endemism_percents)
+# # 1: no, 2: no, 3: no, test ok, 4: ok -> 0 
+# j <- lm_analysis(endemism_percents$max_sign, endemism_percents$non_native, endemism_percents)
+# # 1: no, 2: no, 3: no test ok, 4: ok -> 0
+# k <- lm_analysis(endemism_percents$mean_sign, endemism_percents$native, endemism_percents)
+# # 1: no, 2: ok, 3: no, test ok, 4: ok -> 
+# l <- lm_analysis(endemism_percents$max_sign, endemism_percents$native, endemism_percents)
+# # 1: no, 2: no, 3: no, test ok, 4: ok -> 0
+# m <- lm_analysis(endemism_percents$mean_sign, endemism_percents$exotic, endemism_percents)
+# # 1: no, 2: no, 3: naja, test ok, 4: ok -> 0
+# n <- lm_analysis(endemism_percents$max_sign, endemism_percents$exotic, endemism_percents)
+# # 1: no, 2: no, 3: no, test ok, 4: no
+# o <- lm_analysis(endemism_percents$mean_sign, endemism_percents$endemic, endemism_percents)
+# # 1: no, 2: no, 3: no, test ok, 4: no -> 0
+# p <- lm_analysis(endemism_percents$max_sign, endemism_percents$endemic, endemism_percents)
+# # 1: no, 2: no, 3: no, test ok, 4: no -> 0 
+
+# none of them fulfills models assumptions
+# redo with percentages
+
+i <- lm_analysis(endemism_percents$mean_sign, endemism_percents$perc_non_native, endemism_percents)
+# 1: ok, 2: ok, 3: no, test ok, 4: ok -> ?
+# j <- lm_analysis(endemism_percents$max_sign, endemism_percents$perc_non_native, endemism_percents)
+# 1: no, 2: no, 3: ok, 4: ok -> 0
+k <- lm_analysis(endemism_percents$mean_sign, endemism_percents$perc_native, endemism_percents)
+# 1: ok, 2: ok, 3: no, test ok, 4: ok -> ?
+# l <- lm_analysis(endemism_percents$max_sign, endemism_percents$perc_native, endemism_percents)
+# 1: ok, 2: no, 3: ok, test ok, 4: ok -> 0
+# m <- lm_analysis(endemism_percents$mean_sign, endemism_percents$perc_exotic, endemism_percents)
+# # 1: ok, 2: no, 3: naja, test ok, 4: ok -> 0
+# n <- lm_analysis(endemism_percents$max_sign, endemism_percents$perc_exotic, endemism_percents)
+# 1: no, 2: no, 3: ok, 4: no -> 0
+o <- lm_analysis(endemism_percents$mean_sign, endemism_percents$perc_endemism, endemism_percents)
+# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+# p <- lm_analysis(endemism_percents$max_sign, endemism_percents$perc_endemism, endemism_percents)
+# 1: ok, 2: no, 3: ok, 4: no -> 0
+
+io <-i + labs(x = "percentage_non_native", y = "mean_divergence")
+iok <- k + labs(x = "percentage_native", y = "mean_divergence")
+ioo <- o + labs(x = "percentage_endemic", y = "mean_divergence")
+
+
+
+# percentages and divergence 
+ggarrange(io, iok, ioo, ncol = 3)
+
+tiff(paste("total_models/plots/lm_sign_type.tiff", sep = ""), units="in", width=12, height=4, res=300)
+
+plot(ggarrange(io, iok, ioo, ncol = 3))
+
+# Closing the graphical device
+dev.off()
