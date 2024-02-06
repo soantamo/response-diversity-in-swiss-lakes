@@ -52,6 +52,38 @@ eutroph_dissimilarity |>
   select(Lake, fPhos) |> 
   distinct(Lake, fPhos)
 
+
+#################################################################################3
+lm_analysis <- function(y, x, df) {
+  
+  mod <- lm(y ~ x, data = df)
+  print(summary(mod))
+  print(shapiro.test(resid(mod)))
+  print(lmtest::bptest(mod))
+  par(mfrow=c(2,2))
+  print(plot(mod))
+  
+  ggplot(mod$model, aes_string(x = names(mod$model)[2], y = names(mod$model)[1])) + 
+    geom_point() +
+    geom_smooth(method = "lm", col = "red",  fill = "#CDC9C9") +
+    # stat_smooth(method = "lm", col = "#FF3030", fill = "#CDC9C9") +
+    labs(title = paste("R^2 = ",signif(summary(mod)$r.squared, 2),
+                       # "adj R2 = ",signif(summary(fit)$adj.r.squared, 5),
+                       # "Intercept =",signif(fit$coef[[1]],5 ),
+                       # " Slope =",signif(fit$coef[[2]], 5),
+                       " p-value =",signif(summary(mod)$coef[2,4], 2))) +
+    theme_bw()
+}
+
+lm_analysis(eutroph_dissimilarity$mean_rdiv, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity) +
+  geom_smooth(method = "lm", col = "#4876FF",  fill = "#CDC9C9")
+
+lm_analysis(eutroph_dissimilarity$max_rdiv, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)
+
+lm_analysis(eutroph_dissimilarity$mean_sign, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)
+a <- lm_analysis(eutroph_dissimilarity$max_sign, eutroph_dissimilarity$Phos_max, eutroph_dissimilarity)
+a
+
 #################### regression: eutrophication and mean_rdiv
 
 mrdiv1 <- lm(mean_rdiv ~ Phos_max, data = eutroph_dissimilarity)
@@ -629,9 +661,11 @@ d <- ggplotRegression(msign2) +
 max_phos <- ggarrange(a, b, c, d, nrow = 2, ncol = 2)
 max_phos
 
-tiff(paste("total_models/plots/lm_phos_max.tiff", sep = ""), units="in", width=9, height=6, res=300)
+# tiff(paste("total_models/plots/lm_phos_max.tiff", sep = ""), units="in", width=9, height=6, res=300)
+# 
+# plot(max_phos)
+# 
+# # Closing the graphical device
+# dev.off()
 
-plot(max_phos)
 
-# Closing the graphical device
-dev.off()
