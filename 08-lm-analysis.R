@@ -112,23 +112,25 @@ lm_analysis <- function(y, x) {
 depth1 <- lm_analysis(df_lm$mean_rdiv, df_lm$Max_depth)  +
   labs(x = "maximum_depth", y = "mean_dissimilarity")
 # 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
-depth2 <- lm_analysis(df_lm$max_rdiv, df_lm$Max_depth) +
-  labs(x = "maximum_depth", y = "max_dissimilarity")
+# depth2 <- lm_analysis(df_lm$max_rdiv, df_lm$Max_depth) +
+#   labs(x = "maximum_depth", y = "max_dissimilarity")
 # 1: naja, 2: ok, 3: naja mit pattern, test ok, 4: ok -> ?
-# depth3 <-lm_analysis(df_lm$mean_sign, df_lm$Max_depth,) +
-#   geom_smooth(method = "lm", col = "#EE1289",  fill = "#CDC9C9") +
-#   labs(x = "maximum_depth", y = "mean_divergence")
-# # 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
+depth3 <-lm_analysis(df_lm$mean_sign, df_lm$Max_depth) +
+  labs(x = "maximum_depth", y = "mean_divergence")  +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+# 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
 # depth4 <- lm_analysis(df_lm$max_sign, df_lm$Max_depth) +
 #   geom_smooth(method = "lm", col = "#EE1289",  fill = "#CDC9C9") +
 #   labs(x = "maximum_depth", y = "mean_divergence")
-# # 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
+# 1: naja, 2: no, 3: naja mit pattern, test ok, 4: ok -> 0
 
 ggarrange(depth1, depth2, depth3, depth4, ncol = 2, nrow = 2)
 
-tiff(paste("total_models/plots/lm_depth_max.tiff", sep = ""), units="in", width=8, height=4, res=300)
-
-plot(ggarrange(depth1, depth2, ncol = 2))
+#tiff(paste("total_models/plots/lm_depth_max.tiff", sep = ""), units="in", width=8, height=4, res=300)
+tiff(paste("total_models/plots/07_02_depth_max.tiff", sep = ""), units="in", width=4, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(ggarrange(depth1, depth3, nrow = 2))
 
 # Closing the graphical device
 dev.off()
@@ -138,46 +140,74 @@ dev.off()
 phos1 <- lm_analysis(df_lm$mean_rdiv, df_lm$Phos_max)  +
   labs(x = "maximum_phosphorus", y = "mean_dissimilarity")
 # 1: ok, 2: ok, 3: ok, 4: ok -> 1
-phos2 <- lm_analysis(df_lm$max_rdiv, df_lm$Phos_max) +
-  labs(x = "maximum_phosphorus", y = "max_dissimilarity")
+# phos2 <- lm_analysis(df_lm$max_rdiv, df_lm$Phos_max) +
+#   labs(x = "maximum_phosphorus", y = "max_dissimilarity")
 # 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
-# phos3 <- lm_analysis(df_lm$mean_sign, df_lm$Phos_max)
+phos3 <- lm_analysis(df_lm$mean_sign, df_lm$Phos_max)  +
+  labs(x = "maximum_phosphorus", y = "mean_divergence")  +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
 # # 1: ok, 2: no, 3: naja, test ok, 4: ok -> 0
 # phos4 <- lm_analysis(df_lm$max_sign, df_lm$Phos_max)
 # # 1: no, 2: no, 3: naja, test ok, 4: ok -> 0
 
 ggarrange(phos1, phos2, ncol = 2)
 
-tiff(paste("total_models/plots/lm_max_phos.tiff", sep = ""), units="in", width=8, height=4, res=300)
+# tiff(paste("total_models/plots/lm_max_phos.tiff", sep = ""), units="in", width=8, height=4, res=300)
+tiff(paste("total_models/plots/07_02_phos_max.tiff", sep = ""), units="in", width=4, height=8, res=300)
 
-plot(ggarrange(phos1, phos2, ncol = 2))
-
+# plot(ggarrange(phos1, phos2, ncol = 2))
+# plot sicence discussion
+plot(ggarrange(phos1, phos3, nrow = 2))
 # Closing the graphical device
 dev.off()
 
 ###############################################################################
 #endemism 
 
+e1 <- lm_analysis(df_lm$mean_rdiv, df_lm$sum_species) +
+  labs(x = "species_richness", y = "mean_dissimilarity")
+  
+e11 <- lm_analysis(df_lm$mean_sign, df_lm$sum_species) +
+  labs(x = "species_richness", y = "mean_divergence")  +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+
+tiff(paste("total_models/plots/07_02_species_richness.tiff", sep = ""), units="in", width=4, height=8, res=300)
+
+
+# plot sicence discussion
+plot(ggarrange(e1, e11, nrow = 2))
+
+# Closing the graphical device
+dev.off()
+
 a1 <- lm_analysis(df_lm$mean_rdiv, df_lm$non_native) +
   labs(x = "non_native", y = "mean_dissimilarity")
 # 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
-b1 <- lm_analysis(df_lm$max_rdiv, df_lm$non_native) +
-  labs(x = "non_native", y = "max_dissimilarity")
-# 1: ok, 2: naja, shapiro ok, 3: naja, test ok, 4: ok -> 1
-c1 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_non_native) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
-  labs(x = "percentage_non_native", y = "mean_dissimilarity")
-# 1: ok, 2:  ok, 3: naja, test ok, 4: ok -> 1
-d1 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_non_native) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
-  labs(x = "percentage_non_native", y = "max_dissimilarity")
-# 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
+a11 <- lm_analysis(df_lm$mean_sign, df_lm$non_native) +
+  labs(x = "non_native", y = "mean_divergence") +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+  
+# b1 <- lm_analysis(df_lm$max_rdiv, df_lm$non_native) +
+#   labs(x = "non_native", y = "max_dissimilarity")
+# # 1: ok, 2: naja, shapiro ok, 3: naja, test ok, 4: ok -> 1
+# c1 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_non_native) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+#   labs(x = "percentage_non_native", y = "mean_dissimilarity")
+# # 1: ok, 2:  ok, 3: naja, test ok, 4: ok -> 1
+# d1 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_non_native) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+#   labs(x = "percentage_non_native", y = "max_dissimilarity")
+# # 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
 
 # ggarrange(a1,b1,c1,d1,ncol = 2, nrow = 2)
 
-tiff(paste("total_models/plots/lm_rdiv_non_native.tiff", sep = ""), units="in", width=10, height=9, res=300)
+# tiff(paste("total_models/plots/lm_rdiv_non_native.tiff", sep = ""), units="in", width=10, height=9, res=300)
+tiff(paste("total_models/plots/07_02_non_native.tiff", sep = ""), units="in", width=4, height=8, res=300)
 
-plot(ggarrange(a1,b1,c1,d1,ncol = 2, nrow = 2))
+# plot(ggarrange(a1,b1,c1,d1,ncol = 2, nrow = 2))
+
+# plot sicence discussion
+plot(ggarrange(a1, a11, nrow = 2))
 
 # Closing the graphical device
 dev.off()
@@ -185,12 +215,17 @@ dev.off()
 a2 <- lm_analysis(df_lm$mean_rdiv, df_lm$native) +
   labs(x = "native", y = "mean_dissimilarity")
 # 1: naja, 2: ok, 3: naja, 4: ok -> 1
-b2 <- lm_analysis(df_lm$max_rdiv, df_lm$native) +
-  labs(x = "native", y = "max_dissimilarity")
-# 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
-c2 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_native) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")+
-  labs(x = "percentage_native", y = "mean_dissimilarity")
+
+a22 <- lm_analysis(df_lm$mean_sign, df_lm$native) +
+  labs(x = "native", y = "mean_divergence") +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+
+# b2 <- lm_analysis(df_lm$max_rdiv, df_lm$native) +
+#   labs(x = "native", y = "max_dissimilarity")
+# # 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
+# c2 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_native) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")+
+#   labs(x = "percentage_native", y = "mean_dissimilarity")
 # 1: naja, 2: ok, 3: naja, 4: ok -> 1
 # d2 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_native) +
 #   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
@@ -199,9 +234,14 @@ c2 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_native) +
 # ggarrange(a2,b2,c2,d2,ncol = 2, nrow = 2)
 ggarrange(a2,b2,c2,ncol = 2, nrow = 2)
 
-tiff(paste("total_models/plots/lm_rdiv_native.tiff", sep = ""), units="in", width=9, height=10, res=300)
+# tiff(paste("total_models/plots/lm_rdiv_native.tiff", sep = ""), units="in", width=9, height=10, res=300)
+tiff(paste("total_models/plots/07_02_native.tiff", sep = ""), units="in", width=4, height=8, res=300)
 
-plot(ggarrange(a2,b2,c2,ncol = 2, nrow = 2))
+# 
+# plot(ggarrange(a2,b2,c2,ncol = 2, nrow = 2))
+
+# plot sicence discussion
+plot(ggarrange(a2, a22, nrow = 2))
 
 # Closing the graphical device
 dev.off()
@@ -209,37 +249,49 @@ dev.off()
 
 a3 <- lm_analysis(df_lm$mean_rdiv, df_lm$exotic) +
   labs(x = "exotic", y = "mean_dissimilarity")
-# 1: ok, 2: ok, 3: kanpp unter 0.05, test ok, 4: ok -> 1
-b3 <- lm_analysis(df_lm$max_rdiv, df_lm$exotic) +
-  labs(x = "exotic", y = "max_dissimilarity")
-# 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
-c3 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_exotic) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
-  labs(x = "percentage_exotic", y = "mean_dissimilarity")
-# 1: ok, 2: ok, 3: ok, test ok, 4: ok -> 1
-d3 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_exotic) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
-  labs(x = "percentage_exotic", y = "max_dissimilarity")
-# 1: ok, 2: ok, 3: ok, 4: ok -> 1
+
+a33 <- lm_analysis(df_lm$mean_sign, df_lm$exotic) +
+  labs(x = "exotic", y = "mean_divergence") +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
+
+# # 1: ok, 2: ok, 3: kanpp unter 0.05, test ok, 4: ok -> 1
+# b3 <- lm_analysis(df_lm$max_rdiv, df_lm$exotic) +
+#   labs(x = "exotic", y = "max_dissimilarity")
+# # 1: naja, 2: ok, 3: naja, test ok, 4: ok -> 1
+# c3 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_exotic) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+#   labs(x = "percentage_exotic", y = "mean_dissimilarity")
+# # 1: ok, 2: ok, 3: ok, test ok, 4: ok -> 1
+# d3 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_exotic) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+#   labs(x = "percentage_exotic", y = "max_dissimilarity")
+# # 1: ok, 2: ok, 3: ok, 4: ok -> 1
 
 
 ggarrange(a3,b3,c3,d3,ncol = 2, nrow = 2)
 
-tiff(paste("total_models/plots/lm_rdiv_exotic.tiff", sep = ""), units="in", width=10, height=9, res=300)
+# tiff(paste("total_models/plots/lm_rdiv_exotic.tiff", sep = ""), units="in", width=10, height=9, res=300)
+tiff(paste("total_models/plots/07_02_exotic.tiff", sep = ""), units="in", width=4, height=8, res=300)
 
-plot(ggarrange(a3,b3,c3,d3,ncol = 2, nrow = 2))
+# plot(ggarrange(a3,b3,c3,d3,ncol = 2, nrow = 2))
+# plot sicence discussion
+plot(ggarrange(a3, a33, nrow = 2))
 
 # Closing the graphical device
 dev.off()
 
 a4 <- lm_analysis(df_lm$mean_rdiv, df_lm$endemic) +
   labs(x = "endemic", y = "mean_dissimilarity")
+
+a44 <- lm_analysis(df_lm$mean_sign, df_lm$endemic) +
+  labs(x = "endemic", y = "mean_divergence") +
+  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
 # 1: naja, 2: ok, 3: naja mit pattern, test ok, 4: ok -> 1
 # b4 <- lm_analysis(df_lm$max_rdiv, df_lm$endemic)
 # # 1: no, 2: ok, 3: no, test ok, 4: ok -> 0
-c4 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_endemism) +
-  geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
-  labs(x = "percentage_endemic", y = "mean_dissimilarity")
+# c4 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_endemism) +
+#   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9") +
+#   labs(x = "percentage_endemic", y = "mean_dissimilarity")
 # 1: ok, 2: ok, 3: naja, test ok, 4: ok -> 1
 # d4 <- lm_analysis(df_lm$max_rdiv, df_lm$perc_endemism, df_lm) +
 #   geom_smooth(method = "lm", col = "blue",  fill = "#CDC9C9")
@@ -248,9 +300,14 @@ c4 <- lm_analysis(df_lm$mean_rdiv, df_lm$perc_endemism) +
 # ggarrange(a4,b4,c4,d4,ncol = 2, nrow = 2)
 ggarrange(a4,c4,ncol = 2)
 
-tiff(paste("total_models/plots/lm_rdiv_endemic.tiff", sep = ""), units="in", width=8, height=4, res=300)
+# tiff(paste("total_models/plots/lm_rdiv_endemic.tiff", sep = ""), units="in", width=8, height=4, res=300)
+tiff(paste("total_models/plots/07_02_endemism.tiff", sep = ""), units="in", width=4, height=8, res=300)
 
-plot(ggarrange(a4,c4,ncol = 2))
+# plot(ggarrange(a4,c4,ncol = 2))
+
+# plot sicence discussion
+plot(ggarrange(a4, a44, nrow = 2))
+
 
 # Closing the graphical device
 dev.off()
