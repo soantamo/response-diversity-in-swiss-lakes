@@ -11,6 +11,31 @@ library(mgcViz)
 library(DHARMa)
 library(readxl)
 
+source(here("functions_GAMs.R"))
+
+
+df_1 <- readRDS("data_frame_models/df_binomial_gam")
+df_2 <- readRDS("data_frame_models/df_abundance_gam")
+df_3 <- readRDS("data_frame_models/df_binomial_re")
+df_4 <- readRDS("data_frame_models/df_abundance_re")
+
+predictions(df_1)
+predictions(df_2)
+predictions(df_3)
+predictions(df_4)
+
+
+# run to get one big df 
+# predictions df
+df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+# save total derivatives as RDS
+saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+
+
+
+
 # species that were recorded with electro, fishbase or eawag
 species_lake <- read_xlsx("species_lake.xlsx")
 
