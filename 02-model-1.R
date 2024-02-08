@@ -24,14 +24,69 @@ predictions(df_2)
 predictions(df_3)
 predictions(df_4)
 
+depth_predictions(df_1)
+depth_predictions(df_2)
+depth_predictions(df_3)
+depth_predictions(df_4)
 
+deviance <- read_excel("deviance_comparison.xlsx") |> 
+  select(-greater, -info)
+
+deviance$difference <- as.numeric(deviance$difference)
+str(deviance)
+
+deviance_percentages <- deviance |> 
+  mutate(diff_percent = difference * 100) |> 
+  drop_na()
+
+max(deviance_percentages$diff_percent) 
+# 8.3 
+min(deviance_percentages$diff_percent) 
+#-15 
+
+mean(deviance_percentages$diff_percent)
+median(deviance_percentages$diff_percent)
+
+data_new <- deviance_percentages                                     # Duplicate data
+data_new$groups <- cut(data_new$diff_percent,               # Add group column
+                       breaks = c(-15, -10, -3, -1,  0, 2, 3, 8.4))
+head(data_new)   
+
+data_new |> 
+  ggplot(aes(Species, y = fct_reorder(Species, diff_percent), fill= groups)) + 
+  geom_tile() +
+  scale_fill_manual(breaks = levels(data_new$groups),
+                    values = c("#053061", "#2166AC","#92C5DE", "#FDDBC7",  "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+
+
+
+deviance$temp_dev_expl <- as.numeric(deviance$temp_dev_expl)
+deviance$depth_dev_expl <- as.numeric(deviance$depth_dev_expl)
+str(deviance)
+
+a = deviance$temp_dev_expl
+b = deviance$depth_dev_expl
+
+print(b-a)
+mean(b-a)
+# depth deviation is with a mean of 0.00850625 sbigger -> 0.8%
+
+max(b-a)
+# maximum bigger depth compared to temp -> 0.15%, Salvelinus_sp
+
+min(b-a)
+# 0.669 temp bigger than depth -> does not really count
+
+median(b-a)
+# 0.00735
+#################################################################################3
 # run to get one big df 
-# predictions df
-df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
-  map_dfr(readRDS)
-
-# save total derivatives as RDS
-saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
+# # predictions df
+# df_pred_mod1 <- list.files(path = "model_1/predictions", pattern = ".rds", full.names = TRUE) |> 
+#   map_dfr(readRDS)
+# 
+# # save total derivatives as RDS
+# saveRDS(df_pred_mod1, "total_models/pred_model_1_total")
 
 
 
