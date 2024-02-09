@@ -14,10 +14,28 @@ library(readxl)
 source(here("functions_GAMs.R"))
 
 
+
 df_1 <- readRDS("data_frame_models/df_binomial_gam")
 df_2 <- readRDS("data_frame_models/df_abundance_gam")
 df_3 <- readRDS("data_frame_models/df_binomial_re")
 df_4 <- readRDS("data_frame_models/df_abundance_re")
+
+# df_test <- df_1 |> 
+#   filter(Species == "Alosa_fallax")
+# 
+# df_test$fProtocol <- as.factor(df_test$Protocol)
+# 
+# 
+# model <- gam(data = df_test, Abundance ~ s(mean_last_7days, k = 3)
+#                        +  s(fProtocol, bs = 're'), family = binomial)
+# 
+# deriv(model, df_test)
+# # not working, dont know why: always filter/distinct nicht anwendbar auf GAM
+# 
+# derivatives(df_1)
+# derivatives(df_2)
+# derivatives(df_3)
+# derivatives(df_4)
 
 predictions(df_1)
 predictions(df_2)
