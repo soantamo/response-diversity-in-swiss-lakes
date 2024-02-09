@@ -766,3 +766,197 @@ depth_predictions <- function(df){
 # print(plot(plot_pred))
 # 
 # dev.off()
+
+##############################################################################
+#derivatives temp
+# 
+# derivatives <- function(df){
+#   require(broom)
+#   require(tidyverse)
+#   require(mgcv)
+#   require(gratia)
+#   
+#   # species_list <- df |>
+#   #   distinct(Species) |>
+#   #   pull(Species)
+#   # 
+#   # 
+#   # species_list <- sort(species_list)
+#   
+#   species_list <- c("Alosa_fallax")
+#   # 
+#   
+#   df$fLake <- as.factor(df$Lake)
+#   df$fProtocol <- as.factor(df$Protocol)
+#   
+#   # we need to get the derivatives for every lake
+#   
+#   derivatives <- list()
+#   gam_output <- list()
+#   newdf_analysis <- tibble()
+#   df_analysis <- tibble()
+#   # df to get list of all lakes where species should be
+#   
+#   species_lake <- read_xlsx("species_lake.xlsx") 
+#   
+#   species_lake$fLake <- as.factor(species_lake$Lake)
+#   species_lake$fProtocol <- as.factor(species_lake$Protocol)
+#   
+#   
+#   
+#   
+#   for (i in species_list) {
+#     df_analysis <- df |> 
+#       filter(Species == "Alosa_fallax") |> 
+#       mutate(n_lake = n_distinct(Lake))
+#     
+#     lake_df_analysis <- species_lake |>
+#       filter(Species == i)
+#     
+#     lake_list <- distinct(lake_df_analysis, Lake) |>
+#       pull()
+#     
+#     
+#     # no random effect for lake
+#     if(max(df_analysis$n_lake) == 1) {
+#       
+#       # zip
+#       if (i == "Coregonus_sp_benthic_profundal")  {
+#         cat("special ")
+#         
+#         gam_output <- gam(data = df_analysis, Presence ~ s(mean_last_7days, k = 3)
+#                           +  s(fProtocol, bs = 're'), family = binomial)
+#         
+#         lake_df_analysis <- species_lake |>
+#           filter(Species == i)
+#         
+#         lake_list <- distinct(lake_df_analysis, Lake) |>
+#           pull()
+#         
+#         
+#       } else if (max(df_analysis$Abundance) > 1)  {
+#         cat("zip ")
+#         
+#         gam_output <- gam(data = df_analysis, Abundance ~ s(mean_last_7days, k = 3)
+#                           +  s(fProtocol, bs = 're'), family = ziP())
+#         
+#         lake_df_analysis <- species_lake |>
+#           filter(Species == i)
+#         
+#         lake_list <- distinct(lake_df_analysis, Lake) |>
+#           pull()
+#         
+#         
+#         
+#       }
+#       # binomial
+#       else {
+#         
+#         gam_output[[i]] <- gam(data = df_analysis, Abundance ~ s(mean_last_7days, k = 3)
+#                                +  s(fProtocol, bs = 're'), family = binomial)
+#         
+#         # unique_lakes <- distinct(df_analysis, fLake)
+#         # unique_protocol <- distinct(df_analysis, fProtocol)
+#         # 
+#         # newdf_analysis <- tibble(mean_last_7days = seq(
+#         #   from = min(df_analysis$mean_last_7days, na.rm = TRUE),
+#         #   to = max(df_analysis$mean_last_7days, na.rm = TRUE), length = 200),
+#         #   fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+#         
+#         derivatives <- derivatives(gam_output[[i]])
+#         
+#         cat("binomial ")
+#         
+#         # for (j in lake_list){
+#         # 
+#         # 
+#         #   derivatives <- derivatives(gam_output)
+#         #   
+#         #   cat("test ")
+#         #   #   mutate(fLake = factor(j)) |>
+#         #   #   mutate(species = factor(i)) |>
+#         #   #   rename(temp = df_analysis)
+#         #   # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+#         # 
+#         # }
+#         
+#         
+#       }
+#     }
+#     
+#     # multiple lakes, with fLake as random effect
+#     else {
+#       
+#       
+#       # zip
+#       if (max(df_analysis$Abundance) > 1)  { 
+#         cat("zip re ")
+#         
+#         gam_output <- gam(data = df_analysis, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                           +  s(fProtocol, bs = 're'), family = ziP())
+#         
+#         lake_df_analysis <- species_lake |>
+#           filter(Species == i)
+#         
+#         lake_list <- distinct(lake_df_analysis, Lake) |>
+#           pull()
+#         
+#         
+#       } 
+#       # binomial 
+#       else {
+#         
+#         cat("binomial re ")
+#         
+#         gam_output <- gam(data = df_analysis, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                           +  s(fProtocol, bs = 're'), family = binomial)
+#         
+#         lake_df_analysis <- species_lake |>
+#           filter(Species == i)
+#         
+#         lake_list <- distinct(lake_df_analysis, Lake) |>
+#           pull()
+#         
+#       }
+#       
+#     }
+#   }
+# }
+# 
+# 
+# # not working because of derivatives
+# 
+# deriv <- function(model_species, df){
+#   
+#   species_lake <- read_xlsx("species_lake.xlsx") 
+#   
+#   lake_list <- distinct(species_lake, Lake) |> 
+#     pull()
+#   
+#   derivatives(model_species)
+#   
+#   for (j in lake_list){
+#     
+#     data_lake <- df |> 
+#       filter(Lake == j)
+#     
+#     unique_lakes <- distinct(data_lake, fLake)
+#     unique_protocol <- distinct(data_lake, fProtocol)
+#     
+#     newdata <- tibble(mean_last_7days = seq(
+#       from = min(data_lake$mean_last_7days, na.rm = TRUE),
+#       to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+#       fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+#     
+#     derivatives <- derivatives(gam_output, data = newdata) |> 
+#       mutate(fLake = factor(j)) |> 
+#       rename(temp = data)
+#     saveRDS(derivatives, paste0("total_model/derivatives/derivatives_", j, ".rds"))
+#     
+#     
+#   }
+# 
+#   
+# }
+# 
+
