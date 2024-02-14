@@ -85,144 +85,127 @@ str(df_lm)
 df_lm$Phos_max <- as.numeric(df_lm$Phos_max)
 
 ###############################################################################
+# partial regression
 
-lm2(df_lm$mean_rdiv, df_lm$Phos_max, df_lm$Max_depth)
+source(here("functions_regression.R"))
 
-library(sjPlot)
-library(sjmisc)
-library(ggplot2)
+# species richness
 
-
-
-# fit model with interaction
-# https://medium.com/@josef.waples/partial-regression-added-variable-plots-in-r-f1228e7612d9
-
-model1 <- lm(mean_rdiv ~ sum_species + Max_depth, data = df_lm)
-
-car::avPlots(model1)
-
-# poschiavo has no phos max darum weg
-df_lm_added_variable_plots <- df_lm |> 
-  select(mean_rdiv, Phos_max, Max_depth, sum_species)
-
-########################
-
-partial_regression <- function(y, x1, x2, df){
-  require(patchwork)
-  
-  model_x1_and_x2 <- lm(y ~ x1 + x2, data = df)
-  
-  data_added_variables <- df
-
-  model_x1 <- lm(y ~ x1, data = df)
-  data_added_variables$x1_residuals <- residuals(model_x1)
-  
-  model_x2 <- lm(y ~ x2, data = df)
-  data_added_variables$x2_residuals <- residuals(model_x2)
-  
-  model_x1_against_x2 <- lm(x1 ~ x2, data = df)
-  data_added_variables$x1_against_x2_residuals <- residuals(model_x1_against_x2)
-  
-  model_x2_against_x1 <- lm(x2 ~ x1, data = df)
-  data_added_variables$x2_against_x1_residuals <- residuals(model_x2_against_x1)
-  
-  
-  one <- ggplot(data_added_variables, aes(x = x1_against_x2_residuals, y = x2_residuals)) +
-    geom_point() +
-    geom_smooth(method = 'lm', color = '#e76254') +
-    labs(title = "Test", subtitle = "Partial Regression: y ~ x1 + x2") +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    theme(plot.subtitle = element_text(hjust = 0.5)) +
-    labs(caption = "holding x2 constant") +
-    xlab(" \n (x1_against_x2_residuals)") +
-    ylab(" \n (x2_residuals)")
-
-  two <- ggplot(data_added_variables, aes(x = x2_against_x1_residuals, y = x1_residuals)) +
-    geom_point() +
-    geom_smooth(method = 'lm', color = '#ef8a47') +
-    labs(title = "Test", subtitle = "Partial Regression: y ~ x2 + x1") +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    theme(plot.subtitle = element_text(hjust = 0.5)) +
-    labs(caption = "holding x1 constant") +
-    xlab(" \n (x2_against_x1_residuals)") +
-    ylab(" \n (x1_residuals)")
-
-
-  plot(one + two)
-  
-}
-
-
-partial_regression(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm)
-partial_regression(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm)
-
-
-model_sum_and_depth <- lm(mean_rdiv ~ sum_species + Max_depth, data = df_lm)
-
-model_sum <- lm(mean_rdiv ~ sum_species, data = df_lm_added_variable_plots)
-df_lm_added_variable_plots$sum_residuals <- residuals(model_sum)
-
-model_depth <- lm(mean_rdiv ~ Max_depth, data = df_lm_added_variable_plots)
-df_lm_added_variable_plots$depth_residuals <- residuals(model_depth)
-
-model_depth_against_sum <- lm(Max_depth ~ sum_species, data = df_lm_added_variable_plots)
-
-df_lm_added_variable_plots$depth_against_sum_residuals <- residuals(model_depth_against_sum)
-
-model_sum_against_depth <- lm(sum_species ~ Max_depth, data = df_lm_added_variable_plots)
-df_lm_added_variable_plots$sum_against_depth_residuals <- residuals(model_sum_against_depth) 
-
-one <- ggplot(df_lm_added_variable_plots, aes(x = sum_against_depth_residuals, y = depth_residuals)) +
-  geom_point() + 
-  geom_smooth(method = 'lm', color = '#e76254') +
-  labs(title = "lms", subtitle = "Partial Regression: mean_rdiv ~ sum_species + Max_depth") +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-  theme(plot.subtitle = element_text(hjust = 0.5)) +
+a1 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "Species richness", subtitle = "Partial Regression: mean_rdiv ~ sum_species + Max_depth") +
+  xlab(" Species richness \n (sum_against_depth_residuals)") +
   labs(caption = "holding depth constant") +
-  xlab("Species richness \n (sum_against_depth_residuals)") +
-  ylab("Mean_rdiv \n (depth_residuals)")
+  ylab(" mean_rdiv \n (depth_residuals)")
 
-one
-
-two <- ggplot(df_lm_added_variable_plots, aes(x = depth_against_sum_residuals, y = sum_residuals)) +
-  geom_point() + geom_smooth(method = 'lm', color = '#ef8a47') +
-  labs(title = "lms", subtitle = "Parial Regression: mean_rdiv ~ Max_depth + sum_species") +
-  theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-  theme(plot.subtitle = element_text(hjust = 0.5)) +
+b1 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + sum_species") +
   labs(caption = "holding sum constant") +
-  xlab(" Max_depth \n (depth_against_sum_residuals)") +
-  ylab("Mean_rdiv\n (sum_residuals)")
-
-two
-
-library(patchwork)
-one + two
+  xlab(" Depth_max \n (depth_against_sum_residuals)") +
+  ylab(" mean_rdiv \n (sum_residuals)")
 
 
-plot_model(model1, type = "pred", terms = c("Phos_max", "Max_depth"))
+tiff(paste("total_models/plots/partial_species_richness.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a1 + b1)
+
+# Closing the graphical device
+dev.off()
+
+# native
+
+a2 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "Native", subtitle = "Partial Regression: mean_rdiv ~ native + Max_depth") +
+  xlab(" Native \n (native_against_depth_residuals)") +
+  labs(caption = "holding depth constant") +
+  ylab(" mean_rdiv \n (depth_residuals)")
+
+b2 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + native") +
+  xlab(" Depth_max \n (depth_against_native_residuals)") +
+  labs(caption = "holding native constant") +
+  ylab(" mean_rdiv \n (native_residuals)")
+
+# a2 + b2
+
+tiff(paste("total_models/plots/partial_native.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a2 + b2)
+
+# Closing the graphical device
+dev.off()
+
+# endemic
+
+a3 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "Endemic", subtitle = "Partial Regression: mean_rdiv ~ endemic + Max_depth") +
+  xlab(" Endemic \n (endemic_against_depth_residuals)") +
+  labs(caption = "holding depth constant") +
+  ylab(" mean_rdiv \n (depth_residuals)")
+
+b3 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + endemic") +
+  xlab(" Depth_max \n (depth_against_endemic_residuals)") +
+  labs(caption = "holding endemic constant") +
+  ylab(" mean_rdiv \n (endemic_residuals)")
 
 
-plot_model(fit, type = "pred", terms = c("barthtot", "c161sex"))
 
-test2 <- lm(Max_depth ~ sum_species, data = df_lm)
-plot_model(test2, type = "pred")
+tiff(paste("total_models/plots/partial_endemic.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a3 + b3)
+
+# Closing the graphical device
+dev.off()
+
+# non_native
+a4 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$non_native, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "Non-native", subtitle = "Partial Regression: mean_rdiv ~ non_native + Max_depth") +
+  xlab(" Non_native \n (non_native_against_depth_residuals)") +
+  labs(caption = "holding depth constant") +
+  ylab(" mean_rdiv \n (depth_residuals)")
+
+b4 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$non_native, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + non_native") +
+  xlab(" Depth_max \n (depth_against_non_native_residuals)") +
+  labs(caption = "holding non_native constant") +
+  ylab(" mean_rdiv \n (non_native_residuals)")
+# 
+# a4 + b4
+
+tiff(paste("total_models/plots/partial_non_native.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a4 + b4)
+
+# Closing the graphical device
+dev.off()
+
+# exotic
+a5 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "Exotic", subtitle = "Partial Regression: mean_rdiv ~ exotic + Max_depth") +
+  xlab(" Exotic \n (exotic_against_depth_residuals)") +
+  labs(caption = "holding depth constant") +
+  ylab(" mean_rdiv \n (depth_residuals)")
+
+b5 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm) +
+  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + exotic") +
+  xlab(" Depth_max \n (depth_against_exotic_residuals)") +
+  labs(caption = "holding exotic constant") +
+  ylab(" mean_rdiv \n (exotic_residuals)")
+
+# a5 + b5
 
 
-test <- lm(mean_rdiv ~ Phos_max + Max_depth, data = df_lm)
-plot_model(test, type = "pred", terms = c("Phos_max", "Max_depth"))
-plot(test)
+tiff(paste("total_models/plots/partial_exotic.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a5 + b5)
 
-test3 <- lm(mean_rdiv ~ sum_species + Max_depth, data = df_lm)
-plot_model(test3, type = "pred", terms = c("sum_species", "Max_depth"))
-
-test4 <- lm(mean_rdiv ~ endemic + Max_depth, data = df_lm)
-plot_model(test4, type = "pred", terms = c("endemic", "Max_depth"))
-
-test5 <- lm(mean_rdiv ~ Phos_max * Max_depth, data = df_lm)
-plot_model(test5, type = "pred", terms = c("Phos_max", "Max_depth"))
-
-test6 <- lm(mean_rdiv ~ sum_species * Max_depth, data = df_lm)
-plot_model(test6, type = "pred", terms = c("sum_species", "Max_depth"))
+# Closing the graphical device
+dev.off()
 
 # #######################################################################
 
