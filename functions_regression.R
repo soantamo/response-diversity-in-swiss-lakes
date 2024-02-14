@@ -1,4 +1,8 @@
 
+
+# fit model with interaction
+# https://medium.com/@josef.waples/partial-regression-added-variable-plots-in-r-f1228e7612d9
+
 partial_regression_x1 <- function(y, x1, x2, df){
   require(patchwork)
   require(tidyverse)
