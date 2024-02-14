@@ -73,7 +73,8 @@ predictions <- function(df){
         print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
         dev.off()
 
-        print(glance(gam_output[[i]]))
+        # print(glance(gam_output[[i]]))
+        
 
         model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
@@ -85,6 +86,8 @@ predictions <- function(df){
         saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
         
         summary <- summary(gam_output[[i]])
+        
+        print(signif(summary[["dev.expl"]]))
         
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
