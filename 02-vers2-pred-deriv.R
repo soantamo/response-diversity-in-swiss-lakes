@@ -42,67 +42,87 @@ df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".
 # save total predictions as RDS
 saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
 
+
+############################################################################
+#comparing depth and temp models
+
+depth_temp <- read_xlsx("deviance_comparison.xlsx")
+
+depth_temp |> 
+  arrange(difference) |> 
+  gt()
+
 ###################################################################derivatives
 
-df_1 <- readRDS("data_frame_models/df_binomial_gam")
-df_2 <- readRDS("data_frame_models/df_abundance_gam")
-df_3 <- readRDS("data_frame_models/df_binomial_re")
-df_4 <- readRDS("data_frame_models/df_abundance_re")
-
+# species that were recorded with electro, fishbase or eawag
 species_lake <- read_xlsx("species_lake.xlsx") 
+str(species_lake)
+
+species_lake$fLake <- as.factor(species_lake$Lake)
+species_lake$fProtocol <- as.factor(species_lake$Protocol)
+
+#loading all dfs 
+
+df_binomial_gam <- readRDS("data_frame_models/df_binomial_gam")
+
+df_binomial_gam$fLake <- as.factor(df_binomial_gam$Lake)
+df_binomial_gam$fProtocol <- as.factor(df_binomial_gam$Protocol)
+
+df_abundance_gam <- readRDS("data_frame_models/df_abundance_gam")
+df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
+df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
 
 
-# model 1
-species_list <- df_1 |> 
+df_binomial_re <- readRDS("data_frame_models/df_binomial_re")
+df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
+df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
+
+df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
+df_abundance_re$fLake <- as.factor(df_abundance_re$Lake)
+df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
+
+
+
+
+
+species_list <- df_binomial_gam |> 
   distinct(Species) |> 
   pull(Species)
 
 species_list <- sort(species_list)
 
-
-df_1fLake <- as.factor(df_1$Lake)
-df_1$fProtocol <- as.factor(df_1$Protocol)
-
-str(df_1)
-
-# we need to get the derivatives for every lake
-
 derivatives <- list()
 gam_output <- list()
 
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
 
-str(species_lake)
-
-df_1$fLake <- as.factor(df_1$Lake)
-df_1$fProtocol <- as.factor(df_1$Protocol)
 
 for (i in species_list) {
-  data <- df_1 |> 
+  data <- df_binomial_gam |>
     filter(Species == i)
   
+  lake_data <- species_lake |>
+    filter(Species == i)
   
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
   
-  lake_list <- distinct(data, Lake) |> 
+  lake_list <- distinct(lake_data, Lake) |>
     pull()
   
   for (j in lake_list){
     
-    data_lake <- df_1 |> 
-      filter(Species == i) |> 
+    data_lake <- species_lake |>
+      filter(Species == i) |>
       filter(Lake == j)
     
     unique_lakes <- distinct(data_lake, fLake)
     unique_protocol <- distinct(data_lake, fProtocol)
     
     newdata <- tibble(mean_last_7days = seq(
-      from = min(data_lake$mean_last_7days, na.rm = TRUE),
-      to = max(data_lake$mean_last_7days, na.rm = TRUE), length = 200),
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
       fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
@@ -110,9 +130,9 @@ for (i in species_list) {
   }
 }
 
-# model 2
+# model2
 
-species_list <- df_2 |> 
+species_list <- df_abundance_gam |> 
   # binomial one
   filter(Species == "Coregonus_sp_benthic_profundal") |>
   distinct(Species) |> 
@@ -120,24 +140,15 @@ species_list <- df_2 |>
 
 species_list <- sort(species_list)
 
-
-df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
-df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
-
-str(df_abundance_gam)
-
+# we need to get the derivatives for every lake
 
 derivatives <- list()
 gam_output <- list()
 
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
-
-str(species_lake)
 
 for (i in species_list) {
   
-  data <- df_2 |> 
+  data <- df_abundance_gam |> 
     filter(Species == i)
   
   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
@@ -172,21 +183,13 @@ for (i in species_list) {
   }
 }
 
-
-##model 2 zip
-species_list <- df_2 |> 
-  # binomial ones
+# model2 ZIP
+species_list <- df_abundance_gam |>
   filter(!Species == "Coregonus_sp_benthic_profundal") |>
   distinct(Species) |> 
   pull(Species)
 
 species_list <- sort(species_list)
-
-
-df_abundance_gam$fProtocol <- as.factor(df_abundance_gam$Protocol)
-df_abundance_gam$fLake <- as.factor(df_abundance_gam$Lake)
-
-str(df_abundance_gam)
 
 # we need to get the derivatives for every lake
 
@@ -194,15 +197,9 @@ derivatives <- list()
 gam_output <- list()
 
 
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
-
-str(species_lake)
-
-
 for (i in species_list) {
   
-  data <- df_2 |> 
+  data <- df_abundance_gam |> 
     filter(Species == i)
   
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'),
@@ -236,31 +233,21 @@ for (i in species_list) {
   }
 }
 
-###################model 3
+# model3
 
-species_list <- df_3 |> 
+species_list <- df_binomial_re |> 
   distinct(Species) |> 
   pull(Species)
 
 species_list <- sort(species_list)
 
-
-df_binomial_re$fLake <- as.factor(df_binomial_re$Lake)
-df_binomial_re$fProtocol <- as.factor(df_binomial_re$Protocol)
-
-str(df_binomial_re)
 derivatives <- list()
 gam_output <- list()
 
-species_lake <- read_xlsx("species_lake.xlsx") 
 
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
-
-str(species_lake)
 
 for (i in species_list) {
-  data <- df_3 |> 
+  data <- df_binomial_re |> 
     filter(Species == i)
   
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = "re")
@@ -294,29 +281,25 @@ for (i in species_list) {
   }
 }
 
-
 # model 4
 
-species_list <- df_4 |> 
+
+species_list <- df_abundance_re |> 
   distinct(Species) |> 
   pull(Species)
 
 species_list <- sort(species_list)
 
 
-df_abundance_re$fLake <- as.factor(df_abundance_re$Lake)
-df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
-
+# we need to get the derivatives for every lake
 
 derivatives <- list()
 gam_output <- list()
 
-species_lake$fLake <- as.factor(species_lake$Lake)
-species_lake$fProtocol <- as.factor(species_lake$Protocol)
 
 for (i in species_list) {
   
-  data <- df_4 |> 
+  data <- df_abundance_re |> 
     filter(Species == i)
   
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
@@ -346,11 +329,11 @@ for (i in species_list) {
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
-    saveRDS(derivatives, paste0("total_derivatives/derivatives/derivatives_", i, "_",  j, ".rds"))
+    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
-
+#try again to make a function for derivatives
 df_deriv_all <- list.files(path = "total_models/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
@@ -362,26 +345,31 @@ saveRDS(df_deriv_all, "total_models/df_deriv_all.rds")
 
 source(here("functions.R"))
 
-model_predictions <- readRDS("total_models/df_pred_all") |> 
-  select(-Protocol)
+model_predictions <- readRDS("total_models/df_pred_all.rds")
 
 model_predictions$species <- as.factor(model_predictions$species)
 levels(model_predictions$species)
 
 # plots: all models
 model_predictions |> 
+  filter(species == "Salmo_trutta") |> 
   ggplot(aes(temp, fit, color = factor(species))) +
   geom_line() +
-  geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+  # geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.05) +
   # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
   theme_bw() +
   facet_wrap(~species, scale = "free") +
   theme(strip.background = element_rect(fill="lightgrey")) +
   scale_color_viridis(discrete=TRUE, guide = NULL)
+  ylim(0,2)
 
-all_models_derivatives <- readRDS("total_models/df_deriv_all")
+
+# derivatives
+
+all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
 
 all_deriv <- as_tibble(all_models_derivatives)
+
 str(all_deriv)
 
 levels(all_deriv$species)
@@ -491,7 +479,7 @@ plot_means
 ################################################################################
 library(plotly)
 
-data <- all_lakes_tib |> 
+data <- all_deriv |> 
   mutate(species = factor(species)) |> 
   group_by(fLake, species) |> 
   mutate(max_derivative = max(derivative)) |> 
@@ -509,8 +497,6 @@ data_new$groups <- cut(data_new$max_derivative,               # Add group column
 head(data_new)   
 
 data_new |> 
-  # filter(!species %in% c("Barbatula_sp_Lineage_I", "Phoxinus_csikii",
-  #                       "Cottus_sp_Po_profundal", "Barbatula_sp_Lineage_II")) |>
   ggplot(aes(fLake, y = fct_reorder(species, max_derivative), fill= groups)) + 
   geom_tile() +
   # scale_fill_distiller(palette = "PRGn")
