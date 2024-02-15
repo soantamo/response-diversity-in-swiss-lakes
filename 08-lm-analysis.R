@@ -89,20 +89,25 @@ df_lm$Phos_max <- as.numeric(df_lm$Phos_max)
 
 source(here("functions_regression.R"))
 
+# library(sjPlot)
+# library(sjmisc)
+# model <- lm(mean_rdiv ~ sum_species + Max_depth, data = df_lm)
+# plot_model(model, type = "pred", terms = c("sum_species", "Max_depth"))
+# 
+
 # species richness
 
 a1 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "Species richness", subtitle = "Partial Regression: mean_rdiv ~ sum_species + Max_depth") +
-  xlab(" Species richness \n (sum_against_depth_residuals)") +
-  labs(caption = "holding depth constant") +
-  ylab(" mean_rdiv \n (depth_residuals)")
+  labs(title = "Species richness") +
+  xlab(" Species richness \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 b1 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + sum_species") +
-  labs(caption = "holding sum constant") +
-  xlab(" Depth_max \n (depth_against_sum_residuals)") +
-  ylab(" mean_rdiv \n (sum_residuals)")
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
+a1 + b1
 
 tiff(paste("total_models/plots/partial_species_richness.tiff", sep = ""), units="in", width=12, height=7, res=300)
 # plot(ggarrange(depth1, depth2, ncol = 2))
@@ -115,16 +120,14 @@ dev.off()
 # native
 
 a2 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "Native", subtitle = "Partial Regression: mean_rdiv ~ native + Max_depth") +
-  xlab(" Native \n (native_against_depth_residuals)") +
-  labs(caption = "holding depth constant") +
-  ylab(" mean_rdiv \n (depth_residuals)")
+  labs(title = "Native") +
+  xlab(" Native \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 b2 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + native") +
-  xlab(" Depth_max \n (depth_against_native_residuals)") +
-  labs(caption = "holding native constant") +
-  ylab(" mean_rdiv \n (native_residuals)")
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 # a2 + b2
 
@@ -139,16 +142,14 @@ dev.off()
 # endemic
 
 a3 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "Endemic", subtitle = "Partial Regression: mean_rdiv ~ endemic + Max_depth") +
-  xlab(" Endemic \n (endemic_against_depth_residuals)") +
-  labs(caption = "holding depth constant") +
-  ylab(" mean_rdiv \n (depth_residuals)")
+  labs(title = "Endemic") +
+  xlab(" Endemic \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 b3 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + endemic") +
-  xlab(" Depth_max \n (depth_against_endemic_residuals)") +
-  labs(caption = "holding endemic constant") +
-  ylab(" mean_rdiv \n (endemic_residuals)")
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 
 
@@ -162,16 +163,14 @@ dev.off()
 
 # non_native
 a4 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$non_native, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "Non-native", subtitle = "Partial Regression: mean_rdiv ~ non_native + Max_depth") +
-  xlab(" Non_native \n (non_native_against_depth_residuals)") +
-  labs(caption = "holding depth constant") +
-  ylab(" mean_rdiv \n (depth_residuals)")
+  labs(title = "Non-native") +
+  xlab(" Non_native \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 b4 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$non_native, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + non_native") +
-  xlab(" Depth_max \n (depth_against_non_native_residuals)") +
-  labs(caption = "holding non_native constant") +
-  ylab(" mean_rdiv \n (non_native_residuals)")
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 # 
 # a4 + b4
 
@@ -185,16 +184,14 @@ dev.off()
 
 # exotic
 a5 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "Exotic", subtitle = "Partial Regression: mean_rdiv ~ exotic + Max_depth") +
-  xlab(" Exotic \n (exotic_against_depth_residuals)") +
-  labs(caption = "holding depth constant") +
-  ylab(" mean_rdiv \n (depth_residuals)")
+  labs(title = "Exotic") +
+  xlab(" Exotic \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 b5 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm) +
-  labs(title = "", subtitle = "Partial Regression: mean_rdiv ~ Max_depth + exotic") +
-  xlab(" Depth_max \n (depth_against_exotic_residuals)") +
-  labs(caption = "holding exotic constant") +
-  ylab(" mean_rdiv \n (exotic_residuals)")
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
 
 # a5 + b5
 
@@ -206,6 +203,34 @@ plot(a5 + b5)
 
 # Closing the graphical device
 dev.off()
+
+# eutrophication
+# poschiavo has a missing phos max value
+
+df_lm_excl <- df_lm |> 
+  filter(Lake != "Poschiavo")
+
+a6 <- partial_regression_x1(df_lm_excl$mean_rdiv, df_lm_excl$Phos_max, df_lm_excl$Max_depth, df =  df_lm_excl) +
+  labs(title = "Eutrophication history") +
+  xlab(" Phos_max \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
+
+b6 <- partial_regression_x2(df_lm_excl$mean_rdiv, df_lm_excl$Phos_max, df_lm_excl$Max_depth, df =  df_lm_excl) +
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
+
+
+
+tiff(paste("total_models/plots/partial_eutrophication.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(a6 + b6)
+
+# Closing the graphical device
+dev.off()
+
+
 
 # #######################################################################
 
