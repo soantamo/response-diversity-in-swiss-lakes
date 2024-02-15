@@ -26,6 +26,7 @@ df_2 <- readRDS("data_frame_models/df_abundance_gam")
 df_3 <- readRDS("data_frame_models/df_binomial_re")
 df_4 <- readRDS("data_frame_models/df_abundance_re")
 
+
 predictions(df_1)
 predictions(df_2)
 predictions(df_3)
@@ -36,21 +37,122 @@ depth_predictions(df_2)
 depth_predictions(df_3)
 depth_predictions(df_4)
 
-df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |> 
-  map_dfr(readRDS)
+# df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |> 
+#   map_dfr(readRDS)
 
 # save total predictions as RDS
-saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
+# saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
 
+
+# load total predictions
+model_predictions <- readRDS("total_models/df_pred_all.rds")
+
+model_predictions$species <- as.factor(model_predictions$species)
+levels(model_predictions$species)
+
+# plots: all models
+# second option to make se the same color as line
+all_predictions <- model_predictions |> 
+  ggplot(aes(temp, fit)) +
+  # geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), fill = factor(species)), alpha = 0.3) +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+  geom_line(aes(color = factor(species))) +
+  theme_bw() +
+  facet_wrap(~species, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  # scale_color_viridis(discrete=TRUE, guide = NULL, aesthetics = c("color", "fill"))
+  scale_color_viridis(discrete=TRUE, guide = NULL)
+
+
+tiff(paste("total_models/plots/all_predictions_models.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(all_predictions)
+
+# Closing the graphical device
+dev.off()
+
+strange_predictions <- model_predictions |> 
+  filter(fit > 1) |> 
+  ggplot(aes(temp, fit)) +
+  geom_line(aes(color = factor(species))) +
+  theme_bw() +
+  facet_wrap(~species, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  scale_color_viridis(discrete=TRUE, guide = NULL) +
+  labs(title = "Fit > 1")
+
+strange_predictions
+
+tiff(paste("total_models/plots/strange_predictions.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(strange_predictions)
+
+# Closing the graphical device
+dev.off()
+
+
+four_predictions <- model_predictions |> 
+  filter(species %in% c("Cyprinus_carpio", "Lepomis_gibbosus", "Phoxinus_csikii",
+                        "Salmo_trutta")) |> 
+  ggplot(aes(temp, fit)) +
+  geom_line(aes(color = factor(species))) +
+  theme_bw() +
+  facet_wrap(~species, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey")) +
+  # scale_color_viridis(discrete=TRUE, guide = NULL, aesthetics = c("color", "fill"))
+  scale_color_viridis(discrete=TRUE, guide = NULL)
+
+
+four_predictions
+tiff(paste("total_models/plots/strange_rpedictions_four.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(four_predictions)
+
+# Closing the graphical device
+dev.off()
 
 ############################################################################
 #comparing depth and temp models
 
 depth_temp <- read_xlsx("deviance_comparison.xlsx")
 
-depth_temp |> 
+tab_1 <- depth_temp |> 
+  filter(difference < 0) |> 
   arrange(difference) |> 
   gt()
+
+tab_1
+
+depth_temp1 <- depth_temp |> 
+  filter(Species != "Coregonus_sp_large_pelagic") 
+
+mean(depth_temp1$difference)
+median(depth_temp1$difference)
+
+lollipop_difference <- depth_temp|> 
+  filter(Species != "Coregonus_sp_large_pelagic") |> 
+    ggplot(aes(x = fct_reorder(Species, difference), y = difference)) +
+    geom_segment(aes(x=fct_reorder(Species, difference), xend=fct_reorder(Species, difference), y=0, yend=difference), color ="darkgrey") +
+    geom_point(size=2) +
+    coord_flip() +
+    xlab("") +
+    ylab("Difference (dev. expl temp - dev. expl depth)") +
+  labs(title = "mean: -0.02324794, median: -0.007589") +
+  theme_classic()
+
+
+lollipop_difference
+
+tiff(paste("total_models/plots/lollipop_diff_depth_temp.tiff", sep = ""), units="in", width = 10, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(lollipop_difference)
+
+# Closing the graphical device
+dev.off()
 
 ###################################################################derivatives
 
@@ -345,25 +447,6 @@ saveRDS(df_deriv_all, "total_models/df_deriv_all.rds")
 
 source(here("functions.R"))
 
-model_predictions <- readRDS("total_models/df_pred_all.rds")
-
-model_predictions$species <- as.factor(model_predictions$species)
-levels(model_predictions$species)
-
-# plots: all models
-model_predictions |> 
-  filter(species == "Salmo_trutta") |> 
-  ggplot(aes(temp, fit, color = factor(species))) +
-  geom_line() +
-  # geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.05) +
-  # geom_ribbon(aes(ymin = lower, ymax = upper), alpha = 0.3) +
-  theme_bw() +
-  facet_wrap(~species, scale = "free") +
-  theme(strip.background = element_rect(fill="lightgrey")) +
-  scale_color_viridis(discrete=TRUE, guide = NULL)
-  ylim(0,2)
-
-
 # derivatives
 
 all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
@@ -493,10 +576,13 @@ min(data$max_derivative)
 
 data_new <- data                                      # Duplicate data
 data_new$groups <- cut(data_new$max_derivative,               # Add group column
-                       breaks = c(-7.634168, -3, 0, 1, 2, 3, 4, 10, 200))
+                       breaks = c(-7.634168, -3, -1, 0, 1, 3, 4, 10, 30, 200, 14061010))
 head(data_new)   
 
-data_new |> 
+library(RColorBrewer)
+# Define the number of colors you want
+
+max_deriv_plot <- data_new |> 
   ggplot(aes(fLake, y = fct_reorder(species, max_derivative), fill= groups)) + 
   geom_tile() +
   # scale_fill_distiller(palette = "PRGn")
@@ -504,6 +590,17 @@ data_new |>
   #                     high = "#971B20",
   #                     guide = "colorbar") +
   scale_fill_manual(breaks = levels(data_new$groups),
-                    values = c("#053061", "#2166AC","#92C5DE", "#FDDBC7",  "#F4A582", "#D6604D", "#B2182B", "#67001F"))
+                    values = rev(brewer.pal(11, "BrBG")))
 
+
+                    # values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
+                    #            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
+
+tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=10, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+
+plot(max_deriv_plot)
+# Closing the graphical device
+dev.off()
 
