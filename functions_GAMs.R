@@ -55,7 +55,6 @@ predictions <- function(df){
       
       if (i == "Coregonus_sp_benthic_profundal")  { 
         
-        
         gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
                                  s(fProtocol, bs = 're'), family = binomial)
         # prepare residuals
@@ -108,12 +107,8 @@ predictions <- function(df){
     
         
       } else if (max(data$Abundance) > 1)  {
-        
-        unique_method <- distinct(data, fProtocol)
-        grid <- expand.grid(mean_last_7days = seq(
-          from = min(data$mean_last_7days, na.rm = TRUE),
-          to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-          fProtocol = unique_method$fProtocol)
+
+  
 
         gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                                  s(fProtocol, bs = 're'), family = ziP())
