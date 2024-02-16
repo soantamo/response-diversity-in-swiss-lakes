@@ -91,7 +91,7 @@ predictions <- function(df){
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
-          geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
           theme_bw() +
           # facet_wrap(~fLake, scale = "free") +
           theme(strip.background = element_rect(fill="lightgrey")) +
@@ -129,7 +129,7 @@ predictions <- function(df){
 
         print(glance(gam_output[[i]]))
 
-        model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
+        model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, exclude= "s(fProtocol)", type = "response", se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
         pred_df <- model_bind |>
           group_by(mean_last_7days) |>
@@ -143,7 +143,7 @@ predictions <- function(df){
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
-          geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
           theme_bw() +
           # facet_wrap(~fLake, scale = "free") +
           theme(strip.background = element_rect(fill="lightgrey")) +
@@ -196,7 +196,7 @@ predictions <- function(df){
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
-          geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
           theme_bw() +
           # facet_wrap(~fLake, scale = "free") +
           theme(strip.background = element_rect(fill="lightgrey")) +
@@ -257,7 +257,7 @@ predictions <- function(df){
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
-          geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
           theme_bw() +
           # facet_wrap(~fLake, scale = "free") +
           theme(strip.background = element_rect(fill="lightgrey")) +
@@ -309,7 +309,7 @@ predictions <- function(df){
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
-          geom_ribbon(aes(ymin = fit - se.fit, ymax = fit + se.fit), alpha = 0.3) +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
           theme_bw() +
           # facet_wrap(~fLake, scale = "free") +
           theme(strip.background = element_rect(fill="lightgrey")) +
@@ -699,6 +699,178 @@ depth_predictions <- function(df){
   }
 }
  
+
+
+
+############################## temp + depth model
+
+depth_temp_deviance <- function(df){
+  
+  require(broom)
+  require(tidyverse)
+  require(DHARMa)
+  require(mgcv)
+  require(gratia)
+  require(mgcViz)
+  
+  species_list <- df |> 
+    distinct(Species) |> 
+    pull(Species)
+  
+  species_list <- sort(species_list)
+  
+  gam_output <- list()
+  
+  df$fLake <- as.factor(df$Lake)
+  
+  df$fProtocol <- as.factor(df$Protocol)
+  
+  for (i in species_list) {
+    data <- df |> 
+      filter(Species == i) |> 
+      mutate(n_lake = n_distinct(Lake))
+    
+    # only one lake, no re for lakes
+    if(max(data$n_lake) == 1) {
+      
+      unique_method <- distinct(data, fProtocol)
+      grid <- expand.grid(Depth_sample = seq(
+        from = min(data$Depth_sample, na.rm = TRUE),
+        to = max(data$Depth_sample, na.rm = TRUE), by = 0.02),
+        fProtocol = unique_method$fProtocol)
+      
+      # special case
+      if (i == "Coregonus_sp_benthic_profundal")  { 
+        
+        
+        model1 <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're'), family = binomial)
+        
+        model2 <- gam(data = data, Presence ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = binomial)
+        model3 <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = binomial)
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+        
+    
+        
+        # zip
+      } else if (max(data$Abundance) > 1)  {
+        
+        model1 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're'), family = ziP())
+        
+        model2 <- gam(data = data, Abundance ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = ziP())
+        model3 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = ziP())
+        
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+  
+        
+      } 
+      #binomial 
+      else {   
+        model1 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're'), family = binomial)
+        
+        model2 <- gam(data = data, Abundance ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = binomial)
+        model3 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're'), family = binomial)
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+      }
+    }
+    # multiple lakes
+    else {
+
+      # zip
+      # special case
+      if (i == "Coregonus_sp_large_pelagic"){
+        
+        model1 <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        
+        model2 <- gam(data = data, Presence ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        model3 <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+        
+        
+      }
+      else if (max(data$Abundance) > 1)  { 
+        
+        
+        model1 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = ziP())
+        
+        model2 <- gam(data = data, Abundance ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = ziP())
+        model3 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = ziP())
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+        
+        #binomial
+      } else {
+        
+        model1 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + 
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        
+        model2 <- gam(data = data, Abundance ~ s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        model3 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3) +
+                        s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+        
+        summary1 <- summary(model1)
+        summary2 <- summary(model2)
+        summary3 <- summary(model3)
+        
+        print(paste(i, "temp: ", summary1[["dev.expl"]]))
+        print(paste(i, "depth: ", summary2[["dev.expl"]]))
+        print(paste(i, "temp + depth: ", summary3[["dev.expl"]]))
+        
+      }
+      
+    }
+  }
+}
+
 # data <- readRDS("data_frame_models/df_binomial_gam") |> 
 #   filter(Species == "Alosa_fallax") 
 # 
