@@ -240,6 +240,17 @@ plot(a6 + b6)
 dev.off()
 
 
+c <- partial_regression_x1(df_lm_excl$mean_rdiv, df_lm_excl$Phos_max, df_lm_excl$sum_species, df =  df_lm_excl) +
+  labs(title = "Eutrophication history") +
+  xlab(" Phos_max \n (x1 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
+c
+
+d <- partial_regression_x2(df_lm_excl$mean_rdiv, df_lm_excl$Phos_max, df_lm_excl$sum_species, df =  df_lm_excl) +
+  labs(title = "") +
+  xlab(" Depth_max \n (x2 given others)") +
+  ylab(" mean_rdiv \n (y given others)")
+
 
 # #######################################################################
 
@@ -270,11 +281,21 @@ lm_analysis <- function(y, x) {
 # plot residuals 
 
 models <- lm(mean_rdiv ~ Phos_max, data = df_lm)
+model1 <- lm(mean_rdiv ~ Phos_max )
+
+plot_model(models)
 
 res <- resid(models)
 
 plot(res)
 
+lm <- lm(mean_rdiv ~ Phos_max + sum_species, data = df_lm_excl)
+summary(lm)
+library(sjPlot)
+
+model1 <- lm(mean_rdiv ~ Phos_max * sum_species, data = df_lm_excl)
+summary(model1)
+plot_model(model1, type = "pred", terms = c("Phos_max", "endemic"))
 # maximum_depth:
 
 depth1 <- lm_analysis(df_lm$mean_rdiv, df_lm$Max_depth)  +
