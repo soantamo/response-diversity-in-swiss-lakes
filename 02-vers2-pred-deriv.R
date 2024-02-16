@@ -114,6 +114,37 @@ plot(four_predictions)
 # Closing the graphical device
 dev.off()
 
+
+# look at abundance per temp of each species
+df_models <- readRDS("df_models.rds")
+
+species_list <- df_models |> 
+  distinct(Species) |> 
+  pull(Species)
+
+species_list <- sort(species_list)
+
+for (i in species_list) {
+  
+  data <- df_models |> 
+    filter(Species == i)
+  
+  abu_plot <- data |> 
+    ggplot(aes(mean_last_7days, Abundance, color = Protocol)) +
+    geom_point() +
+    labs(title = i) +
+    scale_color_manual(values = c("seagreen", "skyblue"))
+    
+  tiff(paste("total_models/plot_abundance/abu_temp_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
+  
+  print(plot(abu_plot))
+  
+  dev.off()
+  
+
+}
+
+
 ############################################################################
 #comparing depth and temp models
 
