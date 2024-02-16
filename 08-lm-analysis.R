@@ -96,7 +96,9 @@ source(here("functions_regression.R"))
 # 
 
 # species richness
+# model assumptions only need to be checked for either a or b
 
+# model assumptions okay
 a1 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth, df =  df_lm) +
   labs(title = "Species richness") +
   xlab(" Species richness \n (x1 given others)") +
@@ -107,7 +109,6 @@ b1 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$sum_species, df_lm$Max_depth,
   xlab(" Depth_max \n (x2 given others)") +
   ylab(" mean_rdiv \n (y given others)")
 
-a1 + b1
 
 tiff(paste("total_models/plots/partial_species_richness.tiff", sep = ""), units="in", width=12, height=7, res=300)
 # plot(ggarrange(depth1, depth2, ncol = 2))
@@ -119,10 +120,12 @@ dev.off()
 
 # native
 
+# x1 against x2 not normally distributed, resid vs fitted x2 against x1 looks bad
 a2 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
   labs(title = "Native") +
   xlab(" Native \n (x1 given others)") +
   ylab(" mean_rdiv \n (y given others)")
+
 
 b2 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$native, df_lm$Max_depth, df =  df_lm) +
   labs(title = "") +
@@ -141,10 +144,12 @@ dev.off()
 
 # endemic
 
+# x2 against x1 no homodeicasity, rest okay
 a3 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
   labs(title = "Endemic") +
   xlab(" Endemic \n (x1 given others)") +
   ylab(" mean_rdiv \n (y given others)")
+
 
 b3 <- partial_regression_x2(df_lm$mean_rdiv, df_lm$endemic, df_lm$Max_depth, df =  df_lm) +
   labs(title = "") +
@@ -162,6 +167,7 @@ plot(a3 + b3)
 dev.off()
 
 # non_native
+# model assumptions okay
 a4 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$non_native, df_lm$Max_depth, df =  df_lm) +
   labs(title = "Non-native") +
   xlab(" Non_native \n (x1 given others)") +
@@ -183,6 +189,7 @@ plot(a4 + b4)
 dev.off()
 
 # exotic
+# model assumptions are okay 
 a5 <- partial_regression_x1(df_lm$mean_rdiv, df_lm$exotic, df_lm$Max_depth, df =  df_lm) +
   labs(title = "Exotic") +
   xlab(" Exotic \n (x1 given others)") +
@@ -209,6 +216,8 @@ dev.off()
 
 df_lm_excl <- df_lm |> 
   filter(Lake != "Poschiavo")
+
+# model assumptions are okay
 
 a6 <- partial_regression_x1(df_lm_excl$mean_rdiv, df_lm_excl$Phos_max, df_lm_excl$Max_depth, df =  df_lm_excl) +
   labs(title = "Eutrophication history") +
