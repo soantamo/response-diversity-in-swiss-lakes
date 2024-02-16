@@ -15,18 +15,31 @@ partial_regression_x1 <- function(y, x1, x2, df){
   model_x1 <- lm(y ~ x1, data = df)
   data_added_variables$x1_residuals <- residuals(model_x1)
   print(plot(model_x1))
+  print(summary(model_x1))
+  print(shapiro.test(resid(model_x1)))
+  print(lmtest::bptest(model_x1))
   
   model_x2 <- lm(y ~ x2, data = df)
   data_added_variables$x2_residuals <- residuals(model_x2)
   print(plot(model_x2))
+  print(summary(model_x2))
+  print(shapiro.test(resid(model_x2)))
+  print(lmtest::bptest(model_x2))
   
   model_x1_against_x2 <- lm(x1 ~ x2, data = df)
   data_added_variables$x1_against_x2_residuals <- residuals(model_x1_against_x2)
   print(plot(model_x1_against_x2))
+  print(summary(model_x1_against_x2))
+  print(shapiro.test(resid(model_x1_against_x2)))
+  print(lmtest::bptest(model_x1_against_x2))
   
   model_x2_against_x1 <- lm(x2 ~ x1, data = df)
   data_added_variables$x2_against_x1_residuals <- residuals(model_x2_against_x1)
   print(plot(model_x2_against_x1))
+  print(summary(model_x2_against_x1))
+  print(shapiro.test(resid(model_x2_against_x1)))
+  print(lmtest::bptest(model_x2_against_x1))
+
   
   
   ggplot(data_added_variables, aes(x = x1_against_x2_residuals, y = x2_residuals)) +
@@ -54,19 +67,33 @@ partial_regression_x2 <- function(y, x1, x2, df){
   
   model_x1 <- lm(y ~ x1, data = df)
   data_added_variables$x1_residuals <- residuals(model_x1)
+  print(plot(model_x1))
   print(summary(model_x1))
+  print(shapiro.test(resid(model_x1)))
+  print(lmtest::bptest(model_x1))
+  
   
   model_x2 <- lm(y ~ x2, data = df)
   data_added_variables$x2_residuals <- residuals(model_x2)
+  print(plot(model_x2))
   print(summary(model_x2))
+  print(shapiro.test(resid(model_x2)))
+  print(lmtest::bptest(model_x2))
   
   model_x1_against_x2 <- lm(x1 ~ x2, data = df)
   data_added_variables$x1_against_x2_residuals <- residuals(model_x1_against_x2)
+  print(plot(model_x1_against_x2))
   print(summary(model_x1_against_x2))
+  print(shapiro.test(resid(model_x1_against_x2)))
+  print(lmtest::bptest(model_x1_against_x2))
+  
   
   model_x2_against_x1 <- lm(x2 ~ x1, data = df)
   data_added_variables$x2_against_x1_residuals <- residuals(model_x2_against_x1)
+  print(plot(model_x2_against_x1))
   print(summary(model_x2_against_x1))
+  print(shapiro.test(resid(model_x2_against_x1)))
+  print(lmtest::bptest(model_x2_against_x1))
   
 
   ggplot(data_added_variables, aes(x = x2_against_x1_residuals, y = x1_residuals)) +
