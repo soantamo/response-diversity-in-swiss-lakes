@@ -2,9 +2,6 @@ library(tidyverse)
 library(here)
 library(readr)
 library(viridis)
-library(lattice)
-library(gt)
-
 
 df_final <- readRDS("df_final.rds")
 
@@ -12,6 +9,11 @@ species <- df_final |>
   group_by(Species) |> 
   summarize(tot_obs = sum(Abundance))
 
+test <- df_final |> 
+  filter(str_detect(Species, "Coregonus")) |> 
+  distinct(Lake, Species)
+
+# df models should be suitable for my functions
 
 # df_coregonus <- df_final |> 
 #   filter(str_detect(Species, "Coregonus")) |> 
@@ -151,6 +153,8 @@ df_models <- df_final |>
   ungroup() |> 
   filter(tot_abu >= 10) 
 
+# saveRDS(df_models, "df_models.rds")
+
 df_models$Species <- as.factor(df_models$Species)
 levels(df_models$Species)
 
@@ -159,6 +163,7 @@ species <- df_models |>
   summarize(tot_obs = sum(Abundance))
 
 
+##############################################################################
 ###OVERVIEW
 #1. species that dont have any catch > 1, 0 and 1 only -> binomial data
 #prepare subsets of df with those species in it, separat for binomial and abundance data
@@ -244,21 +249,3 @@ saveRDS(df_abundance_re, "data_frame_models/df_abundance_re")
 
 # prepare excel to add all the species based on Projet Lac matrix
 
-# mod1 <- readRDS("data_frame_models/df_binomial_re")
-# mod2 <- readRDS("data_frame_models/df_binomial_gam")
-# mod3 <- readRDS("data_frame_models/df_abundance_re")
-# mod4 <- readRDS("data_frame_models/df_abundance_gam")
-# 
-# model_all <- bind_rows(mod1, mod2, mod3, mod4)
-
-
-# all species with lakes they were caught in
-# library(writexl)
-# 
-# df_species_lake <- model_all |> 
-#   group_by(Species, Lake) |> 
-#   distinct(Lake)
-# 
-# 
-# 
-# write_xlsx(df_species_lake, 'species_lake.xlsx')
