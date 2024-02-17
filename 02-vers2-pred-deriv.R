@@ -16,6 +16,8 @@ library(gridExtra)
 library(grid)
 library(gghighlight)
 
+# to do: add code to take one level of a lake where the fish occurs 
+
 ###############################################################################
 #get model predictions 
 
@@ -26,6 +28,101 @@ df_2 <- readRDS("data_frame_models/df_abundance_gam")
 df_3 <- readRDS("data_frame_models/df_binomial_re")
 df_4 <- readRDS("data_frame_models/df_abundance_re")
 
+# https://fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/
+# following this post does not change that we still get values for each protocol
+# https://stats.stackexchange.com/questions/159380/gam-models-with-random-effect-r
+# solving re prediction probelm
+# comment section in the bottom of the heap blog
+# You can predict from the fixed effects only (i.e., exclude the random effects) in two ways:
+#   
+#   ## Set subject id to a value not observed in training data
+#   rats2 <- rats
+# rats2$subject <- 0
+# predict(m2_gam, newdata = rats2) ## yields a warning about new level, but predictions are fine
+# 
+# ## Exclude term from predictions using exclude argument, avoid checks on newdata using newdata.guaranteed argument
+# rats3 <- rats[ , -which(names(rats) == "subject")]
+# predict(m2_gam, newdata = rats3, newdata.guaranteed=TRUE, exclude = "s(subject)")
+
+
+# gavin:
+# Yeah; I would just choose a level of the subject that exists in the data and 
+# then use the second idea of using the exclude argument to remove the effect of 
+# the random effect smooth(s) as needed. You then don't need to set 
+# newdata.guaranteed = TRUE; the checks are helpful to insure you have created
+# the rest of the prediction data correctly.
+
+# works with one level in factor and then exclude
+
+df_3 |> 
+  distinct(Species) |> 
+  pull(Species)
+
+data |> 
+  distinct(Lake)
+
+data <- df_3 |> 
+  filter(Species == "Barbus_barbus")
+
+data$fProtocol <- as.factor(data$Protocol)
+data$fLake <- as.factor(data$Lake)
+
+gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+                   s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
+
+# it needs to chose one value of the lakes where the fish occurs
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(data$mean_last_7days, na.rm = TRUE),
+  to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+  fProtocol = factor("VERT"), fLake = factor("Biel"))
+
+
+model_prediction <- predict.gam(gam_output, newdata = grid, exclude = c("s(fProtocol)", "s(fLake)")
+                                , type = "response", se.fit = TRUE)
+model_bind <- cbind(grid, as.data.frame(model_prediction))
+pred_df <- model_bind |> 
+  rename(temp = mean_last_7days)
+
+plot_pred <- pred_df |>
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+  theme_bw()
+
+plot_pred
+
+# # does the protocol make a difference?
+grid2 <- expand.grid(mean_last_7days = seq(
+  from = min(data$mean_last_7days, na.rm = TRUE),
+  to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+  fProtocol = factor("CEN"), fLake = factor("Constance"))
+
+
+model_prediction2 <- predict.gam(gam_output, newdata = grid2, exclude = c("s(fProtocol)", "s(fLake)")
+                                , type = "response", se.fit = TRUE)
+model_bind2 <- cbind(grid2, as.data.frame(model_prediction2))
+pred_df2 <- model_bind2 |> 
+  rename(temp = mean_last_7days)
+
+plot_pred2 <- pred_df2 |>
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+  theme_bw()
+
+plot_pred2
+
+##########################################################################3
+df_4_short <- df_4 |> 
+  filter(!Species %in% c("Alburnus_arborella", "Alosa_agone", "Cottus_sp_Po"))
+
+
+data <- df_4 |> 
+
+depth_temp_deviance(df_1)
+depth_temp_deviance(df_2)
+depth_temp_deviance(df_3)
+depth_temp_deviance(df_4_short)
 
 predictions(df_1)
 predictions(df_2)
@@ -36,6 +133,7 @@ depth_predictions(df_1)
 depth_predictions(df_2)
 depth_predictions(df_3)
 depth_predictions(df_4)
+
 
 # df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |> 
 #   map_dfr(readRDS)
