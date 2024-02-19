@@ -17,6 +17,7 @@ library(grid)
 library(gghighlight)
 
 # to do: add code to take one level of a lake where the fish occurs 
+# zip is not working with new code 
 
 ###############################################################################
 #get model predictions 
@@ -58,8 +59,6 @@ df_3 |>
   distinct(Species) |> 
   pull(Species)
 
-data |> 
-  distinct(Lake)
 
 data <- df_3 |> 
   filter(Species == "Barbus_barbus")
@@ -71,10 +70,15 @@ gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                    s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
 
 # it needs to chose one value of the lakes where the fish occurs
+# extracting all species where the fish occurs and choosing a random one
+unique_lakes <- unique(data$fLake)
+str(unique_lakes)
+# random_level <- sample(levels(unique_lakes), 1)
+unique_lakes <- unique(data$fLake)
 grid <- expand.grid(mean_last_7days = seq(
   from = min(data$mean_last_7days, na.rm = TRUE),
   to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-  fProtocol = factor("VERT"), fLake = factor("Biel"))
+  fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
 
 
 model_prediction <- predict.gam(gam_output, newdata = grid, exclude = c("s(fProtocol)", "s(fLake)")
@@ -92,40 +96,35 @@ plot_pred <- pred_df |>
 plot_pred
 
 # # does the protocol make a difference?
-grid2 <- expand.grid(mean_last_7days = seq(
-  from = min(data$mean_last_7days, na.rm = TRUE),
-  to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-  fProtocol = factor("CEN"), fLake = factor("Constance"))
-
-
-model_prediction2 <- predict.gam(gam_output, newdata = grid2, exclude = c("s(fProtocol)", "s(fLake)")
-                                , type = "response", se.fit = TRUE)
-model_bind2 <- cbind(grid2, as.data.frame(model_prediction2))
-pred_df2 <- model_bind2 |> 
-  rename(temp = mean_last_7days)
-
-plot_pred2 <- pred_df2 |>
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
-  theme_bw()
-
-plot_pred2
+# grid2 <- expand.grid(mean_last_7days = seq(
+#   from = min(data$mean_last_7days, na.rm = TRUE),
+#   to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+#   fProtocol = factor("CEN"), fLake = factor(sample(levels(unique_lakes), 1)))
+# 
+# 
+# model_prediction2 <- predict.gam(gam_output, newdata = grid2, exclude = c("s(fProtocol)", "s(fLake)")
+#                                 , type = "response", se.fit = TRUE)
+# model_bind2 <- cbind(grid2, as.data.frame(model_prediction2))
+# pred_df2 <- model_bind2 |> 
+#   rename(temp = mean_last_7days)
+# 
+# plot_pred2 <- pred_df2 |>
+#   ggplot(aes(temp, fit)) +
+#   geom_line() +
+#   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+#   theme_bw()
+# 
+# plot_pred2
 
 ##########################################################################3
-df_4_short <- df_4 |> 
-  filter(!Species %in% c("Alburnus_arborella", "Alosa_agone", "Cottus_sp_Po"))
 
+# depth_temp_deviance(df_1)
+# depth_temp_deviance(df_2)
+# depth_temp_deviance(df_3)
+# depth_temp_deviance(df_4_short)
 
-data <- df_4 |> 
-
-depth_temp_deviance(df_1)
-depth_temp_deviance(df_2)
-depth_temp_deviance(df_3)
-depth_temp_deviance(df_4_short)
-
-predictions(df_1)
-predictions(df_2)
+predictions(df_1) #works with new code
+predictions(df_2) #not working
 predictions(df_3)
 predictions(df_4)
 
