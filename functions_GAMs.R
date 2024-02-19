@@ -8,6 +8,21 @@
 # appropriate for non-normal errors." Therefore, deviance explained should be a 
 # more generalized measurement of goodness of fit especially for non-gaussian models.
 # 
+# random effects exlusion: 
+# https://fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/
+# following this post does not change that we still get values for each protocol
+# https://stats.stackexchange.com/questions/159380/gam-models-with-random-effect-r
+# solving re prediction probelm
+# comment section in the bottom of the heap blog
+# You can predict from the fixed effects only (i.e., exclude the random effects) in two ways:
+
+
+# gavin:
+# Yeah; I would just choose a level of the subject that exists in the data and 
+# then use the second idea of using the exclude argument to remove the effect of 
+# the random effect smooth(s) as needed. You then don't need to set 
+# newdata.guaranteed = TRUE; the checks are helpful to insure you have created
+# the rest of the prediction data correctly.
 
 
 predictions <- function(df){
@@ -206,44 +221,42 @@ predictions <- function(df){
     
     else {
       
-      unique_lakes <- distinct(data, fLake)
-      unique_method <- distinct(data, fProtocol)
-      grid <- expand.grid(mean_last_7days = seq(
-        from = min(data$mean_last_7days, na.rm = TRUE),
-        to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02
-      ), fLake = unique_lakes$fLake, fProtocol = unique_method$fProtocol)
-      
+
       if (max(data$Abundance) > 1)  { 
         
-        gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+        unique_lakes <- unique(data$fLake)
+        grid <- expand.grid(mean_last_7days = seq(
+          from = min(data$mean_last_7days, na.rm = TRUE),
+          to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+          fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
+        
+        gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = ziP())
         # prepare residuals
-        simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+        simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
         tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
         tiff(tiff_filename, width = 800, height = 600)
         print(plot(simulationOutput))
         dev.off()
-        # get rid of NAs in temp datat
-        temp_data <- data |>
-          drop_na(mean_last_7days)
+      
         # Plotting standardized residuals against predictors
         tiff_file_2 <- paste("total_models/gam_check/predictor_", i, ".tiff", sep = "")
         tiff(tiff_file_2, width = 800, height = 600)
         print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
         dev.off()
         
-        print(glance(gam_output[[i]]))
+        print(glance(gam_output))
         
-        model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-        model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+        model_prediction <- predict.gam(gam_output, newdata = grid,
+                                             exclude = c("s(fProtocol)", "s(fLake)"), 
+                                             type = "response", se.fit = TRUE)
+        model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
-          group_by(mean_last_7days) |>
-          mutate(fit = mean(fit)) |>
           rename(temp = mean_last_7days) |> 
           mutate(species = factor(i))
         saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
         
-        summary <- summary(gam_output[[i]])
+        summary <- summary(gam_output)
         
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
@@ -265,37 +278,40 @@ predictions <- function(df){
       
       
       } else {
-        gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+        
+        unique_lakes <- unique(data$fLake)
+        grid <- expand.grid(mean_last_7days = seq(
+          from = min(data$mean_last_7days, na.rm = TRUE),
+          to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+          fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
+        
+        gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = binomial)
         # prepare residuals
-        simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+        simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
         tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
         tiff(tiff_filename, width = 800, height = 600)
         print(plot(simulationOutput))
         dev.off()
-        # get rid of NAs in temp datat
-        temp_data <- data |>
-          drop_na(mean_last_7days)
+     
         # Plotting standardized residuals against predictors
         tiff_file_2 <- paste("total_models/gam_check/predictor_", i, ".tiff", sep = "")
         tiff(tiff_file_2, width = 800, height = 600)
         print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
         dev.off()
         
-        print(glance(gam_output[[i]]))
+        print(glance(gam_output))
         
-        model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid, type = "response", se.fit = TRUE)
-        model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+        model_prediction <- predict.gam(gam_output, newdata = grid,
+                                        exclude = c("s(fProtocol)", "s(fLake)"),
+                                        type = "response", se.fit = TRUE)
+        model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
-          group_by(mean_last_7days) |>
-          mutate(fit = mean(fit)) |>
           rename(temp = mean_last_7days) |> 
           mutate(species = factor(i))
         saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
         
-        summary <- summary(gam_output[[i]])
-        
-        summary <- summary(gam_output[[i]])
+        summary <- summary(gam_output)
         
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
