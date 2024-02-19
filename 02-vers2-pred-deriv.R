@@ -46,49 +46,50 @@ predictions(df_4)
 # excluding 3 and 5  -> lower but still strange
 # with binomial looking okay but for now just exclude it because we dont know why 
 # zip between 0 and 1
-# df_lepomis <- df_4 |> 
-#   filter(Species == "Lepomis_gibbosus") |> 
-#   filter(Abundance < 3)
-#   
-#   
-# df_lepomis$fLake <- as.factor(df_lepomis$Lake)
-# df_lepomis$fProtocol <- as.factor(df_lepomis$Protocol)
-#   # try k = 5
-# gam_output<- gam(data = df_lepomis, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-#                    +  s(fProtocol, bs = 're'), family = binomial)
-# 
-# summary(gam_output)
-# unique_lakes <- distinct(df_lepomis, Lake) |>
-#   pull()
-# 
-# random_lake <- sample(unique_lakes, 1)
-# 
-# grid <- expand.grid(mean_last_7days = seq(
-#   from = min(df_lepomis$mean_last_7days, na.rm = TRUE),
-#   to = max(df_lepomis$mean_last_7days, na.rm = TRUE), by = 0.02),
-#   fProtocol = factor("VERT"), fLake = factor(random_lake))
-# 
-# 
-# model_prediction <- predict.gam(gam_output, newdata = grid,
-#                                 exclude = c("s(fProtocol)", "s(fLake)"), 
-#                                 type = "response", se.fit = TRUE)
-# model_bind <- cbind(grid, as.data.frame(model_prediction))
-# pred_df <- model_bind |>
-#   rename(temp = mean_last_7days) |> 
-#   mutate(species = factor(i))
-# 
-# summary <- summary(gam_output)
-# 
-# plot_pred <- pred_df |>
-#   ggplot(aes(temp, fit)) +
-#   geom_line() +
-#   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
-#   theme_bw() +
-#   # facet_wrap(~fLake, scale = "free") +
-#   theme(strip.background = element_rect(fill="lightgrey")) +
-#   labs(title = paste("Species = ", i,
-#                      "deviance explained = ", signif(summary[["dev.expl"]])))
-# plot_pred
+
+
+# gasterosteus aculeatus se is normal
+df_lepomis <- df_4 |>
+  filter(Species == "Perca_fluviatilis")
+  # filter(Abundance < 3)
+
+
+df_lepomis$fLake <- as.factor(df_lepomis$Lake)
+df_lepomis$fProtocol <- as.factor(df_lepomis$Protocol)
+  # try k = 5
+gam_output<- gam(data = df_lepomis, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                   +  s(fProtocol, bs = 're'), family = ziP())
+
+summary(gam_output)
+unique_lakes <- distinct(df_lepomis, Lake) |>
+  pull()
+
+random_lake <- sample(unique_lakes, 1)
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(df_lepomis$mean_last_7days, na.rm = TRUE),
+  to = max(df_lepomis$mean_last_7days, na.rm = TRUE), by = 0.02),
+  fProtocol = factor("VERT"), fLake = factor(random_lake))
+
+
+model_prediction <- predict(gam_output, newdata = grid,
+                                exclude = c("s(fProtocol)", "s(fLake)"),
+                                terms = "s(mean_last_7days)", se.fit = TRUE)
+model_bind <- cbind(grid, as.data.frame(model_prediction))
+pred_df <- model_bind |>
+  rename(temp = mean_last_7days)
+
+summary <- summary(gam_output)
+
+plot_pred <- pred_df |>
+  ggplot(aes(temp, fit)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+  theme_bw() +
+  # facet_wrap(~fLake, scale = "free") +
+  theme(strip.background = element_rect(fill="lightgrey"))
+
+plot_pred
 
 
 
