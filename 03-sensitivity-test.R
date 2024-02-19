@@ -16,6 +16,9 @@ library(gridExtra)
 library(grid)
 library(gghighlight)
 
+
+# wie hat Conor das gemeint mit tiefe konstant halten? Und wie kann ich diese mean_depth
+# in die predictions inkludieren?
 # look at df models 
 df_models <- readRDS("df_models.rds")
 
@@ -41,6 +44,8 @@ df_sensitivity <- df_models |>
 
 df_sensitivity$fLake <- as.factor(df_sensitivity$Lake)
 df_sensitivity$fProtocol <- as.factor(df_sensitivity$Protocol)
+df_sensitivity$mean_depth <- as.numeric(df_sensitivity$mean_depth)
+
 
 species_list <- df_sensitivity |> 
   distinct(Species) |> 
@@ -52,7 +57,7 @@ for (i in species_list){
   data <- df_sensitivity |> 
     filter(Species == i)
   
-  
+  str(data)
   # gam for temperature and depth with depth kept constant at mean depth ->
   # does not work we get error 
   model1 <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(Depth_sample, k = 3)
@@ -68,15 +73,17 @@ for (i in species_list){
   
   random_lake <- sample(unique_lakes, 1)
   
-  # depth sample is way too long
-  grid1 <- expand.grid(mean_last_7days = seq(
+  # depth sample is way too long, why??????
+ not_workign <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-    fProtocol = factor("VERT"), fLake = factor(random_lake), Depth_sample = sample(data$mean_depth))
+    to = max(data$mean_last_7days, na.rm = TRUE), length = 1500),
+    fProtocol = factor("VERT"), fLake = factor(random_lake), 
+    Depth_sample = seq(from = min(data$mean_depth),
+                       to = max(data$mean_depth), length = 1500))
   
   grid2 <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+    to = max(data$mean_last_7days, na.rm = TRUE), length = 1500),
     fProtocol = factor("VERT"), fLake = factor(random_lake))
   
   print(glance(model1))
