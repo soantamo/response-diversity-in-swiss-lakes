@@ -30,40 +30,73 @@ df_4 <- readRDS("data_frame_models/df_abundance_re")
 
 predictions(df_1) 
 predictions(df_2)
-predictions(df_3) #warnings are strange
-predictions(df_4) #warnings are strange
+predictions(df_3)
+predictions(df_4)
+
+# depth_predictions(df_1)
+# depth_predictions(df_2)
+# depth_predictions(df_3)
+# depth_predictions(df_4)
+
+
+# strange model: lepomis gibbosus
+
+# lepomis_gibbosus gets better with increase in k, but still ~ 50 with k = 20
+# excluding the outlier 5 -> no real change
+# excluding 3 and 5  -> lower but still strange
+# with binomial looking okay but for now just exclude it because we dont know why 
+# zip between 0 and 1
+# df_lepomis <- df_4 |> 
+#   filter(Species == "Lepomis_gibbosus") |> 
+#   filter(Abundance < 3)
+#   
+#   
+# df_lepomis$fLake <- as.factor(df_lepomis$Lake)
+# df_lepomis$fProtocol <- as.factor(df_lepomis$Protocol)
+#   # try k = 5
+# gam_output<- gam(data = df_lepomis, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                    +  s(fProtocol, bs = 're'), family = binomial)
+# 
+# summary(gam_output)
+# unique_lakes <- distinct(df_lepomis, Lake) |>
+#   pull()
+# 
+# random_lake <- sample(unique_lakes, 1)
+# 
+# grid <- expand.grid(mean_last_7days = seq(
+#   from = min(df_lepomis$mean_last_7days, na.rm = TRUE),
+#   to = max(df_lepomis$mean_last_7days, na.rm = TRUE), by = 0.02),
+#   fProtocol = factor("VERT"), fLake = factor(random_lake))
+# 
+# 
+# model_prediction <- predict.gam(gam_output, newdata = grid,
+#                                 exclude = c("s(fProtocol)", "s(fLake)"), 
+#                                 type = "response", se.fit = TRUE)
+# model_bind <- cbind(grid, as.data.frame(model_prediction))
+# pred_df <- model_bind |>
+#   rename(temp = mean_last_7days) |> 
+#   mutate(species = factor(i))
+# 
+# summary <- summary(gam_output)
+# 
+# plot_pred <- pred_df |>
+#   ggplot(aes(temp, fit)) +
+#   geom_line() +
+#   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+#   theme_bw() +
+#   # facet_wrap(~fLake, scale = "free") +
+#   theme(strip.background = element_rect(fill="lightgrey")) +
+#   labs(title = paste("Species = ", i,
+#                      "deviance explained = ", signif(summary[["dev.expl"]])))
+# plot_pred
 
 
 
-predictions(data_df_2)
-
-depth_predictions(df_1)
-depth_predictions(df_2)
-depth_predictions(df_3)
-depth_predictions(df_4)
-
-
-data_test <- df_3 |> 
-  filter(Species == "Ameiurus_melas") |> 
-  mutate(n_lake = n_distinct(Lake))
-data_test$fLake <- as.factor(data_test$Lake)
-
-unique_lakes <- unique(data_test$fLake)
-
-random_lake <- sample(levels(unique_lakes), 1)
-
-grid <- expand.grid(mean_last_7days = seq(
-  from = min(data_test$mean_last_7days, na.rm = TRUE),
-  to = max(data_test$mean_last_7days, na.rm = TRUE), by = 0.02),
-  fProtocol = factor("VERT"), fLake = factor(random_lake))
-
-grid(fLake = factor(random_lake))
-
-# df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |> 
-#   map_dfr(readRDS)
+ df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |>
+   map_dfr(readRDS)
 
 # save total predictions as RDS
-# saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
+saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
 
 
 # load total predictions
@@ -85,14 +118,15 @@ all_predictions <- model_predictions |>
   # scale_color_viridis(discrete=TRUE, guide = NULL, aesthetics = c("color", "fill"))
   scale_color_viridis(discrete=TRUE, guide = NULL)
 
+all_predictions
 
-tiff(paste("total_models/plots/all_predictions_models.tiff", sep = ""), units="in", width = 12, height=8, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-plot(all_predictions)
-
-# Closing the graphical device
-dev.off()
+# tiff(paste("total_models/plots/all_predictions_models.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# plot(all_predictions)
+# 
+# # Closing the graphical device
+# dev.off()
 
 strange_predictions <- model_predictions |> 
   filter(fit > 1) |> 
@@ -106,13 +140,13 @@ strange_predictions <- model_predictions |>
 
 strange_predictions
 
-tiff(paste("total_models/plots/strange_predictions.tiff", sep = ""), units="in", width = 12, height=8, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-plot(strange_predictions)
-
-# Closing the graphical device
-dev.off()
+# tiff(paste("total_models/plots/strange_predictions.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# plot(strange_predictions)
+# 
+# # Closing the graphical device
+# dev.off()
 
 
 four_predictions <- model_predictions |> 
@@ -128,13 +162,13 @@ four_predictions <- model_predictions |>
 
 
 four_predictions
-tiff(paste("total_models/plots/strange_rpedictions_four.tiff", sep = ""), units="in", width = 12, height=8, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-plot(four_predictions)
-
-# Closing the graphical device
-dev.off()
+# tiff(paste("total_models/plots/strange_rpedictions_four.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# plot(four_predictions)
+# 
+# # Closing the graphical device
+# dev.off()
 
 
 # look at abundance per temp of each species
@@ -208,6 +242,7 @@ plot(lollipop_difference)
 dev.off()
 
 ###################################################################derivatives
+# derivatives() will ignore any random effect smooths it encounters in object.
 
 # species that were recorded with electro, fishbase or eawag
 species_lake <- read_xlsx("species_lake.xlsx") 
@@ -237,52 +272,7 @@ df_abundance_re <- readRDS("data_frame_models/df_abundance_re")
 df_abundance_re$fLake <- as.factor(df_abundance_re$Lake)
 df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
 
-
-
-# 
-# 
-# species_list <- df_binomial_gam |> 
-#   distinct(Species) |> 
-#   pull(Species)
-# 
-# species_list <- sort(species_list)
-# 
-# derivatives <- list()
-# gam_output <- list()
-# 
-# # test 
-# df_binomial_gam |> 
-#   distinct(Species) |> 
-#   pull(Species)
-#   
-# data_test <- df_binomial_gam |>
-#   filter(Species == "Alosa_fallax")
-# 
-# lake_data <- species_lake |>
-#   filter(Species == "Alosa_fallax")
-# 
-# gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
-# 
-# lake_list <- distinct(lake_data, Lake) |>
-#   pull()
-# 
-#   data_lake <- species_lake |>
-#     filter(Species == "Alosa_fallax") |>
-#     filter(Lake == "Maggiore")
-#   
-#   unique_lakes <- distinct(data_lake, fLake)
-#   unique_protocol <- distinct(data_lake, fProtocol)
-#   
-#   newdata <- tibble(mean_last_7days = seq(
-#     from = min(data_lake$temp, na.rm = TRUE),
-#     to = max(data_lake$temp, na.rm = TRUE), length = 200), 
-#     fProtocol = factor("VERT"))
-#   
-#   derivatives <- derivatives(gam_output, data = newdata, term = "s(mean_last_7days)", 
-#                              partial_match = TRUE)
-#     rename(temp = data)
-
-
+# model1
 species_list <- df_binomial_gam |>
   distinct(Species) |>
   pull(Species)
@@ -292,85 +282,38 @@ species_list <- sort(species_list)
 derivatives <- list()
 gam_output <- list()
 
-species_lake |> 
-  filter(Species == "Salvelinus_sp")
-
 for (i in species_list) {
   data <- df_binomial_gam |>
     filter(Species == i)
-  
+
   lake_data <- species_lake |>
     filter(Species == i)
-  
+
   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
-  
+
   lake_list <- distinct(lake_data, Lake) |>
     pull()
-  
+
   for (j in lake_list){
-    
+
     data_lake <- species_lake |>
       filter(Species == i) |>
       filter(Lake == j)
-    
+
     unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
-    
+
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
       fProtocol = factor("VERT"))
-    
-    derivatives <- derivatives(gam_output[[i]], data = newdata, term = "s(mean_last_7days)",
-                               partial_match = TRUE) |>
+
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
-
-
-test1 <- readRDS("total_models/derivatives/derivatives_Alosa_fallax_Maggiore.rds")
-
-test1 |> 
-  ggplot(aes(temp, derivative)) +
-  geom_line()
-
-# original
-# for (i in species_list) {
-#   data <- df_binomial_gam |>
-#     filter(Species == i)
-#   
-#   lake_data <- species_lake |>
-#     filter(Species == i)
-#   
-#   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
-#   
-#   lake_list <- distinct(lake_data, Lake) |>
-#     pull()
-#   
-#   for (j in lake_list){
-#     
-#     data_lake <- species_lake |>
-#       filter(Species == i) |>
-#       filter(Lake == j)
-#     
-#     unique_lakes <- distinct(data_lake, fLake)
-#     unique_protocol <- distinct(data_lake, fProtocol)
-#     
-#     newdata <- tibble(mean_last_7days = seq(
-#       from = min(data_lake$temp, na.rm = TRUE),
-#       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-#       fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
-#     
-#     derivatives <- derivatives(gam_output[[i]], data = newdata) |>
-#       mutate(fLake = factor(j)) |>
-#       mutate(species = factor(i)) |>
-#       rename(temp = data)
-#     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
-#   }
-# }
 
 # model2
 
@@ -386,7 +329,6 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
-
 
 for (i in species_list) {
   
@@ -408,14 +350,12 @@ for (i in species_list) {
       filter(Species == i) |>
       filter(Lake == j)
     
-    unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
     
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
-    
+      fProtocol = factor("VERT"))
+
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
@@ -459,13 +399,10 @@ for (i in species_list) {
       filter(Species == i) |>
       filter(Lake == j)
     
-    unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
-    
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+      fProtocol = factor("VERT"))
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
@@ -486,9 +423,8 @@ species_list <- sort(species_list)
 derivatives <- list()
 gam_output <- list()
 
-
-
 for (i in species_list) {
+  
   data <- df_binomial_re |> 
     filter(Species == i)
   
@@ -501,19 +437,24 @@ for (i in species_list) {
   lake_list <- distinct(lake_data, Lake) |>
     pull()
   
+  unique_lakes <- distinct(data, Lake) |> 
+    pull()
+
+  
   for (j in lake_list){
     
     data_lake <- species_lake |>
       filter(Species == i) |>
       filter(Lake == j)
+    # take all lakes where the species really is and take random one
     
-    unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
+    random_lake <- sample(unique_lakes, 1)
+  
     
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+      fProtocol = factor("VERT"), fLake = factor(random_lake))
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
@@ -523,10 +464,63 @@ for (i in species_list) {
   }
 }
 
+
 # model 4
+# salmo_trutta with binomial
 
+# species_list <- df_abundance_re |> 
+#   filter(Species == "Salmo_trutta") |> 
+#   distinct(Species) |> 
+#   pull(Species)
+# 
+# species_list <- sort(species_list)
+# 
+# 
+# derivatives <- list()
+# gam_output <- list()
+# 
+# 
+# for (i in species_list) {
+#   
+#   data <- df_abundance_re |> 
+#     filter(Species == i)
+#   
+#   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+#                          +  s(fProtocol, bs = 're'), family = binomial)
+#   
+#   lake_data <- species_lake |>
+#     filter(Species == i)
+#   
+#   lake_list <- distinct(lake_data, Lake) |>
+#     pull()
+#   
+#   unique_lakes <- distinct(data, Lake) |> 
+#     pull()
+#   
+#   for (j in lake_list){
+#     
+#     data_lake <- species_lake |>
+#       filter(Species == i) |>
+#       filter(Lake == j)
+#     
+#     random_lake <- sample(unique_lakes, 1)
+#     
+#     newdata <- tibble(mean_last_7days = seq(
+#       from = min(data_lake$temp, na.rm = TRUE),
+#       to = max(data_lake$temp, na.rm = TRUE), length = 200),
+#       fLake = factor(random_lake), fProtocol = factor("VERT"))
+#     
+#     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+#       mutate(fLake = factor(j)) |>
+#       mutate(species = factor(i)) |>
+#       rename(temp = data)
+#     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+#   }
+# }
 
+# rest
 species_list <- df_abundance_re |> 
+  # filter(Species != "Salmo_trutta") |> 
   distinct(Species) |> 
   pull(Species)
 
@@ -553,19 +547,21 @@ for (i in species_list) {
   lake_list <- distinct(lake_data, Lake) |>
     pull()
   
+  unique_lakes <- distinct(data, Lake) |> 
+    pull()
+  
   for (j in lake_list){
     
     data_lake <- species_lake |>
       filter(Species == i) |>
       filter(Lake == j)
-    
-    unique_lakes <- distinct(data_lake, fLake)
-    unique_protocol <- distinct(data_lake, fProtocol)
+   
+    random_lake <- sample(unique_lakes, 1)
     
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = unique_lakes$fLake, fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+      fLake = factor(random_lake), fProtocol = factor("VERT"))
     
     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
       mutate(fLake = factor(j)) |>
@@ -597,13 +593,17 @@ str(all_deriv)
 
 levels(all_deriv$species)
 
-######resp div with all models 
+######resp div with all models but lepomis gibbosus
 
 lakes_list <- all_deriv  |> 
   distinct(fLake) |> 
   pull(fLake)
 
 str(lakes_list)
+
+
+all_deriv <- all_deriv |> 
+  filter(!species %in% c("Lepomis_gibbosus"))
 
 all_deriv$fLake <- as.character(all_deriv $fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
@@ -687,18 +687,44 @@ plot_means <- df_means |>
 
 plot_means
 
-p <- df_means |> 
-  ggplot(aes(mean_rdiv, mean_sign)) +
-  geom_point(color = "#007ED3")
+# p <- df_means |> 
+#   ggplot(aes(mean_rdiv, mean_sign)) +
+#   geom_point(color = "#007ED3")
+# 
+# plot_means <- p + geom_text_repel(aes(label = Lake),
+#                                   size = 3.5, 
+#                                   max.overlaps = 13) +
+#   labs(x = "mean dissimilarity", y = "mean divergence") +
+#   theme_bw()
+# 
 
-plot_means <- p + geom_text_repel(aes(label = Lake),
-                                  size = 3.5, 
-                                  max.overlaps = 13) +
-  labs(x = "mean dissimilarity", y = "mean divergence") +
-  theme_bw()
 
-plot_means
+# plot dissimilarity only
 
+plot_mean_dissimilarity <- df_means |> 
+  ggplot(aes(fct_reorder(Lake, mean_rdiv), mean_rdiv)) +
+  geom_col( fill  = "seagreen")
+
+tiff(paste("total_models/plots/mean_rdiv.tiff", sep = ""), units="in", width=12, height=5, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+
+plot(plot_mean_dissimilarity)
+# Closing the graphical device
+dev.off()
+
+plot_mean_divergence <- df_means |> 
+  ggplot(aes(fct_reorder(Lake, mean_sign), mean_sign)) +
+  geom_point() +
+  ylim(0,1)
+
+tiff(paste("total_models/plots/mean_sign.tiff", sep = ""), units="in", width=12, height=5, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+
+plot(plot_mean_divergence)
+# Closing the graphical device
+dev.off()
 ################################################################################
 library(plotly)
 
@@ -716,7 +742,7 @@ min(data$max_derivative)
 
 data_new <- data                                      # Duplicate data
 data_new$groups <- cut(data_new$max_derivative,               # Add group column
-                       breaks = c(-7.634168, -3, -1, 0, 1, 3, 4, 10, 30, 200, 14061010))
+                       breaks = c(-7.634168, -3, -1, 0, 1, 3, 4, 10, 30, 180, 15061010))
 head(data_new)   
 
 library(RColorBrewer)
@@ -736,7 +762,7 @@ max_deriv_plot <- data_new |>
                     # values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
                     #            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
 
-tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=10, height=8, res=300)
+tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
 # plot(ggarrange(depth1, depth2, ncol = 2))
 # plot science discussion
 
