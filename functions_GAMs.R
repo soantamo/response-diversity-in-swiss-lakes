@@ -174,7 +174,7 @@ predictions <- function(df){
       else {   
         
     
-        gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
+        gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                                  s(fProtocol, bs = 're'), family = binomial)
         # prepare residuals
         simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
@@ -225,18 +225,18 @@ predictions <- function(df){
     
     else {
       
+      unique_lakes <- distinct(data, Lake) |>
+        pull()
+      
+      random_lake <- sample(unique_lakes, 1)
+      
+      grid <- expand.grid(mean_last_7days = seq(
+        from = min(data$mean_last_7days, na.rm = TRUE),
+        to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
+        fProtocol = factor("VERT"), fLake = factor(random_lake))
 
       if (max(data$Abundance) > 1)  { 
-        
-        
-        unique_lakes <- unique(data$fLake)
-        
-        random_lake <- sample(levels(unique_lakes), 1)
-        
-        grid <- expand.grid(mean_last_7days = seq(
-          from = min(data$mean_last_7days, na.rm = TRUE),
-          to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-          fProtocol = factor("VERT"), fLake = factor(random_lake))
+      
         
         gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = ziP())
@@ -287,14 +287,6 @@ predictions <- function(df){
       
       } else {
         
-        unique_lakes <- unique(data$fLake)
-        
-        random_lake <- sample(levels(unique_lakes), 1)
-        
-        grid <- expand.grid(mean_last_7days = seq(
-          from = min(data$mean_last_7days, na.rm = TRUE),
-          to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-          fProtocol = factor("VERT"), fLake = factor(random_lake))
         
         gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = binomial)
