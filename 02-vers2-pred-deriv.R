@@ -16,8 +16,7 @@ library(gridExtra)
 library(grid)
 library(gghighlight)
 
-# to do: add code to take one level of a lake where the fish occurs 
-# zip is not working with new code 
+# to do: add code to take one level of a lake where the fish occurs: strange warnings
 
 ###############################################################################
 #get model predictions 
@@ -29,110 +28,36 @@ df_2 <- readRDS("data_frame_models/df_abundance_gam")
 df_3 <- readRDS("data_frame_models/df_binomial_re")
 df_4 <- readRDS("data_frame_models/df_abundance_re")
 
-# https://fromthebottomoftheheap.net/2021/02/02/random-effects-in-gams/
-# following this post does not change that we still get values for each protocol
-# https://stats.stackexchange.com/questions/159380/gam-models-with-random-effect-r
-# solving re prediction probelm
-# comment section in the bottom of the heap blog
-# You can predict from the fixed effects only (i.e., exclude the random effects) in two ways:
-#   
-#   ## Set subject id to a value not observed in training data
-#   rats2 <- rats
-# rats2$subject <- 0
-# predict(m2_gam, newdata = rats2) ## yields a warning about new level, but predictions are fine
-# 
-# ## Exclude term from predictions using exclude argument, avoid checks on newdata using newdata.guaranteed argument
-# rats3 <- rats[ , -which(names(rats) == "subject")]
-# predict(m2_gam, newdata = rats3, newdata.guaranteed=TRUE, exclude = "s(subject)")
+predictions(df_1) 
+predictions(df_2)
+predictions(df_3) #warnings are strange
+predictions(df_4) #warnings are strange
 
 
-# gavin:
-# Yeah; I would just choose a level of the subject that exists in the data and 
-# then use the second idea of using the exclude argument to remove the effect of 
-# the random effect smooth(s) as needed. You then don't need to set 
-# newdata.guaranteed = TRUE; the checks are helpful to insure you have created
-# the rest of the prediction data correctly.
 
-# works with one level in factor and then exclude
-
-df_3 |> 
-  distinct(Species) |> 
-  pull(Species)
-
-
-data <- df_3 |> 
-  filter(Species == "Barbus_barbus")
-
-data$fProtocol <- as.factor(data$Protocol)
-data$fLake <- as.factor(data$Lake)
-
-gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
-                   s(fProtocol, bs = 're') + s(fLake, bs = "re"), family = binomial)
-
-# it needs to chose one value of the lakes where the fish occurs
-# extracting all species where the fish occurs and choosing a random one
-unique_lakes <- unique(data$fLake)
-str(unique_lakes)
-# random_level <- sample(levels(unique_lakes), 1)
-unique_lakes <- unique(data$fLake)
-grid <- expand.grid(mean_last_7days = seq(
-  from = min(data$mean_last_7days, na.rm = TRUE),
-  to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-  fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
-
-
-model_prediction <- predict.gam(gam_output, newdata = grid, exclude = c("s(fProtocol)", "s(fLake)")
-                                , type = "response", se.fit = TRUE)
-model_bind <- cbind(grid, as.data.frame(model_prediction))
-pred_df <- model_bind |> 
-  rename(temp = mean_last_7days)
-
-plot_pred <- pred_df |>
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
-  theme_bw()
-
-plot_pred
-
-# # does the protocol make a difference?
-# grid2 <- expand.grid(mean_last_7days = seq(
-#   from = min(data$mean_last_7days, na.rm = TRUE),
-#   to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-#   fProtocol = factor("CEN"), fLake = factor(sample(levels(unique_lakes), 1)))
-# 
-# 
-# model_prediction2 <- predict.gam(gam_output, newdata = grid2, exclude = c("s(fProtocol)", "s(fLake)")
-#                                 , type = "response", se.fit = TRUE)
-# model_bind2 <- cbind(grid2, as.data.frame(model_prediction2))
-# pred_df2 <- model_bind2 |> 
-#   rename(temp = mean_last_7days)
-# 
-# plot_pred2 <- pred_df2 |>
-#   ggplot(aes(temp, fit)) +
-#   geom_line() +
-#   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
-#   theme_bw()
-# 
-# plot_pred2
-
-##########################################################################3
-
-# depth_temp_deviance(df_1)
-# depth_temp_deviance(df_2)
-# depth_temp_deviance(df_3)
-# depth_temp_deviance(df_4_short)
-
-predictions(df_1) #works with new code
-predictions(df_2) #not working
-predictions(df_3)
-predictions(df_4)
+predictions(data_df_2)
 
 depth_predictions(df_1)
 depth_predictions(df_2)
 depth_predictions(df_3)
 depth_predictions(df_4)
 
+
+data_test <- df_3 |> 
+  filter(Species == "Ameiurus_melas") |> 
+  mutate(n_lake = n_distinct(Lake))
+data_test$fLake <- as.factor(data_test$Lake)
+
+unique_lakes <- unique(data_test$fLake)
+
+random_lake <- sample(levels(unique_lakes), 1)
+
+grid <- expand.grid(mean_last_7days = seq(
+  from = min(data_test$mean_last_7days, na.rm = TRUE),
+  to = max(data_test$mean_last_7days, na.rm = TRUE), by = 0.02),
+  fProtocol = factor("VERT"), fLake = factor(random_lake))
+
+grid(fLake = factor(random_lake))
 
 # df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |> 
 #   map_dfr(readRDS)
@@ -290,6 +215,7 @@ str(species_lake)
 
 species_lake$fLake <- as.factor(species_lake$Lake)
 species_lake$fProtocol <- as.factor(species_lake$Protocol)
+species_lake$Species <- as.factor(species_lake$Species)
 
 #loading all dfs 
 
@@ -313,10 +239,52 @@ df_abundance_re$fProtocol <- as.factor(df_abundance_re$Protocol)
 
 
 
+# 
+# 
+# species_list <- df_binomial_gam |> 
+#   distinct(Species) |> 
+#   pull(Species)
+# 
+# species_list <- sort(species_list)
+# 
+# derivatives <- list()
+# gam_output <- list()
+# 
+# # test 
+# df_binomial_gam |> 
+#   distinct(Species) |> 
+#   pull(Species)
+#   
+# data_test <- df_binomial_gam |>
+#   filter(Species == "Alosa_fallax")
+# 
+# lake_data <- species_lake |>
+#   filter(Species == "Alosa_fallax")
+# 
+# gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
+# 
+# lake_list <- distinct(lake_data, Lake) |>
+#   pull()
+# 
+#   data_lake <- species_lake |>
+#     filter(Species == "Alosa_fallax") |>
+#     filter(Lake == "Maggiore")
+#   
+#   unique_lakes <- distinct(data_lake, fLake)
+#   unique_protocol <- distinct(data_lake, fProtocol)
+#   
+#   newdata <- tibble(mean_last_7days = seq(
+#     from = min(data_lake$temp, na.rm = TRUE),
+#     to = max(data_lake$temp, na.rm = TRUE), length = 200), 
+#     fProtocol = factor("VERT"))
+#   
+#   derivatives <- derivatives(gam_output, data = newdata, term = "s(mean_last_7days)", 
+#                              partial_match = TRUE)
+#     rename(temp = data)
 
 
-species_list <- df_binomial_gam |> 
-  distinct(Species) |> 
+species_list <- df_binomial_gam |>
+  distinct(Species) |>
   pull(Species)
 
 species_list <- sort(species_list)
@@ -324,7 +292,8 @@ species_list <- sort(species_list)
 derivatives <- list()
 gam_output <- list()
 
-
+species_lake |> 
+  filter(Species == "Salvelinus_sp")
 
 for (i in species_list) {
   data <- df_binomial_gam |>
@@ -350,15 +319,58 @@ for (i in species_list) {
     newdata <- tibble(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+      fProtocol = factor("VERT"))
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
+    derivatives <- derivatives(gam_output[[i]], data = newdata, term = "s(mean_last_7days)",
+                               partial_match = TRUE) |>
       mutate(fLake = factor(j)) |>
       mutate(species = factor(i)) |>
       rename(temp = data)
     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
+
+
+test1 <- readRDS("total_models/derivatives/derivatives_Alosa_fallax_Maggiore.rds")
+
+test1 |> 
+  ggplot(aes(temp, derivative)) +
+  geom_line()
+
+# original
+# for (i in species_list) {
+#   data <- df_binomial_gam |>
+#     filter(Species == i)
+#   
+#   lake_data <- species_lake |>
+#     filter(Species == i)
+#   
+#   gam_output[[i]] <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fProtocol, bs = 're'), family = binomial)
+#   
+#   lake_list <- distinct(lake_data, Lake) |>
+#     pull()
+#   
+#   for (j in lake_list){
+#     
+#     data_lake <- species_lake |>
+#       filter(Species == i) |>
+#       filter(Lake == j)
+#     
+#     unique_lakes <- distinct(data_lake, fLake)
+#     unique_protocol <- distinct(data_lake, fProtocol)
+#     
+#     newdata <- tibble(mean_last_7days = seq(
+#       from = min(data_lake$temp, na.rm = TRUE),
+#       to = max(data_lake$temp, na.rm = TRUE), length = 200),
+#       fProtocol = sample(levels(unique_protocol$fProtocol), size = 200, replace = TRUE))
+#     
+#     derivatives <- derivatives(gam_output[[i]], data = newdata) |>
+#       mutate(fLake = factor(j)) |>
+#       mutate(species = factor(i)) |>
+#       rename(temp = data)
+#     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+#   }
+# }
 
 # model2
 
