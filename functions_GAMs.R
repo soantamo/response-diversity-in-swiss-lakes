@@ -44,12 +44,11 @@ predictions <- function(df){
   derivatives <- list()
   grid <- list()
   pred_df <- list()
-  unique_lakes <- list()
-  unique_protocol <- list()
   tiff_filename <- list()
   tiff_file_2 <- list()
   temp_data <- list()
   summary <- list()
+  
   df$fLake <- as.factor(df$Lake)
   
   df$fProtocol <- as.factor(df$Protocol)
@@ -58,6 +57,11 @@ predictions <- function(df){
     data <- df |> 
       filter(Species == i) |> 
       mutate(n_lake = n_distinct(Lake))
+    
+    unique_lakes <- unique(data$fLake)
+    
+    random_lake <- sample(levels(unique_lakes), 1)
+  
     
     if(max(data$n_lake) == 1) {
       
@@ -72,7 +76,7 @@ predictions <- function(df){
         gam_output<- gam(data = data, Presence ~ s(mean_last_7days, k = 3) +
                                  s(fProtocol, bs = 're'), family = binomial)
         # prepare residuals
-        simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+        simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
         tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
         tiff(tiff_filename, width = 800, height = 600)
         print(plot(simulationOutput))
@@ -94,7 +98,7 @@ predictions <- function(df){
           mutate(species = factor(i))
         saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
         
-        summary <- summary(gam_output[[i]])
+        summary <- summary(gam_output)
         
         print(signif(summary[["dev.expl"]]))
         
@@ -123,7 +127,7 @@ predictions <- function(df){
         gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) +
                                  s(fProtocol, bs = 're'), family = ziP())
         # prepare residuals
-        simulationOutput <- simulateResiduals(fittedModel = gam_output[[i]], plot = F)
+        simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
         tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
         tiff(tiff_filename, width = 800, height = 600)
         print(plot(simulationOutput))
@@ -140,7 +144,7 @@ predictions <- function(df){
         model_prediction <- predict.gam(gam_output, newdata = grid,
                                              exclude= "s(fProtocol)",
                                              type = "response", se.fit = TRUE)
-        model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+        model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
           rename(temp = mean_last_7days) |>
           mutate(species = factor(i))
@@ -224,11 +228,15 @@ predictions <- function(df){
 
       if (max(data$Abundance) > 1)  { 
         
+        
         unique_lakes <- unique(data$fLake)
+        
+        random_lake <- sample(levels(unique_lakes), 1)
+        
         grid <- expand.grid(mean_last_7days = seq(
           from = min(data$mean_last_7days, na.rm = TRUE),
           to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-          fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
+          fProtocol = factor("VERT"), fLake = factor(random_lake))
         
         gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = ziP())
@@ -280,10 +288,13 @@ predictions <- function(df){
       } else {
         
         unique_lakes <- unique(data$fLake)
+        
+        random_lake <- sample(levels(unique_lakes), 1)
+        
         grid <- expand.grid(mean_last_7days = seq(
           from = min(data$mean_last_7days, na.rm = TRUE),
           to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
-          fProtocol = factor("VERT"), fLake = factor(sample(levels(unique_lakes), 1)))
+          fProtocol = factor("VERT"), fLake = factor(random_lake))
         
         gam_output <- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                                +  s(fProtocol, bs = 're'), family = binomial)
