@@ -47,7 +47,7 @@ df_sensitivity$fProtocol <- as.factor(df_sensitivity$Protocol)
 species_list <- df_sensitivity |> 
   distinct(Species) |> 
   pull(Species)
-# 
+# # 
 # i <- "Alburnus_alburnus"
 for (i in species_list){
   
@@ -70,22 +70,31 @@ for (i in species_list){
   random_lake <- sample(unique_lakes, 1)
   
   # mean depth only in the depth where fish is present
-  mean_depth <- data |> 
-    filter(Presence == 1) |> 
-    mutate(mean_depth = mean(Depth_sample)) |> 
-    pull(mean_depth)
+  # mean_depth <- data |> 
+  #   filter(Presence == 1) |> 
+  #   mutate(mean_depth = mean(Depth_sample)) |> 
+  #   pull(mean_depth)
+  
+  presence_depth <- data |> 
+    filter(Presence == 1) |>
+    distinct(Depth_sample) |> 
+    pull(Depth_sample)
+  
+  # take randomly 5 values 
+  
+  random_depth <- sort(sample(presence_depth, 5))
 
   
   # depth sample is way too long, why??????
  grid1 <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), length = 1500),
+    to = max(data$mean_last_7days, na.rm = TRUE), length = 200),
     fProtocol = factor("VERT"), fLake = factor(random_lake), 
-    Depth_sample = mean_depth)
+    Depth_sample = random_depth)
   
   grid2 <- expand.grid(mean_last_7days = seq(
     from = min(data$mean_last_7days, na.rm = TRUE),
-    to = max(data$mean_last_7days, na.rm = TRUE), length = 1500),
+    to = max(data$mean_last_7days, na.rm = TRUE), length = 1000),
     fProtocol = factor("VERT"), fLake = factor(random_lake))
   
   print(glance(model1))
@@ -96,13 +105,17 @@ for (i in species_list){
                                   type = "response", se.fit = TRUE)
   
   model_bind1 <- cbind(grid1, as.data.frame(model_prediction1)) |> 
-    # rename(fit1 = fit) |> 
-    # rename(se.fit1 = se.fit) |> 
-    # rename(temp = mean_last_7days) |> 
-    mutate(model = factor("temp_and_depth")) |> 
-    select(-Depth_sample)
+    # rename(fit1 = fit) |>
+    # rename(se.fit1 = se.fit) |>
+    # rename(temp = mean_last_7days) |>
+    mutate(model = factor("temp_and_depth"))
+    # select(-Depth_sample)
   
-  
+  model_bind1 |> 
+    ggplot(aes(mean_last_7days, fit, color = Depth_sample, group = Depth_sample)) +
+    geom_line()
+    
+    
   model_prediction2 <- predict.gam(model2, newdata = grid2,
                                    exclude = c("s(fProtocol)", "s(fLake)"), 
                                    type = "response", se.fit = TRUE)
@@ -110,18 +123,20 @@ for (i in species_list){
   model_bind2 <- cbind(grid2, as.data.frame(model_prediction2)) |> 
     mutate(model = factor("temp")) 
   
-  pred_df <- rbind(model_bind1, model_bind2) |> 
-    rename(temp = mean_last_7days) |> 
+
+  df_pred <- bind_rows(model_bind1, model_bind2) |>
+    rename(temp = mean_last_7days) |>
     select(-fProtocol, -fLake)
   
+    df_pred$Depth_sample[is.na(df_pred$Depth_sample)] <- "temp"
 
-  plot_pred <- pred_df |>
-    ggplot(aes(temp, fit, color = model, group = model)) +
+  plot_pred <- df_pred |>
+    ggplot(aes(temp, fit, color = factor(Depth_sample), group = Depth_sample)) +
     geom_line() +
-    geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), fill  = model),  alpha = 0.2) +
+    geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit), fill  = factor(Depth_sample)),  alpha = 0.1) +
     theme_bw() +
     labs(title = paste("Sensitivity test", i)) +
-    scale_color_manual(values = c("#01665E", "#D73027"), aesthetics = c("color", "fill"))
+    scale_color_manual(values = c("#08306B", "#08519C", "#4292C6", "#6BAED6", "#9ECAE1",  "#D73027"), aesthetics = c("color", "fill"))
   
   plot_pred
   
