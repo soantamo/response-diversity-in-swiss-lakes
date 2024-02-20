@@ -20,12 +20,20 @@ species_endemism <- read_excel("species_endemism_richness.xlsx") |>
 select(-6) |> 
   rename(endemism = details)
 
-species_endemism$endemism <- as.factor(species_endemism$endemism)
+# exclude lepomis gibbosus
+# information about endemism
+species_endemism_short <- species_endemism |> 
+  filter(species != "Lepomis_gibbosus") |> 
+  select(-sum_species) |> 
+  group_by(fLake) |> 
+  mutate(sum_species = sum(num_species))
 
-str(species_endemism)
+species_endemism_short$endemism <- as.factor(species_endemism_short$endemism)
+
+str(species_endemism_short)
 
 # adding number of endemic and native etc species.
-df_species_endemism <- species_endemism |> 
+df_species_endemism <- species_endemism_short |> 
   select(-species, - num_species) |> 
   add_count(fLake, endemism) |> 
   rename(count = n) |> 
@@ -46,10 +54,12 @@ df_species_endemism_long <- df_species_endemism |>
   mutate_if(is.numeric, ~replace(., is.na(.), 0)) |> 
   rename(Lake = fLake) |> 
   group_by(Lake) |> 
-  mutate(perc_endemism = sum(endemic * 100 / sum_species)) |> 
-  mutate(perc_exotic = sum(exotic * 100 / sum_species)) |> 
-  mutate(perc_non_native = sum(non_native * 100 / sum_species)) |> 
-  mutate(perc_native = sum(native * 100 / sum_species))
+  mutate(non_endemic_native = sum(native + non_native)) |> 
+  select(-native, -non_native) |> 
+  rename(non_native = exotic)
+  # mutate(perc_endemism = sum(endemic * 100 / sum_species)) |> 
+  # mutate(perc_non_native = sum(non_native * 100 / sum_species)) |> 
+  # mutate(perc_non_endemic_native = sum(non_endemic_native * 100 / sum_species)) |>
 
 str(df_species_endemism_long)
 
@@ -85,6 +95,180 @@ str(df_lm)
 df_lm$Phos_max <- as.numeric(df_lm$Phos_max)
 
 ###############################################################################
+
+# lm(mean_rdiv  ~ species richness + eutrophication)
+# predict manually with new data eutrophication value fixed at mean and species richness min() to max()
+# also add one with max_rdiv
+# do the same the other way around: mean_rdiv  ~  eutrophication + species richness, with species richness fixed at mean and eutrophication min() to max()species richness +
+#   prepare these two plots
+
+df_lm_excl <- df_lm |> 
+  filter(Lake != "Poschiavo")
+
+lm1 <- lm(mean_rdiv ~ sum_species + Phos_max, data = df_lm_excl)
+
+# checking model assumptions
+summary(lm1)
+shapiro.test(resid(lm1))
+lmtest::bptest(lm1)
+plot(lm1)
+
+# looking good
+
+new_data <- tibble(sum_species = seq(from = min(df_lm_excl$sum_species), to = max(df_lm_excl$sum_species),
+                                    length = 50),
+                  Phos_max = mean(df_lm_excl$Phos_max))
+
+prediction_lm1 <- predict.lm(lm1, newdata = new_data, se.fit = TRUE, type = "response")
+
+bind_model1 <- cbind(new_data, prediction_lm1)
+
+
+
+lm1_plot <- bind_model1 |> 
+  ggplot(aes(sum_species, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("Species richness")
+
+lm1_plot
+
+# change it
+lm2 <- lm(mean_rdiv ~ Phos_max + sum_species, data = df_lm_excl)
+
+# checking model assumptions: super!
+summary(lm2)
+shapiro.test(resid(lm2))
+lmtest::bptest(lm2)
+plot(lm2)
+
+new_data2 <- tibble(Phos_max = seq(from = min(df_lm_excl$Phos_max), to = max(df_lm_excl$Phos_max),
+                                     length = 50),
+                   sum_species = mean(df_lm_excl$sum_species))
+
+prediction_lm2 <- predict.lm(lm2, newdata = new_data2, se.fit = TRUE, type = "response")
+
+bind_model2 <- cbind(new_data2, prediction_lm2)
+
+
+
+lm2_plot <- bind_model2 |> 
+  ggplot(aes(Phos_max, fit)) +
+  geom_line(color = "#35978F") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("Maxmimum historical eutrophication") +
+  ylim(4,6)
+
+lm1_plot + lm2_plot
+
+
+###########################################################################
+# lms categories: endemic, non_native (as in not swiss) and non_endemic_native
+
+
+lm_endemic <- lm(mean_rdiv ~ endemic, data = df_lm)
+
+# checking model assumptions
+summary(lm_endemic)
+shapiro.test(resid(lm_endemic))
+lmtest::bptest(lm_endemic)
+plot(lm_endemic)
+
+# looking good
+
+new_data_a <- tibble(endemic = seq(from = min(df_lm$endemic), to = max(df_lm$endemic),
+                                     length = 30))
+
+prediction_endemic <- predict.lm(lm_endemic, newdata = new_data_a, se.fit = TRUE, type = "response")
+
+df_lm_endemic <- cbind(new_data_a, prediction_endemic)
+
+
+
+plot_a <- df_lm_endemic |> 
+  ggplot(aes(endemic, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("Number of endemic species")  +
+  ylim(4,7.5)
+
+
+plot_a
+
+# non_native
+
+lm_exotic <- lm(mean_rdiv ~ non_native, data = df_lm)
+
+# checking model assumptions: okay
+summary(lm_exotic)
+shapiro.test(resid(lm_exotic))
+lmtest::bptest(lm_exotic)
+plot(lm_exotic)
+
+# looking good
+
+new_data_b <- tibble(non_native = seq(from = min(df_lm$non_native), to = max(df_lm$non_native),
+                                   length = 30))
+
+prediction_exotic <- predict.lm(lm_exotic, newdata = new_data_b, se.fit = TRUE, type = "response")
+
+df_lm_exotic <- cbind(new_data_b, prediction_exotic)
+
+
+
+plot_b <- df_lm_exotic|> 
+  ggplot(aes(non_native, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("Number of exotic species") +
+  ylim(4,7.5)
+
+plot_b
+
+# non endemic native
+
+lm_nne <- lm(mean_rdiv ~ non_endemic_native, data = df_lm)
+
+# checking model assumptions: okay
+summary(lm_nne)
+shapiro.test(resid(lm_nne))
+lmtest::bptest(lm_nne)
+plot(lm_nne)
+
+# looking good
+
+new_data_c <- tibble(non_endemic_native = seq(from = min(df_lm$non_endemic_native), to = max(df_lm$non_endemic_native),
+                                      length = 15))
+
+prediction_nne <- predict.lm(lm_nne, newdata = new_data_c, se.fit = TRUE, type = "response")
+
+df_lm_nne <- cbind(new_data_c, prediction_nne)
+
+
+
+plot_c <- df_lm_nne|> 
+  ggplot(aes(non_endemic_native, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity")
+  # xlab("Number of non-endemic native species") +
+
+plot_c
+
+plot_a + plot_b + plot_c
+#################################################################################
+
+
+
 # partial regression
 
 source(here("functions_regression.R"))
