@@ -20,6 +20,12 @@ library(broom)
 # look at df models 
 df_models <- readRDS("df_models.rds")
 
+
+test <- df_models |> 
+  filter(Species == "Leuciscus_leuciscus") |> 
+  select(Lake, mean_last_7days, Depth_sample, Abundance, Presence) |> 
+  filter(Presence == 1)
+
 # take the 11 most abundant  species
 species_list <- df_models |> 
   filter(tot_abu > 300) |> 
