@@ -131,7 +131,7 @@ lm1_plot <- bind_model1 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
-  xlab("Species richness")
+  xlab("species richness")
 
 lm1_plot
 
@@ -160,12 +160,89 @@ lm2_plot <- bind_model2 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
-  xlab("Maxmimum historical eutrophication") +
-  ylim(4,6)
-
-lm1_plot + lm2_plot
+  xlab("maxmimum historical eutrophication") +
+  ylim(4,7)
 
 
+
+plot(lm1_plot + lm2_plot)
+
+tiff(paste("total_models/plots/lm_species_richness_eutroph.tiff", sep = ""), units="in", width=10, height=5, res=300)
+
+
+plot(lm1_plot + lm2_plot)
+
+# Closing the graphical device
+dev.off()
+
+
+# maximum dissimilarity
+
+
+lm3 <- lm(max_rdiv ~ sum_species + Phos_max, data = df_lm_excl)
+
+# checking model assumptions
+summary(lm3)
+shapiro.test(resid(lm3))
+lmtest::bptest(lm3)
+plot(lm3)
+
+# looking good
+
+new_data3 <- tibble(sum_species = seq(from = min(df_lm_excl$sum_species), to = max(df_lm_excl$sum_species),
+                                     length = 50),
+                   Phos_max = mean(df_lm_excl$Phos_max))
+
+prediction_lm3 <- predict.lm(lm3, newdata = new_data3, se.fit = TRUE, type = "response")
+
+bind_model3 <- cbind(new_data3, prediction_lm3)
+
+
+
+lm3_plot <- bind_model3 |> 
+  ggplot(aes(sum_species, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("maximum dissimilarity") +
+  xlab("species richness")
+
+lm3_plot
+
+# change it
+lm4 <- lm(max_rdiv ~ Phos_max + sum_species, data = df_lm_excl)
+
+# checking model assumptions: super!
+summary(lm4)
+shapiro.test(resid(lm4))
+lmtest::bptest(lm4)
+plot(lm4)
+
+new_data4 <- tibble(Phos_max = seq(from = min(df_lm_excl$Phos_max), to = max(df_lm_excl$Phos_max),
+                                   length = 50),
+                    sum_species = mean(df_lm_excl$sum_species))
+
+prediction_lm4 <- predict.lm(lm4, newdata = new_data4, se.fit = TRUE, type = "response")
+
+bind_model4 <- cbind(new_data4, prediction_lm4)
+
+
+
+lm4_plot <- bind_model4 |> 
+  ggplot(aes(Phos_max, fit)) +
+  geom_line(color = "#35978F") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("maximum dissimilarity") +
+  xlab("maxmimum historical eutrophication") +
+  ylim(4,7)
+
+lm4_plot
+
+lm3_plot + lm4_plot
+
+lm1_plot + lm3_plot
+lm2_plot + lm4_plot
 ###########################################################################
 # lms categories: endemic, non_native (as in not swiss) and non_endemic_native
 
