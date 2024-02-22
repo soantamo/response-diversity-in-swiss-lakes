@@ -754,122 +754,72 @@ all_derivatives <- as_tibble(all_models_derivatives)
 #look at outliers in histogram
 # 
 df_new <- all_derivatives
+  # filter(species != "Salmo_trutta")
 
 transform(quantile(df_new$derivative,
-                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99,1)))
+                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.85,0.9,0.95,0.99,1)))
 
-df_new$groups <- cut(df_new$derivative,               # Add group column
+df_new$groups <- cut(df_new$derivative,               # with salmo trutta
                        breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
                                   -4.543748e-01, 3.454218e-04, 2.485142e-01,
-                                  5.527792e-01, 2.018455e+01, 1.280898e+02, 
-                                  1.231212e+07, 1.406101e+07), 
-                     labels = c("1%", "5%", "10%", "25%", "50%", "75%", "90%",
-                                "95%", "99%", "100%"))
+                                  5.527792e-01, 2.911987e+00, 2.018455e+01, 1.280898e+02,
+                                  1.231212e+07, 1.406101e+07),
+                     # breaks = c(-7.63416779, -2.12406566, -0.88522706,
+                     #            -0.45437787, -0.00421108, 0.21700480,
+                     #            0.49991872, 5.34999452, 20.18455338,
+                     #            138.21524717, 173.65675441),
+                     labels = c("0-1%", "1-5%", "5-10%", "10-25%", "25-50%", "50-75%", "75-85%", "85-90%", "90-95%",
+                                "95-99%", "99-100%"))
 
- df_new |> 
-  ggplot(aes(derivative, fill= groups)) + 
-  geom_histogram()
-  scale_fill_manual(breaks = levels(df_new$groups), values = rev(brewer.pal(10, "BrBG")))
+# 85%  bei  2.911987
 
-h <- hist(all_derivatives$derivative, breaks = 100)
-
-h$density <- h$counts /    # Compute density values
-  sum(h$counts) * 100
-
-plot(h, freq = FALSE)  
-
-no_salmo <- all_derivatives |> 
-  filter(species != "Salmo_trutta")
-
-h <- hist(no_salmo$derivative, breaks = 100)
-
-h$density <- h$counts /    # Compute density values
-  sum(h$counts) * 100
-
-plot(h, freq = FALSE)  
-
-ggplot(no_salmo, aes(derivative)) +            # ggplot2 histogram with default bins
-  geom_histogram(bins = 30)
-
-# lepomis gibbosus is excluded from the response diversity metric
-data <- all_derivatives |> 
-  mutate(species = factor(species)) |> 
-  group_by(fLake, species) |> 
-  mutate(max_derivative = max(derivative)) |> 
-  mutate(mean_temp = mean(temp)) |> 
-  distinct(species, fLake, mean_temp, max_derivative) |> 
-  ungroup() |> 
-  arrange(max_derivative)
-
-max(data$max_derivative)
-min(data$max_derivative)
-
-data_new <- data    
-
-# look at histogram to get outliers
-
-transform(quantile(data_new$max_derivative,
-                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99,1)))
-str(data_new)
-
-data_new |> 
-summarize(max_deriv = quantile(max_derivative, probs=0.85, na.rm=TRUE))
-           
-data_new |> 
-  filter(max_derivative > 4.91) |> 
+library(RColorBrewer)
+ plot_percentiles <- df_new |> 
+   filter(species != "Salmo_trutta") |>
+   # filter(derivative < 10) |>
+   ggplot(aes(x = derivative)) + 
+  # ggplot(aes(x = derivative, fill= groups)) + 
+   geom_histogram(aes(y = after_stat(count / sum(count))),binwidth = 0.5, bins = 10000, color = "#313695") +
+   # geom_histogram(aes(y = after_stat(count / sum(count))), bins = 5000) +
+   scale_y_continuous(labels = scales::percent)
+   # scale_fill_manual(breaks = levels(df_new$groups),
+   #                     values = c("#313695", "#313695", "#313695", "#313695", "#313695", "#313695", "#313695",
+   #                                "#F46D43", "#66C2A5", "#9E0142", "#9E0142"))
+ 
+     # scale_fill_manual(breaks = levels(df_new$groups), values = rev(brewer.pal(10, "BrBG")))
+plot_percentiles +
+ geom_vline(xintercept = 2.018455e+01) +
+  geom_vline(xintercept = 2.911987e+00)
+ 
+# above 90% = 2.018455e+01
+ 
+df_new |> 
+  filter(derivative > 2.018455e+01) |> 
   distinct(species)
 
-# four species are above the 90th percentile
-# 1 Phoxinus_csikii       
-# 2 Alburnus_arborella    
-# 3 Barbatula_sp_Lineage_I
-# 4 Salmo_trutta  
+# 5 species above 90%
+# 1 Alburnus_arborella    
+# 2 Barbatula_sp_Lineage_I
+# 3 Cyprinus_carpio       
+# 4 Phoxinus_csikii       
+# 5 Salmo_trutta 
 
-data_new |> 
-  summarize(max_deriv = quantile(max_derivative, probs=0.95, na.rm=TRUE))
+# above 85% = 2.911987e+00
 
-data_new |> 
-  filter(max_derivative > 174) |> 
+df_new |> 
+  filter(derivative > 2.911987e+00) |> 
   distinct(species)
-# salmo trutta above the 95 % percentile 
 
+# 8 species above 85%
 
-# Load required libraries
-library(ggplot2)
-library(RColorBrewer)
-
-
-derivatives <- data_new$max_derivative
-
-# Load required libraries
-library(ggplot2)
-library(RColorBrewer)
-
-
-# Calculate percentiles
-percentiles <- quantile(derivatives, probs = seq(0, 1, by = 0.01))  # Calculate percentiles from 0% to 100%
-
-# Calculate percentiles for each data point
-data_percentiles <- findInterval(derivatives, percentiles, all.inside = TRUE)
-
-# Create a color palette based on percentiles
-colors <- colorRampPalette(brewer.pal(9, "Blues"))(length(percentiles) + 1)
-
-# Plot histogram with ggplot
-ggplot(data = data.frame(x = derivatives, percentiles = factor(data_percentiles)), aes(x = x, fill = percentiles)) +
-  geom_histogram(bins = 30, color = "black", alpha = 0.8) +
-  labs(title = "Histogram Colored by Percentiles", x = "Values", y = "Frequency") +
-  theme_minimal() +
-  scale_fill_manual(values = colors) +
-  scale_x_continuous(breaks = seq(floor(min(derivatives)), ceiling(max(derivatives)), by = 1)) +
-  scale_y_continuous(breaks = seq(0, max(hist(derivatives, plot = FALSE)$counts), by = 50)) +
-  guides(fill = guide_legend(title = "Percentiles"))
-
-
-
-
-
-
+# 1 Alburnus_arborella     
+# 2 Barbatula_sp_Lineage_I 
+# 3 Barbatula_sp_Lineage_II
+# 4 Cyprinus_carpio        
+# 5 Lepomis_gibbosus       
+# 6 Phoxinus_csikii        
+# 7 Salmo_trutta           
+# 8 Squalius_cephalus
 
 #############################################################################3
 # Duplicate data
