@@ -121,13 +121,13 @@ all_predictions <- model_predictions |>
 
 all_predictions
 
-# tiff(paste("total_models/plots/all_predictions_models.tiff", sep = ""), units="in", width = 12, height=8, res=300)
-# # plot(ggarrange(depth1, depth2, ncol = 2))
-# # plot science discussion
-# plot(all_predictions)
-# 
-# # Closing the graphical device
-# dev.off()
+tiff(paste("total_models/plots/all_predictions_models.tiff", sep = ""), units="in", width = 12, height=8, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(all_predictions)
+
+# Closing the graphical device
+dev.off()
 
 strange_predictions <- model_predictions |> 
   filter(fit > 1) |> 
@@ -201,6 +201,19 @@ for (i in species_list) {
 
 }
 
+################################################################################
+# categories and predictions
+
+species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
+  select(-6) |> 
+  rename(endemism = details) |> 
+  select(-num_species, - sum_species)
+
+
+model_predictions <- readRDS("total_models/df_pred_all.rds")
+
+model_predictions$species <- as.factor(model_predictions$species)
+levels(model_predictions$species)
 
 ############################################################################
 #comparing depth and temp models
@@ -602,9 +615,9 @@ lakes_list <- all_deriv  |>
 
 str(lakes_list)
 
-
-all_deriv <- all_deriv |> 
-  filter(!species %in% c("Lepomis_gibbosus"))
+# needs to be named all_deriv for response diversity calculation
+# all_deriv <- all_deriv |> 
+#   filter(!species %in% c("Lepomis_gibbosus"))
 
 all_deriv$fLake <- as.character(all_deriv $fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
@@ -704,7 +717,10 @@ plot_means
 
 plot_mean_dissimilarity <- df_means |> 
   ggplot(aes(fct_reorder(Lake, mean_rdiv), mean_rdiv)) +
-  geom_col( fill  = "seagreen")
+  geom_point( fill  = "seagreen") +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("Lake")
 
 tiff(paste("total_models/plots/mean_rdiv.tiff", sep = ""), units="in", width=12, height=5, res=300)
 # plot(ggarrange(depth1, depth2, ncol = 2))
@@ -729,7 +745,54 @@ dev.off()
 ################################################################################
 library(plotly)
 
-data <- all_deriv |> 
+
+all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
+
+all_derivatives <- as_tibble(all_models_derivatives)
+
+# ############################
+#look at outliers in histogram
+# 
+df_new <- all_derivatives
+
+transform(quantile(df_new$derivative,
+                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99,1)))
+
+df_new$groups <- cut(df_new$derivative,               # Add group column
+                       breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
+                                  -4.543748e-01, 3.454218e-04, 2.485142e-01,
+                                  5.527792e-01, 2.018455e+01, 1.280898e+02, 
+                                  1.231212e+07, 1.406101e+07), 
+                     labels = c("1%", "5%", "10%", "25%", "50%", "75%", "90%",
+                                "95%", "99%", "100%"))
+
+ df_new |> 
+  ggplot(aes(derivative, fill= groups)) + 
+  geom_histogram()
+  scale_fill_manual(breaks = levels(df_new$groups), values = rev(brewer.pal(10, "BrBG")))
+
+h <- hist(all_derivatives$derivative, breaks = 100)
+
+h$density <- h$counts /    # Compute density values
+  sum(h$counts) * 100
+
+plot(h, freq = FALSE)  
+
+no_salmo <- all_derivatives |> 
+  filter(species != "Salmo_trutta")
+
+h <- hist(no_salmo$derivative, breaks = 100)
+
+h$density <- h$counts /    # Compute density values
+  sum(h$counts) * 100
+
+plot(h, freq = FALSE)  
+
+ggplot(no_salmo, aes(derivative)) +            # ggplot2 histogram with default bins
+  geom_histogram(bins = 30)
+
+# lepomis gibbosus is excluded from the response diversity metric
+data <- all_derivatives |> 
   mutate(species = factor(species)) |> 
   group_by(fLake, species) |> 
   mutate(max_derivative = max(derivative)) |> 
@@ -741,10 +804,80 @@ data <- all_deriv |>
 max(data$max_derivative)
 min(data$max_derivative)
 
-data_new <- data                                      # Duplicate data
+data_new <- data    
+
+# look at histogram to get outliers
+
+transform(quantile(data_new$max_derivative,
+                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.9,0.95,0.99,1)))
+str(data_new)
+
+data_new |> 
+summarize(max_deriv = quantile(max_derivative, probs=0.85, na.rm=TRUE))
+           
+data_new |> 
+  filter(max_derivative > 4.91) |> 
+  distinct(species)
+
+# four species are above the 90th percentile
+# 1 Phoxinus_csikii       
+# 2 Alburnus_arborella    
+# 3 Barbatula_sp_Lineage_I
+# 4 Salmo_trutta  
+
+data_new |> 
+  summarize(max_deriv = quantile(max_derivative, probs=0.95, na.rm=TRUE))
+
+data_new |> 
+  filter(max_derivative > 174) |> 
+  distinct(species)
+# salmo trutta above the 95 % percentile 
+
+
+# Load required libraries
+library(ggplot2)
+library(RColorBrewer)
+
+
+derivatives <- data_new$max_derivative
+
+# Load required libraries
+library(ggplot2)
+library(RColorBrewer)
+
+
+# Calculate percentiles
+percentiles <- quantile(derivatives, probs = seq(0, 1, by = 0.01))  # Calculate percentiles from 0% to 100%
+
+# Calculate percentiles for each data point
+data_percentiles <- findInterval(derivatives, percentiles, all.inside = TRUE)
+
+# Create a color palette based on percentiles
+colors <- colorRampPalette(brewer.pal(9, "Blues"))(length(percentiles) + 1)
+
+# Plot histogram with ggplot
+ggplot(data = data.frame(x = derivatives, percentiles = factor(data_percentiles)), aes(x = x, fill = percentiles)) +
+  geom_histogram(bins = 30, color = "black", alpha = 0.8) +
+  labs(title = "Histogram Colored by Percentiles", x = "Values", y = "Frequency") +
+  theme_minimal() +
+  scale_fill_manual(values = colors) +
+  scale_x_continuous(breaks = seq(floor(min(derivatives)), ceiling(max(derivatives)), by = 1)) +
+  scale_y_continuous(breaks = seq(0, max(hist(derivatives, plot = FALSE)$counts), by = 50)) +
+  guides(fill = guide_legend(title = "Percentiles"))
+
+
+
+
+
+
+
+#############################################################################3
+# Duplicate data
 data_new$groups <- cut(data_new$max_derivative,               # Add group column
-                       breaks = c(-7.634168, -3, -1, 0, 1, 3, 4, 10, 30, 180, 15061010))
+                       breaks = c(-7.634167e+00, -8.946649e-01, -4.543643e-01, -5.931430e-02, 1.086445e-01, 4.515146e-01, 1.051558e+00, 2.102390e+01, 1.736567e+02, 1.402198e+07, 15061010))
 head(data_new)   
+
+
 
 library(RColorBrewer)
 # Define the number of colors you want
@@ -762,12 +895,13 @@ max_deriv_plot <- data_new |>
 
                     # values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
                     #            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
-
-tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-
-plot(max_deriv_plot)
-# Closing the graphical device
-dev.off()
+# 
+max_deriv_plot
+# tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# 
+# plot(max_deriv_plot)
+# # Closing the graphical device
+# dev.off()
 
