@@ -136,6 +136,35 @@ for (i in species_list) {
 
 }
 
+
+
+# prepare categorie in predictions 
+
+species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
+  select(-6) |> 
+  rename(endemism = details)
+
+model_pred_cat <- model_predictions |> 
+  mutate(category = ifelse(species %in% c("Coregonus_sarnensis", "Coregonus_sp_albeli",
+                                          "Coregonus_sp_balchen", "Coregonus_sp_benthic_profundal", 
+                                          "Coregonus_sp_felchen", "Coregonus_sp_large_pelagic",
+                                          "Cottus_sp_Profundal", "Salvelinus_sp", "Salvelinus_sp_Profundal"),
+                          "endemic", "native"))
+
+
+model_pred_cat <- model_pred_cat |> 
+  mutate(category = ifelse(species %in% c("Ameiurus_melas", "Micropterus_salmoides", "Lepomis_gibbosus"),
+                           "non_native", "native"))
+
+model_pred_cat$category <- as.factor(model_pred_cat$category)
+levels(model_pred_cat$category)
+
+model_pred_cat |> 
+  ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  facet_wrap(~category)
+
+
 ################################################################################
 # categories and predictions
 
