@@ -246,8 +246,8 @@ predictions <- function(df){
         fProtocol = factor("VERT"), fLake = factor(random_lake))
       
       if (i %in% c("Alburnus_arborella", "Barbatula_sp_Lineage_I",
-                  "Cyprinus_carpio", "Phoxinus_csikii", "Salmo_trutta")){
-      
+                  "Cyprinus_carpio", "Phoxinus_csikii", "Salmo_trutta", "Lepomis_gibbosus")){
+
 
         gam_output<- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
                          +  s(fProtocol, bs = 're'), family = binomial)
@@ -294,7 +294,7 @@ predictions <- function(df){
 
         dev.off()
 
-        
+
       }
 
       else if (max(data$Abundance) > 1)  { 
