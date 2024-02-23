@@ -16,7 +16,6 @@ library(gridExtra)
 library(grid)
 library(gghighlight)
 
-# to do: add code to take one level of a lake where the fish occurs: strange warnings
 
 ###############################################################################
 #get model predictions 
@@ -31,74 +30,10 @@ df_4 <- readRDS("data_frame_models/df_abundance_re")
 predictions(df_1) 
 predictions(df_2)
 predictions(df_3)
-predictions(df_4)
-
-# depth_predictions(df_1)
-# depth_predictions(df_2)
-# depth_predictions(df_3)
-# depth_predictions(df_4)
-
-
-# strange model: lepomis gibbosus
-
-# lepomis_gibbosus gets better with increase in k, but still ~ 50 with k = 20
-# excluding the outlier 5 -> no real change
-# excluding 3 and 5  -> lower but still strange
-# with binomial looking okay but for now just exclude it because we dont know why 
-# zip between 0 and 1
-
-
-# gasterosteus aculeatus se is normal
-df_lepomis <- df_4 |>
-  filter(Species == "Perca_fluviatilis")
-  # filter(Abundance < 3)
-
-
-df_lepomis$fLake <- as.factor(df_lepomis$Lake)
-df_lepomis$fProtocol <- as.factor(df_lepomis$Protocol)
-  # try k = 5
-gam_output<- gam(data = df_lepomis, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                   +  s(fProtocol, bs = 're'), family = ziP())
-
-summary(gam_output)
-unique_lakes <- distinct(df_lepomis, Lake) |>
-  pull()
-
-random_lake <- sample(unique_lakes, 1)
-
-grid <- expand.grid(mean_last_7days = seq(
-  from = min(df_lepomis$mean_last_7days, na.rm = TRUE),
-  to = max(df_lepomis$mean_last_7days, na.rm = TRUE), by = 0.02),
-  fProtocol = factor("VERT"), fLake = factor(random_lake))
-
-
-model_prediction <- predict(gam_output, newdata = grid,
-                                exclude = c("s(fProtocol)", "s(fLake)"),
-                                terms = "s(mean_last_7days)", se.fit = TRUE)
-model_bind <- cbind(grid, as.data.frame(model_prediction))
-pred_df <- model_bind |>
-  rename(temp = mean_last_7days)
-
-summary <- summary(gam_output)
-
-plot_pred <- pred_df |>
-  ggplot(aes(temp, fit)) +
-  geom_line() +
-  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
-  theme_bw() +
-  # facet_wrap(~fLake, scale = "free") +
-  theme(strip.background = element_rect(fill="lightgrey"))
-
-plot_pred
-
-
-
- df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |>
-   map_dfr(readRDS)
+predictions(df_4) #lepomis also with binomial
 
 # save total predictions as RDS
 saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
-
 
 # load total predictions
 model_predictions <- readRDS("total_models/df_pred_all.rds")
@@ -480,61 +415,66 @@ for (i in species_list) {
 
 
 # model 4
-# salmo_trutta with binomial
+# binomial models
 
-# species_list <- df_abundance_re |> 
-#   filter(Species == "Salmo_trutta") |> 
-#   distinct(Species) |> 
-#   pull(Species)
-# 
-# species_list <- sort(species_list)
-# 
-# 
-# derivatives <- list()
-# gam_output <- list()
-# 
-# 
-# for (i in species_list) {
-#   
-#   data <- df_abundance_re |> 
-#     filter(Species == i)
-#   
-#   gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-#                          +  s(fProtocol, bs = 're'), family = binomial)
-#   
-#   lake_data <- species_lake |>
-#     filter(Species == i)
-#   
-#   lake_list <- distinct(lake_data, Lake) |>
-#     pull()
-#   
-#   unique_lakes <- distinct(data, Lake) |> 
-#     pull()
-#   
-#   for (j in lake_list){
-#     
-#     data_lake <- species_lake |>
-#       filter(Species == i) |>
-#       filter(Lake == j)
-#     
-#     random_lake <- sample(unique_lakes, 1)
-#     
-#     newdata <- tibble(mean_last_7days = seq(
-#       from = min(data_lake$temp, na.rm = TRUE),
-#       to = max(data_lake$temp, na.rm = TRUE), length = 200),
-#       fLake = factor(random_lake), fProtocol = factor("VERT"))
-#     
-#     derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-#       mutate(fLake = factor(j)) |>
-#       mutate(species = factor(i)) |>
-#       rename(temp = data)
-#     saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
-#   }
-# }
+species_list <- df_abundance_re |>
+  filter(Species %in% c("Alburnus_arborella", "Barbatula_sp_Lineage_I",
+                                "Cyprinus_carpio", "Phoxinus_csikii", "Salmo_trutta",
+                        "Lepomis_gibbosus")) |>
+  distinct(Species) |>
+  pull(Species)
+
+species_list <- sort(species_list)
+
+
+derivatives <- list()
+gam_output <- list()
+
+
+for (i in species_list) {
+
+  data <- df_abundance_re |>
+    filter(Species == i)
+
+  gam_output[[i]] <- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = binomial)
+
+  lake_data <- species_lake |>
+    filter(Species == i)
+
+  lake_list <- distinct(lake_data, Lake) |>
+    pull()
+
+  unique_lakes <- distinct(data, Lake) |>
+    pull()
+
+  for (j in lake_list){
+
+    data_lake <- species_lake |>
+      filter(Species == i) |>
+      filter(Lake == j)
+
+    random_lake <- sample(unique_lakes, 1)
+
+    newdata <- tibble(mean_last_7days = seq(
+      from = min(data_lake$temp, na.rm = TRUE),
+      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      fLake = factor(random_lake), fProtocol = factor("VERT"))
+
+    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
+      mutate(fLake = factor(j)) |>
+      mutate(species = factor(i)) |>
+      rename(temp = data)
+    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+  }
+}
+
 
 # rest
 species_list <- df_abundance_re |> 
-  # filter(Species != "Salmo_trutta") |> 
+  filter(!Species %in% c("Alburnus_arborella", "Barbatula_sp_Lineage_I",
+                        "Cyprinus_carpio", "Phoxinus_csikii", "Salmo_trutta", 
+                        "Lepomis_gibbosus")) |>
   distinct(Species) |> 
   pull(Species)
 
@@ -586,13 +526,156 @@ for (i in species_list) {
 }
 
 #try again to make a function for derivatives
-df_deriv_all <- list.files(path = "total_models/derivatives", pattern = ".rds", full.names = TRUE) |> 
+df_deriv <- list.files(path = "total_models/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
 
-# save total derivatives as RDS
-saveRDS(df_deriv_all, "total_models/df_deriv_all.rds")
+# save total derivatives as RDS (no exclusions)
+# saveRDS(df_deriv, "total_models/df_deriv_all_no_excl.rds")
 
-###############################################################################
+saveRDS(df_deriv, "total_models/df_deriv_all.rds")
+
+################################################################################
+library(plotly)
+
+# without exclusions
+all_models_derivatives_no_excl <- readRDS("total_models/df_deriv_all_no_excl.rds")
+df_deriv_no_excl <- as_tibble(all_models_derivatives_no_excl)
+
+# with exclusions
+all_models_derivatives <- readRDS("total_models/df_deriv_all.rds.rds")
+all_derivatives <- as_tibble(all_models_derivatives)
+
+
+# ############################
+#look at outliers in histogram
+
+df_new <- df_deriv_no_excl |> 
+  group_by(species, fLake) |> 
+  mutate(max_derivative = max(derivative)) |> 
+  mutate(mean_derivative = mean(derivative)) |> 
+  ungroup()
+
+
+# transform(quantile(all_derivatives$derivative,
+#                    c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.85,0.9,0.95,0.99,1)))
+# 
+# all_derivatives |> 
+#   filter(derivative > 2.3) |> 
+#   distinct(species)
+transform(quantile(df_new$derivative,
+                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.85,0.9,0.95,0.99,1)))
+
+
+
+df_new$groups <- cut(df_new$derivative,              
+                     breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
+                                -4.543748e-01, 3.454218e-04, 2.485142e-01,
+                                5.527792e-01, 2.911987e+00, 2.018455e+01, 1.280898e+02,
+                                1.231212e+07, 1.406101e+07),
+                     labels = c("0-1%", "1-5%", "5-10%", "10-25%", "25-50%", "50-75%", "75-85%", "85-90%", "90-95%",
+                                "95-99%", "99-100%"))
+
+library(RColorBrewer)
+
+plot_percentiles <- df_new |> 
+  filter(species != "Salmo_trutta") |> 
+# filter(mean_derivative < 10) |>
+  ggplot(aes(x = mean_derivative, fill = factor(species))) + 
+  geom_histogram(aes(y = after_stat(count / sum(count))), binwidth = 1.5) +
+  # geom_histogram(aes())
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c("Cyprinus_carpio" = "purple",
+                                "Alburnus_arborella" = "orange",
+                                "Barbatula_sp_Lineage_I"="steelblue", 
+                               "Phoxinus_csikii" = "#66C2A5", "Salmo_trutta" = "#F46D43"))
+
+
+# scale_fill_manual(breaks = levels(df_new$groups),
+#                     values = c("#313695", "#313695", "#313695", "#313695", "#313695", "#313695", "#313695",
+#                                "#F46D43", "#66C2A5", "#9E0142", "#9E0142"))
+
+plot_percentiles
+
+plot_percentiles +
+  geom_vline(xintercept = 19.9, color = "red") +
+  annotate("text", x= 16.5, y = 0.3, label="90th percentile", angle=90) +
+  geom_vline(xintercept = 2.911987e+00, color = "red") +
+  annotate("text", x= 1.5, y = 0.3, label="85th percentile", angle=90)
+  
+
+# above 90% = 2.018455e+01
+
+df_new |> 
+  filter(derivative > 2.018455e+01) |> 
+  distinct(species)
+
+# 5 species above 90% -> those will be binomial 
+# 1 Alburnus_arborella    
+# 2 Barbatula_sp_Lineage_I
+# 3 Cyprinus_carpio       
+# 4 Phoxinus_csikii       
+# 5 Salmo_trutta 
+
+# above 85% = 2.911987e+00
+
+df_new |> 
+  filter(derivative > 2.911987e+00) |> 
+  distinct(species)
+
+# 8 species above 85%
+
+# 1 Alburnus_arborella     
+# 2 Barbatula_sp_Lineage_I 
+# 3 Barbatula_sp_Lineage_II
+# 4 Cyprinus_carpio        
+# 5 Lepomis_gibbosus       
+# 6 Phoxinus_csikii        
+# 7 Salmo_trutta           
+# 8 Squalius_cephalus
+
+df_new |> 
+  ggplot(aes(x = ))
+
+################tile graph
+library(RColorBrewer)
+# Define the number of colors you want
+
+data_new <- df_new |> 
+  distinct(mean_derivative, max_derivative, fLake, species)
+
+
+data_new$groups <- cut(data_new$mean_derivative,              
+                     breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
+                                -4.543748e-01, 3.454218e-04, 2.485142e-01,
+                                5.527792e-01, 2.911987e+00, 2.018455e+01, 1.280898e+02,
+                                1.231212e+07, 1.406101e+07),
+                     labels = c("0-1%", "1-5%", "5-10%", "10-25%", "25-50%", "50-75%", "75-85%", "85-90%", "90-95%",
+                                "95-99%", "99-100%"))
+
+max_deriv_plot <- data_new |> 
+  ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= groups)) + 
+  geom_tile() +
+  # scale_fill_distiller(palette = "PRGn")
+  # scale_fill_gradient(low = "#006FAB",
+  #                     high = "#971B20",
+  #                     guide = "colorbar") +
+  scale_fill_manual(breaks = levels(data_new$groups),
+                    values = rev(brewer.pal(11, "BrBG")))
+
+
+# values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
+#            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
+# 
+max_deriv_plot
+# tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# 
+# plot(max_deriv_plot)
+# # Closing the graphical device
+# dev.off()
+
+###################################################################################
 #response diversity
 
 source(here("functions.R"))
@@ -615,9 +698,9 @@ lakes_list <- all_deriv  |>
 
 str(lakes_list)
 
-# needs to be named all_deriv for response diversity calculation
-# all_deriv <- all_deriv |> 
-#   filter(!species %in% c("Lepomis_gibbosus"))
+# excluding lepomis
+all_deriv <- all_deriv |>
+  filter(!species %in% c("Lepomis_gibbosus"))
 
 all_deriv$fLake <- as.character(all_deriv $fLake)
 # model_derivatives$fLake <- as.character(model_derivatives$fLake)
@@ -679,12 +762,70 @@ saveRDS(resp_div_no_excl,"total_models/resp_div_all.rds")
 
 resp_div_all <- readRDS("total_models/resp_div_all.rds")
 
+metrics_plots(resp_div_all)
+
+metrics_plots <- function(df){
+  lake_list <- df |> 
+    distinct(fLake) |> 
+    pull(fLake)
+  
+  for (i in lake_list){
+    
+    data <- df |> 
+      filter(fLake == i)
+    
+    plot_rdiv <- data |> 
+      ggplot(aes(temp, rdiv)) +
+      geom_line() +
+      theme_bw() +
+      ylab("dissimilarity") +
+      labs(title = paste(i))
+    
+    plot_sign <- data |> 
+      ggplot(aes(temp, sign)) +
+      geom_line() +
+      theme_bw() +
+      ylab("divergence")
+    
+    metrics_lake <- ggarrange(plot_rdiv, plot_sign, nrow = 2)
+    
+    tiff(paste("total_models/plot_metrics/metrics_resp_div_", i ,".tiff", sep = ""), units="in", width=5, height=9, res=300)
+    
+    plot(metrics_lake)
+
+    dev.off()
+
+  }
+}
+
+# why do we see these patterns?
+
+# with exclusions
+# all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
+# all_derivatives <- as_tibble(all_models_derivatives)
+# 
+overview_derivatives <- all_derivatives |>
+  ggplot(aes(temp, derivative, color = species)) +
+  geom_line() +
+  facet_wrap(~fLake)
+
+tiff(paste("total_models/plot_metrics/overview_derivatives_lake.tiff", sep = ""), units="in", width=20, height=11, res=300)
+
+plot(overview_derivatives)
+
+dev.off()
+
+ 
 df_means <- resp_div_all |>
+  select(fLake, temp, sign, rdiv) |> 
   group_by(fLake) |> 
-  summarise(mean_rdiv = mean(rdiv), across(sign)) |> 
-  summarise(mean_sign = mean(sign), across(mean_rdiv)) |> 
-  rename(Lake = fLake) |> 
-  distinct(Lake, mean_rdiv, mean_sign)
+  mutate(mean_rdiv = mean(rdiv)) |> 
+  mutate(mean_sign = mean(sign)) |> 
+  mutate(max_rdiv = max(rdiv)) |> 
+  mutate(max_sign = max(sign)) |> 
+  distinct(fLake, mean_rdiv, mean_sign, max_rdiv, max_sign) |> 
+  rename(Lake = fLake)
+  
 
 
 #plotting means
@@ -701,17 +842,43 @@ plot_means <- df_means |>
 
 plot_means
 
-# p <- df_means |> 
-#   ggplot(aes(mean_rdiv, mean_sign)) +
-#   geom_point(color = "#007ED3")
-# 
-# plot_means <- p + geom_text_repel(aes(label = Lake),
-#                                   size = 3.5, 
-#                                   max.overlaps = 13) +
-#   labs(x = "mean dissimilarity", y = "mean divergence") +
-#   theme_bw()
-# 
 
+p <- df_means |>
+  ggplot(aes(mean_rdiv, mean_sign)) +
+  geom_point(color = "#007ED3")
+
+
+library(ggrepel)
+plot_means2 <- p + geom_text_repel(aes(label = Lake),
+                                  size = 3.5,
+                                  max.overlaps = 13) +
+  labs(x = "mean dissimilarity", y = "mean divergence") +
+  theme_bw()
+
+plot_means2
+
+
+plot_max <- df_means |> 
+  ggplot(aes(max_rdiv, max_sign)) +
+  geom_point(color = "#007ED3") + 
+  theme_bw()
+plot_max
+
+plot_max2 <- plot_max + geom_text_repel(aes(label = Lake),
+                                   size = 3.5,
+                                   max.overlaps = 13) +
+  labs(x = "maximum dissimilarity", y = "maximum divergence") +
+  theme_bw()
+
+plot_max2
+
+overview <- plot_means2 + plot_max2
+
+tiff(paste("total_models/plot_metrics/overview_mean_max.tiff", sep = ""), units="in", width=10, height=5, res=300)
+
+plot(overview)
+
+dev.off()
 
 # plot dissimilarity only
 
@@ -722,136 +889,23 @@ plot_mean_dissimilarity <- df_means |>
   ylab("mean dissimilarity") +
   xlab("Lake")
 
-tiff(paste("total_models/plots/mean_rdiv.tiff", sep = ""), units="in", width=12, height=5, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-
+# tiff(paste("total_models/plots/mean_rdiv.tiff", sep = ""), units="in", width=12, height=5, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# 
 plot(plot_mean_dissimilarity)
-# Closing the graphical device
-dev.off()
+# # Closing the graphical device
+# dev.off()
 
 plot_mean_divergence <- df_means |> 
   ggplot(aes(fct_reorder(Lake, mean_sign), mean_sign)) +
   geom_point() +
   ylim(0,1)
 
-tiff(paste("total_models/plots/mean_sign.tiff", sep = ""), units="in", width=12, height=5, res=300)
-# plot(ggarrange(depth1, depth2, ncol = 2))
-# plot science discussion
-
-plot(plot_mean_divergence)
-# Closing the graphical device
-dev.off()
-################################################################################
-library(plotly)
-
-
-all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
-
-all_derivatives <- as_tibble(all_models_derivatives)
-
-# ############################
-#look at outliers in histogram
-# 
-df_new <- all_derivatives
-  # filter(species != "Salmo_trutta")
-
-transform(quantile(df_new$derivative,
-                   c(0,0.01,0.05,0.1,0.25,0.5,0.75,0.85,0.9,0.95,0.99,1)))
-
-df_new$groups <- cut(df_new$derivative,               # with salmo trutta
-                       breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
-                                  -4.543748e-01, 3.454218e-04, 2.485142e-01,
-                                  5.527792e-01, 2.911987e+00, 2.018455e+01, 1.280898e+02,
-                                  1.231212e+07, 1.406101e+07),
-                     # breaks = c(-7.63416779, -2.12406566, -0.88522706,
-                     #            -0.45437787, -0.00421108, 0.21700480,
-                     #            0.49991872, 5.34999452, 20.18455338,
-                     #            138.21524717, 173.65675441),
-                     labels = c("0-1%", "1-5%", "5-10%", "10-25%", "25-50%", "50-75%", "75-85%", "85-90%", "90-95%",
-                                "95-99%", "99-100%"))
-
-# 85%  bei  2.911987
-
-library(RColorBrewer)
- plot_percentiles <- df_new |> 
-   filter(species != "Salmo_trutta") |>
-   # filter(derivative < 10) |>
-   ggplot(aes(x = derivative)) + 
-  # ggplot(aes(x = derivative, fill= groups)) + 
-   geom_histogram(aes(y = after_stat(count / sum(count))),binwidth = 0.5, bins = 10000, color = "#313695") +
-   # geom_histogram(aes(y = after_stat(count / sum(count))), bins = 5000) +
-   scale_y_continuous(labels = scales::percent)
-   # scale_fill_manual(breaks = levels(df_new$groups),
-   #                     values = c("#313695", "#313695", "#313695", "#313695", "#313695", "#313695", "#313695",
-   #                                "#F46D43", "#66C2A5", "#9E0142", "#9E0142"))
- 
-     # scale_fill_manual(breaks = levels(df_new$groups), values = rev(brewer.pal(10, "BrBG")))
-plot_percentiles +
- geom_vline(xintercept = 2.018455e+01) +
-  geom_vline(xintercept = 2.911987e+00)
- 
-# above 90% = 2.018455e+01
- 
-df_new |> 
-  filter(derivative > 2.018455e+01) |> 
-  distinct(species)
-
-# 5 species above 90%
-# 1 Alburnus_arborella    
-# 2 Barbatula_sp_Lineage_I
-# 3 Cyprinus_carpio       
-# 4 Phoxinus_csikii       
-# 5 Salmo_trutta 
-
-# above 85% = 2.911987e+00
-
-df_new |> 
-  filter(derivative > 2.911987e+00) |> 
-  distinct(species)
-
-# 8 species above 85%
-
-# 1 Alburnus_arborella     
-# 2 Barbatula_sp_Lineage_I 
-# 3 Barbatula_sp_Lineage_II
-# 4 Cyprinus_carpio        
-# 5 Lepomis_gibbosus       
-# 6 Phoxinus_csikii        
-# 7 Salmo_trutta           
-# 8 Squalius_cephalus
-
-#############################################################################3
-# Duplicate data
-data_new$groups <- cut(data_new$max_derivative,               # Add group column
-                       breaks = c(-7.634167e+00, -8.946649e-01, -4.543643e-01, -5.931430e-02, 1.086445e-01, 4.515146e-01, 1.051558e+00, 2.102390e+01, 1.736567e+02, 1.402198e+07, 15061010))
-head(data_new)   
-
-
-
-library(RColorBrewer)
-# Define the number of colors you want
-
-max_deriv_plot <- data_new |> 
-  ggplot(aes(fLake, y = fct_reorder(species, max_derivative), fill= groups)) + 
-  geom_tile() +
-  # scale_fill_distiller(palette = "PRGn")
-  # scale_fill_gradient(low = "#006FAB",
-  #                     high = "#971B20",
-  #                     guide = "colorbar") +
-  scale_fill_manual(breaks = levels(data_new$groups),
-                    values = rev(brewer.pal(11, "BrBG")))
-
-
-                    # values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
-                    #            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
-# 
-max_deriv_plot
-# tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
+# tiff(paste("total_models/plots/mean_sign.tiff", sep = ""), units="in", width=12, height=5, res=300)
 # # plot(ggarrange(depth1, depth2, ncol = 2))
 # # plot science discussion
 # 
-# plot(max_deriv_plot)
+plot(plot_mean_divergence)
 # # Closing the graphical device
 # dev.off()
-
