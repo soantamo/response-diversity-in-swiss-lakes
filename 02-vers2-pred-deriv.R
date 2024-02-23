@@ -32,8 +32,11 @@ predictions(df_2)
 predictions(df_3)
 predictions(df_4) #lepomis also with binomial
 
+
+# df_predictions_all <- list.files(path = "total_models/predictions", pattern = ".rds", full.names = TRUE) |>
+#   map_dfr(readRDS)
 # save total predictions as RDS
-saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
+# saveRDS(df_predictions_all, "total_models/df_pred_all.rds")
 
 # load total predictions
 model_predictions <- readRDS("total_models/df_pred_all.rds")
@@ -138,46 +141,34 @@ for (i in species_list) {
 
 
 
-# prepare categorie in predictions 
-
-species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
-  select(-6) |> 
-  rename(endemism = details)
-
-model_pred_cat <- model_predictions |> 
-  mutate(category = ifelse(species %in% c("Coregonus_sarnensis", "Coregonus_sp_albeli",
-                                          "Coregonus_sp_balchen", "Coregonus_sp_benthic_profundal", 
-                                          "Coregonus_sp_felchen", "Coregonus_sp_large_pelagic",
-                                          "Cottus_sp_Profundal", "Salvelinus_sp", "Salvelinus_sp_Profundal"),
-                          "endemic", "native"))
-
-
-model_pred_cat <- model_pred_cat |> 
-  mutate(category = ifelse(species %in% c("Ameiurus_melas", "Micropterus_salmoides", "Lepomis_gibbosus"),
-                           "non_native", "native"))
-
-model_pred_cat$category <- as.factor(model_pred_cat$category)
-levels(model_pred_cat$category)
-
-model_pred_cat |> 
-  ggplot(aes(temp, fit, color = species)) +
-  geom_line() +
-  facet_wrap(~category)
-
-
 ################################################################################
 # categories and predictions
 
-species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
-  select(-6) |> 
-  rename(endemism = details) |> 
-  select(-num_species, - sum_species)
+
+# prepare categorie in predictions 
+# 5 categories;
+# endemic: geographically constrained range
+# non-native: from NA or Asia 
+# non-endemic native: native to Switzerland but not endemic
+# non-native region: native to Switzerland and surroundings but has been translocated
+# to other Swiss lakes where the species was not native
+# endemic translocated: endemic species that were translocated to other lakes
+
+species_category <- read_excel("species-category.xlsx") |> 
+  select(-notes)
+
+species_category$category <- as.factor(species_category$category)
+levels(species_category$category)
+
+model_pred_categories <- merge(model_predictions, species_category) 
 
 
-model_predictions <- readRDS("total_models/df_pred_all.rds")
 
-model_predictions$species <- as.factor(model_predictions$species)
-levels(model_predictions$species)
+
+model_pred_categories |>
+  ggplot(aes(temp, fit, group = species, color = category)) +
+  geom_line() +
+  facet_wrap(~category)
 
 ############################################################################
 #comparing depth and temp models
