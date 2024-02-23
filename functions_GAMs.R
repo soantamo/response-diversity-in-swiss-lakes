@@ -25,6 +25,13 @@
 # the rest of the prediction data correctly.
 
 
+# 1 Alburnus_arborella    
+# 2 Barbatula_sp_Lineage_I
+# 3 Cyprinus_carpio       
+# 4 Phoxinus_csikii       
+# 5 Salmo_trutta  
+# those 5 species have derivatives above the 90th percentile -> binomial models
+
 predictions <- function(df){
   require(broom)
   require(tidyverse)
@@ -91,7 +98,8 @@ predictions <- function(df){
         
 
         model_prediction <- predict.gam(gam_output, newdata = grid,
-                                             exclude = "s(fProtocol)", type = "response", se.fit = TRUE)
+                                             exclude = "s(fProtocol)",
+                                        type = "response", se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
           rename(temp = mean_last_7days) |>
@@ -112,7 +120,7 @@ predictions <- function(df){
           labs(title = paste("Species = ", i,
                              "deviance explained = ", signif(summary[["dev.expl"]])))
         
-        tiff(paste("total_models/plot_predictions/temp_predictions_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
+        tiff(paste("total_models/plot_predictions/", i , "_temp_predictions.tiff", sep = ""), units="in", width=8, height=6, res=300)
         
         print(plot(plot_pred))
         
@@ -143,7 +151,8 @@ predictions <- function(df){
 
         model_prediction <- predict.gam(gam_output, newdata = grid,
                                              exclude= "s(fProtocol)",
-                                             type = "response", se.fit = TRUE)
+                                        type = "response", 
+                                        se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
           rename(temp = mean_last_7days) |>
@@ -163,7 +172,7 @@ predictions <- function(df){
           labs(title = paste("Species = ", i,
                              "deviance explained = ", signif(summary[["dev.expl"]])))
         
-        tiff(paste("total_models/plot_predictions/temp_predictions_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
+        tiff(paste("total_models/plot_predictions/", i , "_temp_predictions.tiff", sep = ""), units="in", width=8, height=6, res=300)
         
         print(plot(plot_pred))
         
@@ -193,7 +202,8 @@ predictions <- function(df){
         
 
         model_prediction <- predict.gam(gam_output, newdata = grid,
-                                        exclude = "s(fProtocol)",  type = "response",
+                                        exclude = "s(fProtocol)",
+                                        type = "response",
                                         se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
@@ -213,7 +223,7 @@ predictions <- function(df){
           labs(title = paste("Species = ", i,
                              "deviance explained = ", signif(summary[["dev.expl"]])))
         
-        tiff(paste("total_models/plot_predictions/temp_predictions_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
+        tiff(paste("total_models/plot_predictions/", i , "temp_predictions.tiff", sep = ""), units="in", width=8, height=6, res=300)
         
         print(plot(plot_pred))
 
@@ -234,38 +244,40 @@ predictions <- function(df){
         from = min(data$mean_last_7days, na.rm = TRUE),
         to = max(data$mean_last_7days, na.rm = TRUE), by = 0.02),
         fProtocol = factor("VERT"), fLake = factor(random_lake))
-
-      if (max(data$Abundance) > 1)  { 
       
-        
-        gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
-                               +  s(fProtocol, bs = 're'), family = ziP())
+      if (i %in% c("Alburnus_arborella", "Barbatula_sp_Lineage_I",
+                  "Cyprinus_carpio", "Phoxinus_csikii", "Salmo_trutta")){
+      
+
+        gam_output<- gam(data = data, Presence ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                         +  s(fProtocol, bs = 're'), family = binomial)
+
         # prepare residuals
         simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
         tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
         tiff(tiff_filename, width = 800, height = 600)
         print(plot(simulationOutput))
         dev.off()
-      
+
         # Plotting standardized residuals against predictors
         tiff_file_2 <- paste("total_models/gam_check/predictor_", i, ".tiff", sep = "")
         tiff(tiff_file_2, width = 800, height = 600)
         print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
         dev.off()
-        
+
         print(glance(gam_output))
-        
+
         model_prediction <- predict.gam(gam_output, newdata = grid,
-                                             exclude = c("s(fProtocol)", "s(fLake)"), 
-                                             type = "response", se.fit = TRUE)
+                                        exclude = c("s(fProtocol)", "s(fLake)"),
+                                        type = "response", se.fit = TRUE)
         model_bind <- cbind(grid, as.data.frame(model_prediction))
         pred_df <- model_bind |>
-          rename(temp = mean_last_7days) |> 
+          rename(temp = mean_last_7days) |>
           mutate(species = factor(i))
         saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
-        
+
         summary <- summary(gam_output)
-        
+
         plot_pred <- pred_df |>
           ggplot(aes(temp, fit)) +
           geom_line() +
@@ -275,15 +287,65 @@ predictions <- function(df){
           theme(strip.background = element_rect(fill="lightgrey")) +
           labs(title = paste("Species = ", i,
                              "deviance explained = ", signif(summary[["dev.expl"]])))
-        
+
         tiff(paste("total_models/plot_predictions/temp_predictions_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
-        
+
         print(plot(plot_pred))
-        
+
         dev.off()
-       
+
         
-      
+      }
+
+      else if (max(data$Abundance) > 1)  { 
+        
+
+        gam_output<- gam(data = data, Abundance ~ s(mean_last_7days, k = 3) + s(fLake, bs = 're')
+                               +  s(fProtocol, bs = 're'), family = ziP())
+        # prepare residuals
+        simulationOutput <- simulateResiduals(fittedModel = gam_output, plot = F)
+        tiff_filename <- paste("total_models/gam_check/gam_check_", i, ".tiff", sep = "")
+        tiff(tiff_filename, width = 800, height = 600)
+        print(plot(simulationOutput))
+        dev.off()
+
+        # Plotting standardized residuals against predictors
+        tiff_file_2 <- paste("total_models/gam_check/predictor_", i, ".tiff", sep = "")
+        tiff(tiff_file_2, width = 800, height = 600)
+        print(plotResiduals(simulationOutput, temp_data$mean_last_7days, xlab = "temp", main=NULL))
+        dev.off()
+
+        print(glance(gam_output))
+
+        model_prediction <- predict.gam(gam_output, newdata = grid,
+                                             exclude = c("s(fProtocol)", "s(fLake)"),
+                                             type = "response", se.fit = TRUE)
+        model_bind <- cbind(grid, as.data.frame(model_prediction))
+        pred_df <- model_bind |>
+          rename(temp = mean_last_7days) |>
+          mutate(species = factor(i))
+        saveRDS(pred_df, paste0("total_models/predictions/predictions_",i,".rds"))
+
+        summary <- summary(gam_output)
+
+        plot_pred <- pred_df |>
+          ggplot(aes(temp, fit)) +
+          geom_line() +
+          geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), alpha = 0.3) +
+          theme_bw() +
+          # facet_wrap(~fLake, scale = "free") +
+          theme(strip.background = element_rect(fill="lightgrey")) +
+          labs(title = paste("Species = ", i,
+                             "deviance explained = ", signif(summary[["dev.expl"]])))
+
+        tiff(paste("total_models/plot_predictions/temp_predictions_", i ,".tiff", sep = ""), units="in", width=8, height=6, res=300)
+
+        print(plot(plot_pred))
+
+        dev.off()
+
+
+
       
       } else {
         
