@@ -17,8 +17,7 @@ lake_selection <- lake_info |>
 
 # information about endemism
 species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
-select(-6) |> 
-  rename(endemism = details)
+  rename(endemism = detail_category)
 
 # exclude lepomis gibbosus
 # information about endemism
@@ -52,11 +51,7 @@ df_species_endemism$count <- as.numeric(df_species_endemism$count)
 df_species_endemism_long <- df_species_endemism |> 
   pivot_wider(names_from = endemism, values_from = count) |> 
   mutate_if(is.numeric, ~replace(., is.na(.), 0)) |> 
-  rename(Lake = fLake) |> 
-  group_by(Lake) |> 
-  mutate(non_endemic_native = sum(native + non_native)) |> 
-  select(-native, -non_native) |> 
-  rename(non_native = exotic)
+  rename(Lake = fLake)
   # mutate(perc_endemism = sum(endemic * 100 / sum_species)) |> 
   # mutate(perc_non_native = sum(non_native * 100 / sum_species)) |> 
   # mutate(perc_non_endemic_native = sum(non_endemic_native * 100 / sum_species)) |>
@@ -160,7 +155,7 @@ lm2_plot <- bind_model2 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
-  xlab("maxmimum historical eutrophication") +
+  xlab("maxmimum historical eutrophication")
   ylim(4,7)
 
 
@@ -234,7 +229,7 @@ lm4_plot <- bind_model4 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("maximum dissimilarity") +
-  xlab("maxmimum historical eutrophication") +
+  xlab("maxmimum historical eutrophication")
   ylim(4,7)
 
 lm4_plot
@@ -243,6 +238,72 @@ lm3_plot + lm4_plot
 
 lm1_plot + lm3_plot
 lm2_plot + lm4_plot
+
+# divergence
+
+
+lm_sign1 <- lm(mean_sign ~ sum_species + Phos_max, data = df_lm_excl)
+
+# checking model assumptions
+summary(lm_sign1)
+shapiro.test(resid(lm_sign1))
+lmtest::bptest(lm_sign1)
+plot(lm_sign1)
+
+# looking good
+
+new_data_sign1 <- tibble(sum_species = seq(from = min(df_lm_excl$sum_species), to = max(df_lm_excl$sum_species),
+                                     length = 50),
+                   Phos_max = mean(df_lm_excl$Phos_max))
+
+prediction_sign1 <- predict.lm(lm_sign1, newdata = new_data_sign1, se.fit = TRUE, type = "response")
+
+bind_model_s1 <- cbind(new_data_sign1, prediction_sign1)
+
+
+
+sign1_plot <- bind_model_s1 |> 
+  ggplot(aes(sum_species, fit)) +
+  geom_line(color = "#E08214") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean divergence") +
+  xlab("species richness")
+
+sign1_plot
+
+
+# 
+# lm_s_endemic <- lm(mean_sign ~ endemic, data = df_lm)
+# 
+# # checking model assumptions
+# # summary(lm_endemic)
+# # shapiro.test(resid(lm_endemic))
+# # lmtest::bptest(lm_endemic)
+# # plot(lm_endemic)
+# 
+# # looking good
+# 
+# new_data_1 <- tibble(endemic = seq(from = min(df_lm$endemic), to = max(df_lm$endemic),
+#                                    length = 30))
+# 
+# prediction_endemic1 <- predict.lm(lm_s_endemic, newdata = new_data_1, se.fit = TRUE, type = "response")
+# 
+# df_lm_s_endemic <- cbind(new_data_1, prediction_endemic1)
+# 
+# 
+# 
+# plot1 <- df_lm_s_endemic |> 
+#   ggplot(aes(endemic, fit)) +
+#   geom_line(color = "#E08214") +
+#   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+#   theme_bw() +
+#   ylab("mean divergence") +
+#   xlab("Number of endemic species")
+# # ylim(4,7.5)
+# 
+# 
+# plot1
 ###########################################################################
 # lms categories: endemic, non_native (as in not swiss) and non_endemic_native
 
@@ -258,7 +319,7 @@ plot(lm_endemic)
 # looking good
 
 new_data_a <- tibble(endemic = seq(from = min(df_lm$endemic), to = max(df_lm$endemic),
-                                     length = 30))
+                                     length = 15))
 
 prediction_endemic <- predict.lm(lm_endemic, newdata = new_data_a, se.fit = TRUE, type = "response")
 
@@ -268,51 +329,70 @@ df_lm_endemic <- cbind(new_data_a, prediction_endemic)
 
 plot_a <- df_lm_endemic |> 
   ggplot(aes(endemic, fit)) +
-  geom_line(color = "#E08214") +
+  geom_line(color = "#0097A7") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
-  xlab("Number of endemic species")  +
-  ylim(4,7.5)
+  xlab("number of endemic species") +
+  ylim(1,3)
+  # ylim(4,7.5)
 
 
 plot_a
 
+
+tiff(paste("total_models/plots/category_endemic.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(plot_a)
+
+# Closing the graphical device
+dev.off()
+
 # non_native
 
-lm_exotic <- lm(mean_rdiv ~ non_native, data = df_lm)
+lm_nn <- lm(mean_rdiv ~ non_native, data = df_lm)
 
 # checking model assumptions: okay
-summary(lm_exotic)
-shapiro.test(resid(lm_exotic))
-lmtest::bptest(lm_exotic)
-plot(lm_exotic)
+summary(lm_nn)
+shapiro.test(resid(lm_nn))
+lmtest::bptest(lm_nn)
+plot(lm_nn)
 
 # looking good
 
 new_data_b <- tibble(non_native = seq(from = min(df_lm$non_native), to = max(df_lm$non_native),
-                                   length = 30))
+                                   length = 15))
 
-prediction_exotic <- predict.lm(lm_exotic, newdata = new_data_b, se.fit = TRUE, type = "response")
+prediction_nn <- predict.lm(lm_nn, newdata = new_data_b, se.fit = TRUE, type = "response")
 
-df_lm_exotic <- cbind(new_data_b, prediction_exotic)
+df_lm_nn <- cbind(new_data_b, prediction_nn)
 
 
 
-plot_b <- df_lm_exotic|> 
+b <- df_lm_nn |> 
   ggplot(aes(non_native, fit)) +
-  geom_line(color = "#E08214") +
+  geom_line(color = "#E64A19") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
-  xlab("Number of exotic species") +
-  ylim(4,7.5)
+  xlab("number of non-native species") +
+  ylim(1,3)
 
-plot_b
+b
 
+
+tiff(paste("total_models/plots/category_non_native.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(b)
+
+# Closing the graphical device
+dev.off()
+b
 # non endemic native
 
-lm_nne <- lm(mean_rdiv ~ non_endemic_native, data = df_lm)
+lm_nne <- lm(mean_rdiv ~ native, data = df_lm)
 
 # checking model assumptions: okay
 summary(lm_nne)
@@ -322,7 +402,7 @@ plot(lm_nne)
 
 # looking good
 
-new_data_c <- tibble(non_endemic_native = seq(from = min(df_lm$non_endemic_native), to = max(df_lm$non_endemic_native),
+new_data_c <- tibble(native = seq(from = min(df_lm$native), to = max(df_lm$native),
                                       length = 15))
 
 prediction_nne <- predict.lm(lm_nne, newdata = new_data_c, se.fit = TRUE, type = "response")
@@ -332,16 +412,76 @@ df_lm_nne <- cbind(new_data_c, prediction_nne)
 
 
 plot_c <- df_lm_nne|> 
-  ggplot(aes(non_endemic_native, fit)) +
-  geom_line(color = "#E08214") +
+  ggplot(aes(native, fit)) +
+  geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
-  ylab("mean dissimilarity")
-  # xlab("Number of non-endemic native species") +
+  ylab("mean dissimilarity") +
+  xlab("number of non-endemic native species") +
+  ylim(1,3)
 
 plot_c
 
+
+
+tiff(paste("total_models/plots/category_non_endemic_native.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(plot_c)
+
+# Closing the graphical device
+dev.off()
+
+ggarrange(plot_a, plot_b, plot_c)
+
 plot_a + plot_b + plot_c
+
+
+# translocated species, non-native in synthesis report
+
+lm_trans <- lm(mean_rdiv ~ non_native_region, data = df_lm)
+
+# checking model assumptions: okay
+summary(lm_trans)
+shapiro.test(resid(lm_trans))
+lmtest::bptest(lm_trans)
+plot(lm_trans)
+
+# looking good
+
+new_data_d <- tibble(non_native_region = seq(from = min(df_lm$non_native_region), to = max(df_lm$non_native_region),
+                                              length = 15))
+
+prediction_trans <- predict.lm(lm_trans, newdata = new_data_d, se.fit = TRUE, type = "response")
+
+df_lm_trans <- cbind(new_data_d, prediction_trans)
+
+
+
+plot_d <- df_lm_trans|> 
+  ggplot(aes(non_native_region, fit)) +
+  geom_line(color = "#9E9D24") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean dissimilarity") +
+  xlab("number of species regionally translocated to the lake") +
+  ylim(1,3)
+
+plot_d
+
+library(ggpubr)
+ggarrange(plot_a, b, plot_c, plot_d)
+
+# tiff(paste("total_models/plots/category_translocated.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# # plot(ggarrange(depth1, depth2, ncol = 2))
+# # plot science discussion
+# plot(plot_d)
+# 
+# # Closing the graphical device
+# dev.off()
+
+
+plot_a + b + plot_c + plot_d
 #################################################################################
 
 
