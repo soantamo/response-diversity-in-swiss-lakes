@@ -155,7 +155,10 @@ for (i in species_list) {
 # endemic translocated: endemic species that were translocated to other lakes
 
 species_category <- read_excel("species-category.xlsx") |> 
-  select(-notes)
+  select(-notes) |> 
+  mutate(category = ifelse(category == "native", "non_endemic_native", category)) |> 
+  mutate(category = ifelse(category == "non_native_region", "non_endemic_native_and_translocated", category))
+
 
 species_category$category <- as.factor(species_category$category)
 levels(species_category$category)
@@ -163,12 +166,35 @@ levels(species_category$category)
 model_pred_categories <- merge(model_predictions, species_category) 
 
 
+category_names <- c(
+  `endemic` = "endemic",
+  `endemic_and_translocated` = "translocated endemic",
+  `non_endemic_native` = "non-endemic native",
+  `non_endemic_native_and_translocated` = "translocated non-endemic native",
+  `non_native` = "non-native"
+)
 
 
-model_pred_categories |>
+plot_pred <- model_pred_categories |>
+  filter(species != "Lepmomis_gibbosus") |> 
   ggplot(aes(temp, fit, group = species, color = category)) +
-  geom_line() +
-  facet_wrap(~category)
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line(color = "#512DA8") +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("abundance") +
+  xlab("temperature")
+  
+
+plot_category_predictions <- plot_pred + facet_grid(~category, labeller = as_labeller(category_names))
+
+
+
+tiff(paste("total_models/plots/plot_category_predictions.tiff", sep = ""), units="in", width=15, height=4, res=300)
+
+plot(plot_category_predictions)
+
+dev.off()
 
 ############################################################################
 #comparing depth and temp models
