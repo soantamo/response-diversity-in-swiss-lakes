@@ -185,6 +185,16 @@ plot_pred <- model_pred_categories |>
   ylab("abundance") +
   xlab("temperature")
   
+model_pred_categories |>
+  filter(species != "Lepmomis_gibbosus") |> 
+  ggplot(aes(temp, fit, group = species, color = category)) +
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("abundance") +
+  xlab("temperature") +
+  scale_color_manual(values = c("blue", "orange", "green", "orange", "red"))
 
 plot_category_predictions <- plot_pred + facet_grid(~category, labeller = as_labeller(category_names))
 
@@ -847,17 +857,21 @@ metrics_plots <- function(df){
 # why do we see these patterns?
 
 # with exclusions
-# all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
-# all_derivatives <- as_tibble(all_models_derivatives)
+all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
+all_derivatives <- as_tibble(all_models_derivatives)
 # 
 overview_derivatives <- all_derivatives |>
+  arrange(fLake) |> 
   ggplot(aes(temp, derivative, color = species)) +
   geom_line() +
-  facet_wrap(~fLake)
+  facet_wrap(~fLake) +
+  theme_bw(base_size = 16)
+
+overview_deriv <- overview_derivatives + guides(col = "none")
 
 tiff(paste("total_models/plot_metrics/overview_derivatives_lake.tiff", sep = ""), units="in", width=20, height=11, res=300)
 
-plot(overview_derivatives)
+plot(overview_deriv)
 
 dev.off()
 
