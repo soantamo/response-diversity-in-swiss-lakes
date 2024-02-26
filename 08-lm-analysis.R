@@ -158,14 +158,15 @@ lm2_plot <- bind_model2 |>
   xlab("maxmimum historical eutrophication")
   ylim(4,7)
 
+lm2_plot
+
+library(ggpubr)
+plot2 <- ggarrange(lm1_plot, lm2_plot)
+
+tiff(paste("total_models/plots/lm_species_richness_eutroph.tiff", sep = ""), units="in", width=12, height=5, res=300)
 
 
-plot(lm1_plot + lm2_plot)
-
-tiff(paste("total_models/plots/lm_species_richness_eutroph.tiff", sep = ""), units="in", width=10, height=5, res=300)
-
-
-plot(lm1_plot + lm2_plot)
+plot(plot2)
 
 # Closing the graphical device
 dev.off()
@@ -234,7 +235,7 @@ lm4_plot <- bind_model4 |>
 
 lm4_plot
 
-lm3_plot + lm4_plot
+ggarrange(lm1_plot, lm2_plot, lm3_plot, lm4_plot)
 
 lm1_plot + lm3_plot
 lm2_plot + lm4_plot
@@ -272,6 +273,31 @@ sign1_plot <- bind_model_s1 |>
 
 sign1_plot
 
+
+
+# change it
+sign2 <- lm(mean_sign ~ Phos_max + sum_species, data = df_lm_excl)
+
+
+new_data_sign2 <- tibble(Phos_max = seq(from = min(df_lm_excl$Phos_max), to = max(df_lm_excl$Phos_max),
+                                   length = 50),
+                    sum_species = mean(df_lm_excl$sum_species))
+
+prediction_sign2 <- predict.lm(sign2, newdata = new_data_sign2, se.fit = TRUE, type = "response")
+
+bind_model_sign2 <- cbind(new_data_sign2, prediction_sign2)
+
+
+sign2_plot <- bind_model_sign2 |> 
+  ggplot(aes(Phos_max, fit)) +
+  geom_line(color = "#35978F") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
+  theme_bw() +
+  ylab("mean divergence") +
+  xlab("maxmimum historical eutrophication")
+ylim(4,7)
+
+sign2_plot
 
 # 
 # lm_s_endemic <- lm(mean_sign ~ endemic, data = df_lm)
@@ -329,16 +355,16 @@ df_lm_endemic <- cbind(new_data_a, prediction_endemic)
 
 plot_a <- df_lm_endemic |> 
   ggplot(aes(endemic, fit)) +
-  geom_line(color = "#0097A7") +
+  # geom_line(color = "#0097A7") +
+  geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
-  theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of endemic species") +
-  ylim(1,3)
-  # ylim(4,7.5)
-
+  theme_bw(base_size = 20) +
+  ylim(0, 3.2)
 
 plot_a
+
 
 
 tiff(paste("total_models/plots/category_endemic.tiff", sep = ""), units="in", width=12, height=7, res=300)
@@ -372,12 +398,14 @@ df_lm_nn <- cbind(new_data_b, prediction_nn)
 
 b <- df_lm_nn |> 
   ggplot(aes(non_native, fit)) +
-  geom_line(color = "#E64A19") +
+  # geom_line(color = "#E64A19") +
+  geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of non-native species") +
-  ylim(1,3)
+  ylim(1,3.2) +
+  theme_bw(base_size = 20)
 
 b
 
@@ -418,7 +446,8 @@ plot_c <- df_lm_nne|>
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of non-endemic native species") +
-  ylim(1,3)
+  ylim(1,3.2) +
+  theme_bw(base_size = 20)
 
 plot_c
 
@@ -460,28 +489,39 @@ df_lm_trans <- cbind(new_data_d, prediction_trans)
 
 plot_d <- df_lm_trans|> 
   ggplot(aes(non_native_region, fit)) +
-  geom_line(color = "#9E9D24") +
+  # geom_line(color = "#9E9D24") +
+  geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of species regionally translocated to the lake") +
-  ylim(1,3)
+  ylim(1,3.2) +
+  theme_bw(base_size = 20)
 
 plot_d
 
 library(ggpubr)
 ggarrange(plot_a, b, plot_c, plot_d)
 
-# tiff(paste("total_models/plots/category_translocated.tiff", sep = ""), units="in", width=12, height=7, res=300)
-# # plot(ggarrange(depth1, depth2, ncol = 2))
-# # plot science discussion
-# plot(plot_d)
-# 
-# # Closing the graphical device
-# dev.off()
+tiff(paste("total_models/plots/category_translocated.tiff", sep = ""), units="in", width=12, height=7, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(plot_d)
 
+# Closing the graphical device
+dev.off()
 
-plot_a + b + plot_c + plot_d
+library(ggpubr)
+
+plot_all <- ggarrange(plot_a, b, plot_c, plot_d)
+
+tiff(paste("total_models/plots/all_categories.tiff", sep = ""), units="in", width=15, height=10, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(plot_all)
+
+# Closing the graphical device
+dev.off()
 #################################################################################
 
 
