@@ -100,6 +100,32 @@ df_lm$Phos_max <- as.numeric(df_lm$Phos_max)
 df_lm_excl <- df_lm |> 
   filter(Lake != "Poschiavo")
 
+# overview plot
+
+
+df_lm_excl |> 
+  ggplot(aes(Phos_max, sum_species)) +
+  geom_point() +
+  geom_text_repel(aes(label = Lake),
+                  size = 3.5,
+                  max.overlaps = 13)
+
+library(ggrepel)
+ geom_text_repel(aes(label = Lake),
+                                   size = 3.5,
+                                   max.overlaps = 13) +
+  labs(x = "mean dissimilarity", y = "mean divergence") +
+  theme_bw(base_size = 16)
+
+plot_means2
+
+
+
+#   prepare these two plots
+
+df_lm_excl <- df_lm |> 
+  filter(Lake != "Poschiavo")
+
 lm1 <- lm(mean_rdiv ~ sum_species + Phos_max, data = df_lm_excl)
 
 # checking model assumptions
@@ -124,7 +150,7 @@ lm1_plot <- bind_model1 |>
   ggplot(aes(sum_species, fit)) +
   geom_line(color = "#E08214") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
-  theme_bw() +
+  theme_bw(base_size = 20) +
   ylab("mean dissimilarity") +
   xlab("species richness")
 
@@ -153,7 +179,7 @@ lm2_plot <- bind_model2 |>
   ggplot(aes(Phos_max, fit)) +
   geom_line(color = "#35978F") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
-  theme_bw() +
+  theme_bw(base_size = 20) +
   ylab("mean dissimilarity") +
   xlab("maxmimum historical eutrophication")
   ylim(4,7)
@@ -489,7 +515,7 @@ df_lm_trans <- cbind(new_data_d, prediction_trans)
 
 plot_d <- df_lm_trans|> 
   ggplot(aes(non_native_region, fit)) +
-  # geom_line(color = "#9E9D24") +
+  geom_line(color = "#9E9D24") +
   geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
