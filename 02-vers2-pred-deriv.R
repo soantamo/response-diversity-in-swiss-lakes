@@ -176,7 +176,7 @@ category_names <- c(
 
 
 plot_pred <- model_pred_categories |>
-  filter(species != "Lepmomis_gibbosus") |> 
+  filter(species != "Lepomis_gibbosus") |> 
   ggplot(aes(temp, fit, group = species, color = category)) +
   # ggplot(aes(temp, fit, color = species)) +
   geom_line(color = "#512DA8") +
@@ -186,7 +186,7 @@ plot_pred <- model_pred_categories |>
   xlab("temperature")
   
 model_pred_categories |>
-  filter(species != "Lepmomis_gibbosus") |> 
+  filter(species != "Lepomis_gibbosus") |> 
   ggplot(aes(temp, fit, group = species, color = category)) +
   # ggplot(aes(temp, fit, color = species)) +
   geom_line() +
@@ -286,6 +286,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 for (i in species_list) {
   data <- df_binomial_gam |>
@@ -307,16 +308,35 @@ for (i in species_list) {
 
     unique_lakes <- distinct(data_lake, fLake)
 
-    newdata <- tibble(mean_last_7days = seq(
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fProtocol = factor("VERT"))
+    
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
       fProtocol = factor("VERT"))
+    
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                    exclude = "s(fProtocol)",
+                                    type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
+    
 
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |>
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
@@ -334,6 +354,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 for (i in species_list) {
   
@@ -356,17 +377,36 @@ for (i in species_list) {
       filter(Lake == j)
     
     
-    newdata <- tibble(mean_last_7days = seq(
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fProtocol = factor("VERT"))
+    # 
+    
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
       fProtocol = factor("VERT"))
+    
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                         exclude = "s(fProtocol)",
+                                         type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
 
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
@@ -382,6 +422,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 
 for (i in species_list) {
@@ -404,16 +445,35 @@ for (i in species_list) {
       filter(Species == i) |>
       filter(Lake == j)
     
-    newdata <- tibble(mean_last_7days = seq(
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fProtocol = factor("VERT"))
+    
+    
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
       fProtocol = factor("VERT"))
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                         exclude = "s(fProtocol)",
+                                         type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
+    
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
@@ -427,6 +487,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 for (i in species_list) {
   
@@ -455,17 +516,35 @@ for (i in species_list) {
     
     random_lake <- sample(unique_lakes, 1)
   
+    # 
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fProtocol = factor("VERT"), fLake = factor(random_lake))
     
-    newdata <- tibble(mean_last_7days = seq(
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
       fProtocol = factor("VERT"), fLake = factor(random_lake))
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                         exclude = c("s(fProtocol)", "s(fLake)"),
+                                         type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
+    
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
@@ -485,6 +564,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 
 for (i in species_list) {
@@ -512,16 +592,33 @@ for (i in species_list) {
 
     random_lake <- sample(unique_lakes, 1)
 
-    newdata <- tibble(mean_last_7days = seq(
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fLake = factor(random_lake), fProtocol = factor("VERT"))
+    
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = factor(random_lake), fProtocol = factor("VERT"))
-
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |>
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
+      fProtocol = factor("VERT"), fLake = factor(random_lake))
+    
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                         exclude = c("s(fProtocol)", "s(fLake)"),
+                                         type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |>
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
@@ -541,6 +638,7 @@ species_list <- sort(species_list)
 
 derivatives <- list()
 gam_output <- list()
+model_prediction <- list()
 
 
 for (i in species_list) {
@@ -567,23 +665,47 @@ for (i in species_list) {
       filter(Lake == j)
    
     random_lake <- sample(unique_lakes, 1)
+    # 
+    # newdata <- tibble(mean_last_7days = seq(
+    #   from = min(data_lake$temp, na.rm = TRUE),
+    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   fLake = factor(random_lake), fProtocol = factor("VERT"))
+    # 
     
-    newdata <- tibble(mean_last_7days = seq(
+    grid <- expand.grid(mean_last_7days = seq(
       from = min(data_lake$temp, na.rm = TRUE),
-      to = max(data_lake$temp, na.rm = TRUE), length = 200),
-      fLake = factor(random_lake), fProtocol = factor("VERT"))
+      to = max(data_lake$temp, na.rm = TRUE), by = 0.02),
+      fProtocol = factor("VERT"), fLake = factor(random_lake))
     
-    derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
-      mutate(fLake = factor(j)) |>
-      mutate(species = factor(i)) |>
-      rename(temp = data)
-    saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
+    model_prediction[[i]] <- predict.gam(gam_output[[i]], newdata = grid,
+                                         exclude = c("s(fProtocol)", "s(fLake)"),
+                                         type = "response", se.fit = TRUE)
+    
+    model_bind <- cbind(grid, as.data.frame(model_prediction[[i]]))
+    
+    pred_df <- model_bind |>
+      rename(temp = mean_last_7days) |>
+      mutate(species = factor(i)) |> 
+      mutate(Lake = factor(j))
+    
+    saveRDS(pred_df, paste0("total_models/predictions_lake/predictions_", i, "_",  j, ".rds"))
+    
+    # derivatives <- derivatives(gam_output[[i]], data = newdata) |> 
+    #   mutate(fLake = factor(j)) |>
+    #   mutate(species = factor(i)) |>
+    #   rename(temp = data)
+    # saveRDS(derivatives, paste0("total_models/derivatives/derivatives_", i, "_",  j, ".rds"))
   }
 }
 
 #try again to make a function for derivatives
 df_deriv <- list.files(path = "total_models/derivatives", pattern = ".rds", full.names = TRUE) |> 
   map_dfr(readRDS)
+
+df_predictions_lakes <- list.files(path = "total_models/predictions_lake", pattern = ".rds", full.names = TRUE) |> 
+  map_dfr(readRDS)
+
+saveRDS(df_predictions_lakes, "total_models/df_predictions_lakes.rds")
 
 # save total derivatives as RDS (no exclusions)
 # saveRDS(df_deriv, "total_models/df_deriv_all_no_excl.rds")
@@ -732,6 +854,72 @@ max_deriv_plot
 # dev.off()
 
 ###################################################################################
+
+
+# categories and predictions
+
+
+# prepare categorie in predictions 
+# 5 categories;
+# endemic: geographically constrained range
+# non-native: from NA or Asia 
+# non-endemic native: native to Switzerland but not endemic
+# non-native region: native to Switzerland and surroundings but has been translocated
+# to other Swiss lakes where the species was not native
+# endemic translocated: endemic species that were translocated to other lakes
+
+
+predictions_lakes <- readRDS("total_models/df_predictions_lakes.rds") |> 
+  select(-fLake)
+
+species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
+  rename(endemism = detail_category) |> 
+  rename(Lake = fLake) |> 
+  select(-num_species, -sum_species)
+
+# 
+# species_category$category <- as.factor(species_category$category)
+# levels(species_category$category)
+# 
+lake_pred_categories <- merge(predictions_lakes, species_endemism)
+
+lake_pred_categories$endemism <- as.factor(lake_pred_categories$endemism)
+str(lake_pred_categories)
+
+
+levels(lake_pred_categories$endemism)
+
+test <- lake_pred_categories |> 
+  distinct(species, endemism)
+
+mycolors <-  c("endemic"= "#D94801", "native"="#B2DFDB", "non_native" = "#512DA8",
+               "non_native_region" = "#FFE082")
+
+# mycolors <-  c("endemic"= "#303F9F", "native"="#CBC480", "non_native" = "#E74C3C",
+#                "non_native_region" = "#CB8088")
+
+lake_pred_categories |> 
+  filter(!species %in% c("Lepomis_gibbosus")) |>
+  ggplot(aes(temp, fit, group = species, color = endemism)) +
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("abundance") +
+  xlab("temperature") +
+  facet_wrap(~Lake, scale = "free") +
+  scale_color_manual(values = mycolors) +
+  ylim(0,1)
+
+# 
+tiff(paste("total_models/plots/plot_category_lakes.tiff", sep = ""), units="in", width=10, height=12, res=300)
+
+plot(lake_pred_categories)
+
+dev.off()
+
+
+##################################################################################
 #response diversity
 
 source(here("functions.R"))
@@ -818,9 +1006,33 @@ saveRDS(resp_div_no_excl,"total_models/resp_div_all.rds")
 
 resp_div_all <- readRDS("total_models/resp_div_all.rds")
 
+# rdiv_all <- resp_div_all |> 
+#   group_by(fLake) |> 
+#   mutate(mean_rdiv = mean(rdiv)) |> 
+#   mutate(mean_sign = mean(sign))
+#   
+# create mean by group
+# means<- resp_div_all |> 
+#   group_by(fLake) |> 
+#   summarise(mean_rdiv = mean(rdiv))
+
+resp_div_all |> 
+  ggplot(aes(temp, rdiv)) +
+  geom_line() +
+  facet_wrap(~fLake) +
+  theme_bw()
+
+
+resp_div_all |> 
+  ggplot(aes(temp, sign)) +
+  geom_line() +
+  facet_wrap(~fLake) +
+  theme_bw()
+
 metrics_plots(resp_div_all)
 
 metrics_plots <- function(df){
+  require(ggpubr)
   lake_list <- df |> 
     distinct(fLake) |> 
     pull(fLake)
@@ -833,19 +1045,21 @@ metrics_plots <- function(df){
     plot_rdiv <- data |> 
       ggplot(aes(temp, rdiv)) +
       geom_line() +
-      theme_bw() +
+      theme_bw(base_size = 16) +
       ylab("dissimilarity") +
-      labs(title = paste(i))
+      labs(title = paste(i)) +
+      ylim(1, 3.5)
     
     plot_sign <- data |> 
       ggplot(aes(temp, sign)) +
       geom_line() +
-      theme_bw() +
-      ylab("divergence")
+      theme_bw(base_size = 16) +
+      ylab("divergence") +
+      ylim(0,1)
     
     metrics_lake <- ggarrange(plot_rdiv, plot_sign, nrow = 2)
     
-    tiff(paste("total_models/plot_metrics/metrics_resp_div_", i ,".tiff", sep = ""), units="in", width=5, height=9, res=300)
+    tiff(paste("total_models/plot_metrics/metrics_resp_div_", i ,".tiff", sep = ""), units="in", width=8, height=9, res=300)
     
     plot(metrics_lake)
 
@@ -864,12 +1078,13 @@ overview_derivatives <- all_derivatives |>
   arrange(fLake) |> 
   ggplot(aes(temp, derivative, color = species)) +
   geom_line() +
-  facet_wrap(~fLake) +
-  theme_bw(base_size = 16)
+  facet_wrap(~fLake, scale = "free") +
+  theme_bw(base_size = 16) +
+  scale_color_viridis(discrete = TRUE, guide = NULL)
 
 overview_deriv <- overview_derivatives + guides(col = "none")
 
-tiff(paste("total_models/plot_metrics/overview_derivatives_lake.tiff", sep = ""), units="in", width=20, height=11, res=300)
+tiff(paste("total_models/plot_metrics/overview_derivatives_lake.tiff", sep = ""), units="in", width=11, height=9, res=300)
 
 plot(overview_deriv)
 
@@ -898,7 +1113,7 @@ plot_means <- df_means |>
   geom_text(aes(label = Lake)) +
   # geom_text(aes(label = Lake), nudge_x = 0.01, nudge_y = 0.01,  check_overlap = T) +
   #   check_overlap = T) +
-  theme_bw()
+  theme_bw(base_size = 20)
 
 plot_means
 
@@ -913,7 +1128,7 @@ plot_means2 <- p + geom_text_repel(aes(label = Lake),
                                   size = 3.5,
                                   max.overlaps = 13) +
   labs(x = "mean dissimilarity", y = "mean divergence") +
-  theme_bw()
+  theme_bw(base_size = 16)
 
 plot_means2
 
@@ -921,14 +1136,14 @@ plot_means2
 plot_max <- df_means |> 
   ggplot(aes(max_rdiv, max_sign)) +
   geom_point(color = "#007ED3") + 
-  theme_bw()
+  theme_bw(base_size = 16)
 plot_max
 
 plot_max2 <- plot_max + geom_text_repel(aes(label = Lake),
                                    size = 3.5,
                                    max.overlaps = 13) +
   labs(x = "maximum dissimilarity", y = "maximum divergence") +
-  theme_bw()
+  theme_bw(base_size = 16)
 
 plot_max2
 
