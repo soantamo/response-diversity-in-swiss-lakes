@@ -886,19 +886,23 @@ lake_pred_categories <- merge(predictions_lakes, species_endemism)
 lake_pred_categories$endemism <- as.factor(lake_pred_categories$endemism)
 str(lake_pred_categories)
 
+lake_pred_categories <- lake_pred_categories |> 
+  mutate(endemism = fct_recode(endemism,
+                               "non_endemic_native" = "native")) |> 
+  mutate(endemism = fct_recode(endemism,
+                               "translocated" = "non_native_region"))
 
 levels(lake_pred_categories$endemism)
 
-test <- lake_pred_categories |> 
-  distinct(species, endemism)
 
-mycolors <-  c("endemic"= "#D94801", "native"="#B2DFDB", "non_native" = "#512DA8",
-               "non_native_region" = "#FFE082")
+mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+               "translocated" = "#85B22C")
 
 # mycolors <-  c("endemic"= "#303F9F", "native"="#CBC480", "non_native" = "#E74C3C",
 #                "non_native_region" = "#CB8088")
 
-lake_pred_categories |> 
+lake_plot <- lake_pred_categories |> 
+  # filter(Lake == "Maggiore") |> 
   filter(!species %in% c("Lepomis_gibbosus")) |>
   ggplot(aes(temp, fit, group = species, color = endemism)) +
   # ggplot(aes(temp, fit, color = species)) +
@@ -909,12 +913,13 @@ lake_pred_categories |>
   xlab("temperature") +
   facet_wrap(~Lake, scale = "free") +
   scale_color_manual(values = mycolors) +
-  ylim(0,1)
+  ylim(0,1) 
 
-# 
-tiff(paste("total_models/plots/plot_category_lakes.tiff", sep = ""), units="in", width=10, height=12, res=300)
+lake_plot
 
-plot(lake_pred_categories)
+tiff(paste("total_models/plots/plot_category_lakes.tiff", sep = ""), units="in", width=16, height=12, res=300)
+
+plot(lake_plot)
 
 dev.off()
 
