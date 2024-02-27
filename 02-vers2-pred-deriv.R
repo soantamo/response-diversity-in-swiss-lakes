@@ -175,17 +175,21 @@ category_names <- c(
 )
 
 
-plot_pred <- model_pred_categories |>
-  filter(species != "Lepomis_gibbosus") |> 
-  ggplot(aes(temp, fit, group = species, color = category)) +
-  # ggplot(aes(temp, fit, color = species)) +
-  geom_line(color = "#512DA8") +
-  # geom_line() +
-  theme_bw(base_size = 16) +
-  ylab("abundance") +
-  xlab("temperature")
+mycolors1 <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+               "endemic_and_translocated" = "#85B22C", "non_endemic_native_and_translocated" = "#85B22C")
+
+
+# plot_pred <- model_pred_categories |>
+#   filter(species != "Lepomis_gibbosus") |> 
+#   ggplot(aes(temp, fit, group = species, color = category)) +
+#   # ggplot(aes(temp, fit, color = species)) +
+#   geom_line(color = "#512DA8") +
+#   # geom_line() +
+#   theme_bw(base_size = 16) +
+#   ylab("abundance") +
+#   xlab("temperature")
   
-model_pred_categories |>
+plot_pred <- model_pred_categories |>
   filter(species != "Lepomis_gibbosus") |> 
   ggplot(aes(temp, fit, group = species, color = category)) +
   # ggplot(aes(temp, fit, color = species)) +
@@ -194,11 +198,11 @@ model_pred_categories |>
   theme_bw(base_size = 16) +
   ylab("abundance") +
   xlab("temperature") +
-  scale_color_manual(values = c("blue", "orange", "green", "orange", "red"))
+  scale_color_manual(values = mycolors1, guide = NULL)
 
 plot_category_predictions <- plot_pred + facet_grid(~category, labeller = as_labeller(category_names))
 
-
+plot_category_predictions
 
 tiff(paste("total_models/plots/plot_category_predictions.tiff", sep = ""), units="in", width=15, height=4, res=300)
 
@@ -1021,9 +1025,16 @@ resp_div_all <- readRDS("total_models/resp_div_all.rds")
 #   group_by(fLake) |> 
 #   summarise(mean_rdiv = mean(rdiv))
 
+  
+dMedian <- resp_div_all %>%
+  group_by(fLake) %>%
+  summarise(median = median(rdiv))
+
+
 resp_div_all |> 
   ggplot(aes(temp, rdiv)) +
   geom_line() +
+  geom_hline(data = dMedian, aes(yintercept = median), lty = 2) +
   facet_wrap(~fLake) +
   theme_bw()
 
@@ -1052,8 +1063,8 @@ metrics_plots <- function(df){
       geom_line() +
       theme_bw(base_size = 16) +
       ylab("dissimilarity") +
-      labs(title = paste(i)) +
-      ylim(1, 3.5)
+      # geom_hline(yintercept = data$Med, lty=2) +
+      labs(title = paste(i))
     
     plot_sign <- data |> 
       ggplot(aes(temp, sign)) +
@@ -1083,7 +1094,8 @@ overview_derivatives <- all_derivatives |>
   arrange(fLake) |> 
   ggplot(aes(temp, derivative, color = species)) +
   geom_line() +
-  facet_wrap(~fLake, scale = "free") +
+  facet_wrap(~fLake) +
+  # facet_wrap(~fLake, scale = "free") +
   theme_bw(base_size = 16) +
   scale_color_viridis(discrete = TRUE, guide = NULL)
 
@@ -1103,58 +1115,98 @@ df_means <- resp_div_all |>
   mutate(mean_sign = mean(sign)) |> 
   mutate(max_rdiv = max(rdiv)) |> 
   mutate(max_sign = max(sign)) |> 
-  distinct(fLake, mean_rdiv, mean_sign, max_rdiv, max_sign) |> 
+  mutate(min_rdiv = min(rdiv)) |> 
+  mutate(min_sign = min(sign)) |> 
+  mutate(med_rdiv = median(rdiv)) |> 
+  mutate(med_sign = median(sign)) |> 
+  distinct(fLake, mean_rdiv, mean_sign, max_rdiv, max_sign, min_sign, min_rdiv, med_rdiv, med_sign) |> 
   rename(Lake = fLake)
   
 
 
 #plotting means
-
-plot_means <- df_means |> 
-  ggplot(aes(mean_rdiv, mean_sign)) +
-  # geom_point(aes(color = Lake))
-  # geom_label(aes(label = Lake))
-  # geom_point() +
-  geom_text(aes(label = Lake)) +
-  # geom_text(aes(label = Lake), nudge_x = 0.01, nudge_y = 0.01,  check_overlap = T) +
-  #   check_overlap = T) +
-  theme_bw(base_size = 20)
-
-plot_means
+# 
+# plot_means <- df_means |> 
+#   ggplot(aes(mean_rdiv, mean_sign)) +
+#   # geom_point(aes(color = Lake))
+#   # geom_label(aes(label = Lake))
+#   # geom_point() +
+#   geom_text(aes(label = Lake)) +
+#   # geom_text(aes(label = Lake), nudge_x = 0.01, nudge_y = 0.01,  check_overlap = T) +
+#   #   check_overlap = T) +
+#   theme_bw(base_size = 20)
+# 
+# plot_means
 
 
 p <- df_means |>
   ggplot(aes(mean_rdiv, mean_sign)) +
-  geom_point(color = "#007ED3")
+  geom_point(color = "#260F99")
 
 
 library(ggrepel)
 plot_means2 <- p + geom_text_repel(aes(label = Lake),
                                   size = 3.5,
-                                  max.overlaps = 13) +
+                                  max.overlaps = 20) +
   labs(x = "mean dissimilarity", y = "mean divergence") +
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 16) +
+  ylim(0,1) +
+  xlim(1, 3.5)
 
 plot_means2
 
 
 plot_max <- df_means |> 
   ggplot(aes(max_rdiv, max_sign)) +
-  geom_point(color = "#007ED3") + 
+  geom_point(color = "#260F99") + 
   theme_bw(base_size = 16)
 plot_max
 
 plot_max2 <- plot_max + geom_text_repel(aes(label = Lake),
                                    size = 3.5,
-                                   max.overlaps = 13) +
+                                   max.overlaps = 20) +
   labs(x = "maximum dissimilarity", y = "maximum divergence") +
-  theme_bw(base_size = 16)
+  theme_bw(base_size = 16) +
+  ylim(0,1) +
+  xlim(1, 3.7)
 
 plot_max2
 
-overview <- plot_means2 + plot_max2
 
-tiff(paste("total_models/plot_metrics/overview_mean_max.tiff", sep = ""), units="in", width=10, height=5, res=300)
+plot_min <- df_means |> 
+  ggplot(aes(min_rdiv, min_sign)) +
+  geom_point(color = "#260F99") + 
+  theme_bw(base_size = 16)
+plot_min
+
+plot_min2 <- plot_min + geom_text_repel(aes(label = Lake),
+                                        size = 3.5,
+                                        max.overlaps = 20) +
+  labs(x = "minimum dissimilarity", y = "minimum divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1) +
+  xlim(1,3.2)
+
+plot_min2
+
+plot_med <- df_means |> 
+  ggplot(aes(med_rdiv, med_sign)) +
+  geom_point(color = "#260F99") + 
+  theme_bw(base_size = 16)
+
+plot_med2 <- plot_med + geom_text_repel(aes(label = Lake),
+                                        size = 3.5,
+                                        max.overlaps = 20) +
+  labs(x = "median dissimilarity", y = "median divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1) +
+  xlim(1,3.5)
+
+plot_med2
+
+overview <- plot_means2 + plot_med2 + plot_max2
+
+tiff(paste("total_models/plot_metrics/overview_mean_max.tiff", sep = ""), units="in", width=15, height=5, res=300)
 
 plot(overview)
 
