@@ -188,15 +188,28 @@ mycolors1 <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_nativ
 #   theme_bw(base_size = 16) +
 #   ylab("abundance") +
 #   xlab("temperature")
-  
-plot_pred <- model_pred_categories |>
+
+# rescale the predictions
+
+library(scales)
+
+head(model_pred_categories)
+
+model_pred_categories_rescaled <- model_pred_categories |> 
+  group_by(species) |> 
+  mutate(fit_rescaled = (fit - min(fit)) / (max(fit) - min(fit)))
+
+
+
+
+plot_pred <- model_pred_categories_rescaled |>
   filter(species != "Lepomis_gibbosus") |> 
-  ggplot(aes(temp, fit, group = species, color = category)) +
+  ggplot(aes(temp, fit_rescaled, group = species, color = category)) +
   # ggplot(aes(temp, fit, color = species)) +
   geom_line() +
   # geom_line() +
   theme_bw(base_size = 16) +
-  ylab("abundance") +
+  ylab("rescaled prediction") +
   xlab("temperature") +
   scale_color_manual(values = mycolors1, guide = NULL)
 
@@ -1107,6 +1120,85 @@ plot(overview_deriv)
 
 dev.off()
 
+
+# new overview plots with rdiv at minimum, mean  and maximum temp
+minimum_rdiv <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  filter(temp %in% min(temp))
+
+
+p <- minimum_rdiv |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#260F99")
+
+
+library(ggrepel)
+plot_a <- p + geom_text_repel(aes(label = fLake),
+                                   size = 3.5,
+                                   max.overlaps = 18) +
+  labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1)
+plot_a
+
+maximum_rdiv <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  filter(temp %in% max(temp))
+
+
+max_plot <- maximum_rdiv |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#260F99")
+
+
+library(ggrepel)
+plot_b <- max_plot + geom_text_repel(aes(label = fLake),
+                                    size = 3.5,
+                                    max.overlaps = 18) +
+  labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1)
+
+plot_a
+
+resp_div_all <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  mutate(mean_temp = mean(temp))
+
+resp_div_all$temp <- round(resp_div_all$temp, 1)
+resp_div_all$mean_temp <- round(resp_div_all$mean_temp, 1)
+
+mean_temp <- resp_div_all |> 
+  group_by(fLake) |>  
+  filter(temp == mean_temp) |> 
+  distinct(fLake, .keep_all = TRUE)
+
+mean_plot <- mean_temp |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#260F99")
+
+
+library(ggrepel)
+plot_c <- mean_plot + geom_text_repel(aes(label = fLake),
+                                        size = 3.5,
+                                        max.overlaps = 18) +
+  labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1)
+
+
+library(ggpubr)
+overview_temp <- ggarrange(plot_a, plot_c, plot_b, ncol = 3)
+
+
+tiff(paste("total_models/plot_metrics/overview_temp.tiff", sep = ""), units="in", width=15, height=5, res=300)
+
+plot(overview_temp)
+
+dev.off()
  
 df_means <- resp_div_all |>
   select(fLake, temp, sign, rdiv) |> 
@@ -1125,18 +1217,6 @@ df_means <- resp_div_all |>
 
 
 #plotting means
-# 
-# plot_means <- df_means |> 
-#   ggplot(aes(mean_rdiv, mean_sign)) +
-#   # geom_point(aes(color = Lake))
-#   # geom_label(aes(label = Lake))
-#   # geom_point() +
-#   geom_text(aes(label = Lake)) +
-#   # geom_text(aes(label = Lake), nudge_x = 0.01, nudge_y = 0.01,  check_overlap = T) +
-#   #   check_overlap = T) +
-#   theme_bw(base_size = 20)
-# 
-# plot_means
 
 
 p <- df_means |>
