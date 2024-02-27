@@ -381,8 +381,8 @@ df_lm_endemic <- cbind(new_data_a, prediction_endemic)
 
 plot_a <- df_lm_endemic |> 
   ggplot(aes(endemic, fit)) +
-  # geom_line(color = "#0097A7") +
-  geom_line(color = "#512DA8") +
+  geom_line(color = "#990F0F") +
+  # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   ylab("mean dissimilarity") +
   xlab("number of endemic species") +
@@ -424,8 +424,8 @@ df_lm_nn <- cbind(new_data_b, prediction_nn)
 
 b <- df_lm_nn |> 
   ggplot(aes(non_native, fit)) +
-  # geom_line(color = "#E64A19") +
-  geom_line(color = "#512DA8") +
+  geom_line(color = "#260F99") +
+  # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
@@ -448,7 +448,7 @@ b
 
 lm_nne <- lm(mean_rdiv ~ native, data = df_lm)
 
-# checking model assumptions: okay
+# checking model assumptions: naja!
 summary(lm_nne)
 shapiro.test(resid(lm_nne))
 lmtest::bptest(lm_nne)
@@ -467,7 +467,7 @@ df_lm_nne <- cbind(new_data_c, prediction_nne)
 
 plot_c <- df_lm_nne|> 
   ggplot(aes(native, fit)) +
-  geom_line(color = "#512DA8") +
+  geom_line(color = "#8F7EE5") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
@@ -496,7 +496,7 @@ plot_a + plot_b + plot_c
 
 lm_trans <- lm(mean_rdiv ~ non_native_region, data = df_lm)
 
-# checking model assumptions: okay
+# checking model assumptions: naja
 summary(lm_trans)
 shapiro.test(resid(lm_trans))
 lmtest::bptest(lm_trans)
@@ -515,8 +515,8 @@ df_lm_trans <- cbind(new_data_d, prediction_trans)
 
 plot_d <- df_lm_trans|> 
   ggplot(aes(non_native_region, fit)) +
-  geom_line(color = "#9E9D24") +
-  geom_line(color = "#512DA8") +
+  geom_line(color = "#85B22C") +
+  # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
