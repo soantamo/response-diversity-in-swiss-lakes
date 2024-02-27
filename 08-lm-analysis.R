@@ -31,6 +31,13 @@ species_endemism_short$endemism <- as.factor(species_endemism_short$endemism)
 
 str(species_endemism_short)
 
+library(gt)
+
+species_endemism_short |> 
+  select(-num_species, -sum_species) |> 
+  filter(endemism == "non_native_region") |> 
+  gt()
+
 # adding number of endemic and native etc species.
 df_species_endemism <- species_endemism_short |> 
   select(-species, - num_species) |> 
@@ -376,7 +383,9 @@ new_data_a <- tibble(endemic = seq(from = min(df_lm$endemic), to = max(df_lm$end
 
 prediction_endemic <- predict.lm(lm_endemic, newdata = new_data_a, se.fit = TRUE, type = "response")
 
-df_lm_endemic <- cbind(new_data_a, prediction_endemic)
+df_lm_endemic <- cbind(new_data_a, prediction_endemic) |> 
+  mutate(category = factor("endemic")) |> 
+  rename(species_richness = endemic)
 
 
 
@@ -418,7 +427,9 @@ new_data_b <- tibble(non_native = seq(from = min(df_lm$non_native), to = max(df_
 
 prediction_nn <- predict.lm(lm_nn, newdata = new_data_b, se.fit = TRUE, type = "response")
 
-df_lm_nn <- cbind(new_data_b, prediction_nn)
+df_lm_nn <- cbind(new_data_b, prediction_nn)  |> 
+  mutate(category = factor("non_native")) |> 
+  rename(species_richness = non_native)
 
 
 
@@ -461,7 +472,9 @@ new_data_c <- tibble(native = seq(from = min(df_lm$native), to = max(df_lm$nativ
 
 prediction_nne <- predict.lm(lm_nne, newdata = new_data_c, se.fit = TRUE, type = "response")
 
-df_lm_nne <- cbind(new_data_c, prediction_nne)
+df_lm_nne <- cbind(new_data_c, prediction_nne)  |> 
+  mutate(category = factor("non_endemic_native")) |> 
+  rename(species_richness = native)
 
 
 
@@ -509,7 +522,9 @@ new_data_d <- tibble(non_native_region = seq(from = min(df_lm$non_native_region)
 
 prediction_trans <- predict.lm(lm_trans, newdata = new_data_d, se.fit = TRUE, type = "response")
 
-df_lm_trans <- cbind(new_data_d, prediction_trans)
+df_lm_trans <- cbind(new_data_d, prediction_trans)  |> 
+  mutate(category = factor("translocated")) |> 
+  rename(species_richness = non_native_region)
 
 
 
@@ -547,6 +562,31 @@ tiff(paste("total_models/plots/all_categories.tiff", sep = ""), units="in", widt
 plot(plot_all)
 
 # Closing the graphical device
+dev.off()
+
+
+df_all_lms <- rbind(df_lm_endemic, df_lm_nn, df_lm_nne, df_lm_trans)
+
+
+mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+               "translocated" = "#85B22C")
+plot_all_lms <- df_all_lms|> 
+  ggplot(aes(species_richness, fit, color = category, fill = category)) +
+  geom_line(linewidth = 0.8) +
+  # geom_line(color = "#512DA8") +
+  geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)), color = NA, alpha = 0.1) +
+  theme_bw(base_size = 16) +
+  ylab("mean dissimilarity") +
+  xlab("species richness") +
+  scale_fill_manual(values = mycolors, aesthetics = c("color", "fill"))
+
+
+
+tiff(paste("total_models/plots/lm_all.tiff", sep = ""), units="in", width=15, height=10, res=300)
+# plot(ggarrange(depth1, depth2, ncol = 2))
+# plot science discussion
+plot(plot_all_lms)
+
 dev.off()
 #################################################################################
 
