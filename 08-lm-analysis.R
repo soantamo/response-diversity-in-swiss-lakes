@@ -152,7 +152,8 @@ lm1_plot <- bind_model1 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw(base_size = 20) +
   ylab("mean dissimilarity") +
-  xlab("species richness")
+  xlab("species richness") +
+  ylim(1,3)
 
 lm1_plot
 
@@ -181,8 +182,8 @@ lm2_plot <- bind_model2 |>
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw(base_size = 20) +
   ylab("mean dissimilarity") +
-  xlab("maxmimum historical eutrophication")
-  ylim(4,7)
+  xlab("maxmimum historical eutrophication") +
+  ylim(1,3)
 
 lm2_plot
 
@@ -362,7 +363,7 @@ sign2_plot
 
 lm_endemic <- lm(mean_rdiv ~ endemic, data = df_lm)
 
-# checking model assumptions
+# checking model assumptions: okay
 summary(lm_endemic)
 shapiro.test(resid(lm_endemic))
 lmtest::bptest(lm_endemic)
@@ -381,16 +382,15 @@ df_lm_endemic <- cbind(new_data_a, prediction_endemic)
 
 plot_a <- df_lm_endemic |> 
   ggplot(aes(endemic, fit)) +
-  geom_line(color = "#990F0F") +
+  geom_line(color = "#990F0F", linewidth = 0.8) +
   # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   ylab("mean dissimilarity") +
   xlab("number of endemic species") +
   theme_bw(base_size = 20) +
-  ylim(0, 3.2)
+  ylim(1, 3.7)
 
 plot_a
-
 
 
 tiff(paste("total_models/plots/category_endemic.tiff", sep = ""), units="in", width=12, height=7, res=300)
@@ -424,14 +424,14 @@ df_lm_nn <- cbind(new_data_b, prediction_nn)
 
 b <- df_lm_nn |> 
   ggplot(aes(non_native, fit)) +
-  geom_line(color = "#260F99") +
+  geom_line(color = "#260F99", linewidth = 0.8) +
   # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of non-native species") +
-  ylim(1,3.2) +
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 20) +
+  ylim(1,3.7)
 
 b
 
@@ -467,13 +467,13 @@ df_lm_nne <- cbind(new_data_c, prediction_nne)
 
 plot_c <- df_lm_nne|> 
   ggplot(aes(native, fit)) +
-  geom_line(color = "#8F7EE5") +
+  geom_line(color = "#8F7EE5", linewidth = 0.8) +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of non-endemic native species") +
-  ylim(1,3.2) +
-  theme_bw(base_size = 20)
+  theme_bw(base_size = 20) +
+  ylim(1,3.7)
 
 plot_c
 
@@ -515,13 +515,13 @@ df_lm_trans <- cbind(new_data_d, prediction_trans)
 
 plot_d <- df_lm_trans|> 
   ggplot(aes(non_native_region, fit)) +
-  geom_line(color = "#85B22C") +
+  geom_line(color = "#85B22C", linewidth = 0.8) +
   # geom_line(color = "#512DA8") +
   geom_ribbon(aes(ymin = (fit - se.fit), ymax = (fit + se.fit)),  alpha = 0.1) +
   theme_bw() +
   ylab("mean dissimilarity") +
   xlab("number of species regionally translocated to the lake") +
-  ylim(1,3.2) +
+  ylim(1,3.7) +
   theme_bw(base_size = 20)
 
 plot_d
