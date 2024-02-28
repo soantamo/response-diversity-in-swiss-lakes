@@ -13,7 +13,7 @@ lake_info <- read_xlsx("lake_info.xlsx")
 
 # select the ones we use
 lake_selection <- lake_info |> 
-  select(Lake, Phos_max, Max_depth)
+  select(Lake, Phos_max, Max_depth, Lake_area)
 
 # information about endemism
 species_endemism <- read_excel("species_endemism_richness.xlsx") |> 

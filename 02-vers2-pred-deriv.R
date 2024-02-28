@@ -1129,33 +1129,34 @@ minimum_rdiv <- resp_div_all |>
   filter(temp %in% min(temp))
 
 
-min_plot <- minimum_rdiv |>
+plot_a <- minimum_rdiv |>
   ggplot(aes(rdiv, sign)) +
-  geom_point(color = "#260F99")
-
-
-library(ggrepel)
-plot_a <- min_plot + geom_text_repel(aes(label = fLake),
+  geom_point(color = "#02818A") + geom_text_repel(aes(label = fLake),
                                    size = 3.5,
                                    max.overlaps = 20) +
   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
   theme_bw(base_size = 16) +
   ylim(0,1) +
   xlim(1,4) + 
-  geom_hline(yintercept = 0.5) + 
-  geom_vline(xintercept = 2.5)
+  geom_hline(yintercept = 0.5, linetype = "dashed") + 
+  geom_vline(xintercept = 2.5, linetype = "dashed") +
+  labs(title = "all species")
 
 plot_a
   
   
-plot_a2 <- min_plot + geom_text_repel(aes(label = fLake),
+plot_a2 <- minimum_rdiv |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#02818A") + 
+  geom_text_repel(aes(label = fLake),
                                 size = 3.5,
                                 max.overlaps = 20) +
     labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
     theme_bw(base_size = 16) +
     ylim(0,1) + 
-  geom_hline(yintercept = 0.5) + 
-  geom_vline(xintercept = 2.75)
+  geom_hline(yintercept = 0.5, linetype = "dashed") + 
+  geom_vline(xintercept = 2.75, linetype = "dashed")  +
+  labs(title = "all species")
   
   
 plot_a2
@@ -1165,71 +1166,70 @@ maximum_rdiv <- resp_div_all |>
   group_by(fLake) |>  
   filter(temp %in% max(temp))
 
-
-max_plot <- maximum_rdiv |>
+plot_b <- maximum_rdiv |>
   ggplot(aes(rdiv, sign)) +
-  geom_point(color = "#260F99")
-
-
-library(ggrepel)
-plot_b <- max_plot + geom_text_repel(aes(label = fLake),
+  geom_point(color = "#02818A") + 
+  geom_text_repel(aes(label = fLake),
                                     size = 3.5,
                                     max.overlaps = 20) +
   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
   theme_bw(base_size = 16) +
   ylim(0,1) +
   xlim(1,4) + 
-  geom_hline(yintercept = 0.5) + 
-  geom_vline(xintercept = 2.5)
+  geom_hline(yintercept = 0.5, linetype = "dashed") + 
+  geom_vline(xintercept = 2.5, linetype = "dashed")
 
 plot_b
 
-plot_b2 <- max_plot + geom_text_repel(aes(label = fLake),
+plot_b2 <-maximum_rdiv |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#02818A") +
+  geom_text_repel(aes(label = fLake),
                                      size = 3.5,
                                      max.overlaps = 20) +
   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
   theme_bw(base_size = 16) +
   ylim(0,1) + 
-  geom_hline(yintercept = 0.5) + 
-  geom_vline(xintercept = 2)
+  geom_hline(yintercept = 0.5, linetype = "dashed") + 
+  geom_vline(xintercept = 2, linetype = "dashed")
 
 
 
-resp_div_all <- resp_div_all |> 
+means_resp <- resp_div_all |> 
   select(temp, rdiv, Med, sign, fLake) |> 
   group_by(fLake) |>  
   mutate(mean_temp = mean(temp))
 
-resp_div_all$temp <- round(resp_div_all$temp, 1)
-resp_div_all$mean_temp <- round(resp_div_all$mean_temp, 1)
+means_resp$temp <- round(means_resp$temp, 1)
+means_resp$mean_temp <- round(means_resp$mean_temp, 1)
 
-mean_temp <- resp_div_all |> 
+mean_temp <- means_resp |> 
   group_by(fLake) |>  
   filter(temp == mean_temp) |> 
   distinct(fLake, .keep_all = TRUE)
 
-mean_plot <- mean_temp |>
+plot_c <- mean_temp |>
   ggplot(aes(rdiv, sign)) +
-  geom_point(color = "#260F99")
-
-
-library(ggrepel)
-plot_c <- mean_plot + geom_text_repel(aes(label = fLake),
+  geom_point(color = "#02818A") + 
+  geom_text_repel(aes(label = fLake),
                                         size = 3.5,
                                         max.overlaps = 20) +
   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
   theme_bw(base_size = 16) +
   ylim(0,1) +
-  xlim(1,4) + geom_hline(yintercept = 0.5) + 
-  geom_vline(xintercept = 2.5)
+  xlim(1,4) + geom_hline(yintercept = 0.5, linetype = "dashed") + 
+  geom_vline(xintercept = 2.5, linetype = "dashed")
   
-plot_c2 <- mean_plot + geom_text_repel(aes(label = fLake),
+plot_c2 <- mean_temp |>
+  ggplot(aes(rdiv, sign)) +
+  geom_point(color = "#02818A") +
+  geom_text_repel(aes(label = fLake),
                                       size = 3.5,
                                       max.overlaps = 20) +
   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
   theme_bw(base_size = 16) +
-  ylim(0,1)+ geom_hline(yintercept = 0.5) +
-  geom_vline(xintercept = 2.5) +
+  ylim(0,1)+ geom_hline(yintercept = 0.5, linetype = "dashed") +
+  geom_vline(xintercept = 2.5, linetype = "dashed") +
   xlim(1.5, 3.5)
 
 
@@ -1252,124 +1252,381 @@ plot(overview_temp)
 dev.off()
 
  
-df_means <- resp_div_all |>
-  select(fLake, temp, sign, rdiv) |> 
-  group_by(fLake) |> 
-  mutate(mean_rdiv = mean(rdiv)) |> 
-  mutate(mean_sign = mean(sign)) |> 
-  mutate(max_rdiv = max(rdiv)) |> 
-  mutate(max_sign = max(sign)) |> 
-  mutate(min_rdiv = min(rdiv)) |> 
-  mutate(min_sign = min(sign)) |> 
-  mutate(med_rdiv = median(rdiv)) |> 
-  mutate(med_sign = median(sign)) |> 
-  distinct(fLake, mean_rdiv, mean_sign, max_rdiv, max_sign, min_sign, min_rdiv, med_rdiv, med_sign) |> 
+#############################################################################
+# response diversity endemic and non-endemic native
+
+#response diversity
+
+source(here("functions.R"))
+
+# derivatives
+
+all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
+
+all_deriv <- as_tibble(all_models_derivatives) |> 
+  select(temp, derivative, species, fLake) |> 
   rename(Lake = fLake)
+
+
+species_endemism <- read_excel("species_endemism_richness.xlsx") |> 
+  rename(endemism = detail_category) |> 
+  rename(Lake = fLake) |> 
+  select(-num_species, -sum_species)
+
+derivatives_categories <- merge(all_deriv, species_endemism)
+
+str(derivatives_categories)
+
+levels(derivatives_categories$species)
+
+
+endemic_deriv <- derivatives_categories |> 
+  filter(endemism == "endemic")
+
+endemic_deriv$Lake <- as.character(endemic_deriv$Lake)
+######resp div with all models but lepomis gibbosus
+
+lakes_list <- endemic_deriv |> 
+  distinct(Lake) |> 
+  pull(Lake)
+
+str(lakes_list)
+
+lakes_list <- sort(lakes_list)
+
+species_overview <- tibble()
+
+
+endemic_deriv$species <- as.character(endemic_deriv$species)
+endemic_deriv$species <- as.factor(endemic_deriv$species)
+
+
+str(derivatives_categories)
+
+i <- "Thun"
+# loop to get response diversity measures for each lake 
+for (i in lakes_list){
   
+  data <- endemic_deriv |>
+    select(temp, Lake, derivative, species) |> 
+    filter(Lake == i)
+  
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+  
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/endemic_deriv/endemic_resp_div_", i, ".rds"))
+  
+}
 
 
-#plotting means
+endemic_resp_div <- list.files(path = "total_models/endemic_deriv", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS) |>
+  relocate(rdiv, Med, sign, .after = temp)
+
+saveRDS(endemic_resp_div,"total_models/endemic_resp_div.rds")
+
+##############################
+
+native_deriv <- derivatives_categories |> 
+  filter(endemism == "native")
+
+native_deriv$Lake <- as.character(native_deriv$Lake)
+######resp div with all models but lepomis gibbosus
+
+lakes_list <- native_deriv |> 
+  distinct(Lake) |> 
+  pull(Lake)
+
+str(lakes_list)
+
+lakes_list <- sort(lakes_list)
+
+species_overview <- tibble()
 
 
-p <- df_means |>
-  ggplot(aes(mean_rdiv, mean_sign)) +
-  geom_point(color = "#260F99")
+native_deriv$species <- as.character(native_deriv$species)
+native_deriv$species <- as.factor(native_deriv$species)
 
 
-library(ggrepel)
-plot_means2 <- p + geom_text_repel(aes(label = Lake),
-                                  size = 3.5,
-                                  max.overlaps = 20) +
-  labs(x = "mean dissimilarity", y = "mean divergence") +
-  theme_bw(base_size = 16) +
-  ylim(0,1) +
-  xlim(1, 3.5)
+i <- "Biel"
+# loop to get response diversity measures for each lake 
+for (i in lakes_list){
+  
+  data <- native_deriv |>
+    select(temp, Lake, derivative, species) |> 
+    filter(Lake == i)
+  
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+  
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/native_deriv/native_resp_div_", i, ".rds"))
+  
+}
 
-plot_means2
+native_resp_div <- list.files(path = "total_models/native_deriv", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS) |>
+  relocate(rdiv, Med, sign, .after = temp)
 
-
-plot_max <- df_means |> 
-  ggplot(aes(max_rdiv, max_sign)) +
-  geom_point(color = "#260F99") + 
-  theme_bw(base_size = 16)
-plot_max
-
-plot_max2 <- plot_max + geom_text_repel(aes(label = Lake),
-                                   size = 3.5,
-                                   max.overlaps = 20) +
-  labs(x = "maximum dissimilarity", y = "maximum divergence") +
-  theme_bw(base_size = 16) +
-  ylim(0,1) +
-  xlim(1, 3.7)
-
-plot_max2
+saveRDS(native_resp_div,"total_models/native_resp_div.rds")
 
 
-plot_min <- df_means |> 
-  ggplot(aes(min_rdiv, min_sign)) +
-  geom_point(color = "#260F99") + 
-  theme_bw(base_size = 16)
-plot_min
+########################
 
-plot_min2 <- plot_min + geom_text_repel(aes(label = Lake),
-                                        size = 3.5,
-                                        max.overlaps = 20) +
-  labs(x = "minimum dissimilarity", y = "minimum divergence") +
-  theme_bw(base_size = 16) +
-  ylim(0,1) +
-  xlim(1,3.2)
+trans_deriv <- derivatives_categories |> 
+  filter(endemism == "non_native_region")
 
-plot_min2
+trans_deriv$Lake <- as.character(trans_deriv$Lake)
+######resp div with all models but lepomis gibbosus
 
-plot_med <- df_means |> 
-  ggplot(aes(med_rdiv, med_sign)) +
-  geom_point(color = "#260F99") + 
-  theme_bw(base_size = 16)
+lakes_list <- trans_deriv |> 
+  distinct(Lake) |> 
+  pull(Lake)
 
-plot_med2 <- plot_med + geom_text_repel(aes(label = Lake),
-                                        size = 3.5,
-                                        max.overlaps = 20) +
-  labs(x = "median dissimilarity", y = "median divergence") +
-  theme_bw(base_size = 16) +
-  ylim(0,1) +
-  xlim(1,3.5)
+str(lakes_list)
 
-plot_med2
+lakes_list <- sort(lakes_list)
 
-overview <- plot_means2 + plot_med2 + plot_max2
+species_overview <- tibble()
 
-tiff(paste("total_models/plot_metrics/overview_mean_max.tiff", sep = ""), units="in", width=15, height=5, res=300)
 
-plot(overview)
+trans_deriv$species <- as.character(trans_deriv$species)
+trans_deriv$species <- as.factor(trans_deriv$species)
 
-dev.off()
 
-# plot dissimilarity only
 
-plot_mean_dissimilarity <- df_means |> 
-  ggplot(aes(fct_reorder(Lake, mean_rdiv), mean_rdiv)) +
-  geom_point( fill  = "seagreen") +
-  theme_bw() +
-  ylab("mean dissimilarity") +
-  xlab("Lake")
+# loop to get response diversity measures for each lake 
+for (i in lakes_list){
+  
+  data <- trans_deriv |>
+    select(temp, Lake, derivative, species) |> 
+    filter(Lake == i)
+  
+  df_resp_div <- data |>
+    pivot_wider(
+      names_from = species,
+      values_from = derivative)
+  
+  df_resp_div$rdiv <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = F)
+  df_resp_div$sign <- apply(df_resp_div[,-(1:2), drop = FALSE], 1, resp_div, sign_sens = T)
+  df_resp_div$Med <- median(df_resp_div$rdiv)
+  saveRDS(df_resp_div, paste0("total_models/translocated_deriv/trans_resp_div_", i, ".rds"))
+  
+}
 
-# tiff(paste("total_models/plots/mean_rdiv.tiff", sep = ""), units="in", width=12, height=5, res=300)
-# # plot(ggarrange(depth1, depth2, ncol = 2))
-# # plot science discussion
-# 
-plot(plot_mean_dissimilarity)
-# # Closing the graphical device
-# dev.off()
+translocated_resp_div <- list.files(path = "total_models/translocated_deriv", pattern = ".rds", full.names = TRUE) |>
+  map_dfr(readRDS) |>
+  relocate(rdiv, Med, sign, .after = temp)
 
-plot_mean_divergence <- df_means |> 
-  ggplot(aes(fct_reorder(Lake, mean_sign), mean_sign)) +
-  geom_point() +
-  ylim(0,1)
+saveRDS(translocated_resp_div,"total_models/translocated_resp_div.rds")
 
-# tiff(paste("total_models/plots/mean_sign.tiff", sep = ""), units="in", width=12, height=5, res=300)
-# # plot(ggarrange(depth1, depth2, ncol = 2))
-# # plot science discussion
-# 
-plot(plot_mean_divergence)
-# # Closing the graphical device
-# dev.off()
+
+##############################################################################
+
+endemic_resp_div <- readRDS("total_models/endemic_resp_div.rds")
+native_resp_div <- readRDS("total_models/native_resp_div.rds")
+trans_resp_div <- readRDS("total_models/translocated_resp_div.rds")
+
+#   
+  # new overview plots with rdiv at minimum, mean  and maximum temp
+  endemic_minimum <- endemic_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% min(temp))
+  
+  native_minimum <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% min(temp))
+  
+  trans_minimum <- trans_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% min(temp))
+
+ 
+ #minimum 
+  library(ggrepel)
+  
+ end_mini <- endemic_minimum |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#990F0F") +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                                       max.overlaps = 20) +
+    labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) +
+   labs(title = "endemic")
+  
+ nat_mini <- native_minimum |>
+   ggplot(aes(rdiv, sign)) +
+   geom_point(color = "#8F7EE5") +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 20) +
+   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   labs(title = "native")
+ 
+ t_mini <- trans_minimum |>
+   ggplot(aes(rdiv, sign)) +
+   geom_point(color = "#85B22C") +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 20) +
+   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   labs(title = "translocated")
+
+  # maximum
+  endemic_maximum <- endemic_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% max(temp))
+  
+  native_maximum <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% max(temp))
+  
+  trans_maximum <- trans_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% max(temp))
+  
+  
+ end_maxi <-  endemic_maximum |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#990F0F") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  
+  nat_maxi <- native_maximum |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#8F7EE5") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  t_maxi <- trans_maximum |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#85B22C") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  
+  
+  endemic_mean <- endemic_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
+  
+  endemic_mean$temp <- round(endemic_mean$temp, 1)
+  endemic_mean$mean_temp <- round(endemic_mean$mean_temp, 1)
+  
+  endemic_mean_temp <- endemic_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)
+  
+  
+  end_mean <- endemic_mean_temp |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#990F0F") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  
+  native_mean <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
+  
+  native_mean$temp <- round(native_mean$temp, 1)
+  native_mean$mean_temp <- round(native_mean$mean_temp, 1)
+  
+  native_mean_temp <- native_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)
+  
+  
+  nat_mean <- native_mean_temp |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#8F7EE5") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  
+  trans_mean <- trans_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
+  
+  trans_mean$temp <- round(trans_mean$temp, 1)
+  trans_mean$mean_temp <- round(trans_mean$mean_temp, 1)
+  
+  trans_mean_temp <- trans_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)
+  
+  
+  t_mean <- trans_mean_temp |>
+    ggplot(aes(rdiv, sign)) +
+    geom_point(color = "#85B22C") +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 20) +
+    labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1)
+  
+  library(ggpubr)
+endemic_overview <- ggarrange(end_mini, end_mean, end_maxi, ncol = 3)
+native_overview <- ggarrange(nat_mini, nat_mean, nat_maxi, ncol = 3)
+translocated_overview <- ggarrange(t_mini, t_mean, t_maxi, ncol = 3)
+  
+  tiff(paste("total_models/plots/overview_temp_endemic.tiff", sep = ""), units="in", width=15, height=5, res=300)
+  
+  plot(endemic_overview)
+  
+  dev.off()
+  
+  
+  tiff(paste("total_models/plots/overview_temp_native.tiff", sep = ""), units="in", width=15, height=5, res=300)
+  
+  plot(native_overview)
+  
+  dev.off()
+  
+  
+  tiff(paste("total_models/plots/overview_temp_translocated.tiff", sep = ""), units="in", width=15, height=5, res=300)
+  
+  plot(translocated_overview)
+  
+  dev.off()
+
