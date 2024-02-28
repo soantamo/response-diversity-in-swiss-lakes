@@ -1104,6 +1104,7 @@ all_models_derivatives <- readRDS("total_models/df_deriv_all.rds")
 all_derivatives <- as_tibble(all_models_derivatives)
 # 
 overview_derivatives <- all_derivatives |>
+  # filter(derivative < 5) |>
   arrange(fLake) |> 
   ggplot(aes(temp, derivative, color = species)) +
   geom_line() +
@@ -1128,19 +1129,36 @@ minimum_rdiv <- resp_div_all |>
   filter(temp %in% min(temp))
 
 
-p <- minimum_rdiv |>
+min_plot <- minimum_rdiv |>
   ggplot(aes(rdiv, sign)) +
   geom_point(color = "#260F99")
 
 
 library(ggrepel)
-plot_a <- p + geom_text_repel(aes(label = fLake),
+plot_a <- min_plot + geom_text_repel(aes(label = fLake),
                                    size = 3.5,
-                                   max.overlaps = 18) +
+                                   max.overlaps = 20) +
   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
   theme_bw(base_size = 16) +
-  ylim(0,1)
+  ylim(0,1) +
+  xlim(1,4) + 
+  geom_hline(yintercept = 0.5) + 
+  geom_vline(xintercept = 2.5)
+
 plot_a
+  
+  
+plot_a2 <- min_plot + geom_text_repel(aes(label = fLake),
+                                size = 3.5,
+                                max.overlaps = 20) +
+    labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) + 
+  geom_hline(yintercept = 0.5) + 
+  geom_vline(xintercept = 2.75)
+  
+  
+plot_a2
 
 maximum_rdiv <- resp_div_all |> 
   select(temp, rdiv, Med, sign, fLake) |> 
@@ -1156,12 +1174,26 @@ max_plot <- maximum_rdiv |>
 library(ggrepel)
 plot_b <- max_plot + geom_text_repel(aes(label = fLake),
                                     size = 3.5,
-                                    max.overlaps = 18) +
+                                    max.overlaps = 20) +
   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
   theme_bw(base_size = 16) +
-  ylim(0,1)
+  ylim(0,1) +
+  xlim(1,4) + 
+  geom_hline(yintercept = 0.5) + 
+  geom_vline(xintercept = 2.5)
 
-plot_a
+plot_b
+
+plot_b2 <- max_plot + geom_text_repel(aes(label = fLake),
+                                     size = 3.5,
+                                     max.overlaps = 20) +
+  labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1) + 
+  geom_hline(yintercept = 0.5) + 
+  geom_vline(xintercept = 2)
+
+
 
 resp_div_all <- resp_div_all |> 
   select(temp, rdiv, Med, sign, fLake) |> 
@@ -1184,14 +1216,33 @@ mean_plot <- mean_temp |>
 library(ggrepel)
 plot_c <- mean_plot + geom_text_repel(aes(label = fLake),
                                         size = 3.5,
-                                        max.overlaps = 18) +
+                                        max.overlaps = 20) +
   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
   theme_bw(base_size = 16) +
-  ylim(0,1)
+  ylim(0,1) +
+  xlim(1,4) + geom_hline(yintercept = 0.5) + 
+  geom_vline(xintercept = 2.5)
+  
+plot_c2 <- mean_plot + geom_text_repel(aes(label = fLake),
+                                      size = 3.5,
+                                      max.overlaps = 20) +
+  labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1)+ geom_hline(yintercept = 0.5) +
+  geom_vline(xintercept = 2.5) +
+  xlim(1.5, 3.5)
 
 
+plot_c2
 library(ggpubr)
-overview_temp <- ggarrange(plot_a, plot_c, plot_b, ncol = 3)
+overview_temp_scaled <- ggarrange(plot_a, plot_c, plot_b, ncol = 3)
+overview_temp <- ggarrange(plot_a2, plot_c2, plot_b2, ncol = 3)
+
+tiff(paste("total_models/plot_metrics/overview_temp_scaled.tiff", sep = ""), units="in", width=15, height=5, res=300)
+
+plot(overview_temp_scaled)
+
+dev.off()
 
 
 tiff(paste("total_models/plot_metrics/overview_temp.tiff", sep = ""), units="in", width=15, height=5, res=300)
@@ -1199,6 +1250,7 @@ tiff(paste("total_models/plot_metrics/overview_temp.tiff", sep = ""), units="in"
 plot(overview_temp)
 
 dev.off()
+
  
 df_means <- resp_div_all |>
   select(fLake, temp, sign, rdiv) |> 
