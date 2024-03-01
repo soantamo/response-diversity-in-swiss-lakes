@@ -1435,28 +1435,88 @@ saveRDS(translocated_resp_div,"total_models/translocated_resp_div.rds")
 endemic_resp_div <- readRDS("total_models/endemic_resp_div.rds")
 native_resp_div <- readRDS("total_models/native_resp_div.rds")
 trans_resp_div <- readRDS("total_models/translocated_resp_div.rds")
+resp_div_all <- readRDS("total_models/resp_div_all.rds")
 
 #   
   # new overview plots with rdiv at minimum, mean  and maximum temp
+
+minimum_rdiv <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  filter(temp %in% min(temp)) |> 
+  mutate(category =  factor("all")) |> 
+  rename(Lake = fLake)
+
   endemic_minimum <- endemic_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
-    filter(temp %in% min(temp))
+    filter(temp %in% min(temp)) |> 
+    # rename(end_rdiv = rdiv) |> 
+    # rename(end_sign = sign) |> 
+    mutate(category =  factor("endemic"))
   
   native_minimum <- native_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
-    filter(temp %in% min(temp))
+    filter(temp %in% min(temp)) |> 
+    # rename(nat_rdiv = rdiv) |>
+    # rename(nat_sign = sign) |>
+    mutate(category =  factor("native"))
+  
+  
   
   trans_minimum <- trans_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
-    filter(temp %in% min(temp))
+    filter(temp %in% min(temp)) |> 
+    # rename(trans_rdiv = rdiv) |> 
+    # rename(trans_sign = sign) |> 
+    mutate(category =  factor("translocated"))
+  
+  distances <- all_minimum |> 
+  
+  
+  all_minimum <- rbind(minimum_rdiv, endemic_minimum, native_minimum, trans_minimum)
+  
+  distances <- all_minimum |> 
+    group_by(Lake) |> 
+    mutate(dist = )
+  
+  mycolors <-  c("endemic"= "#990F0F", "native"="#8F7EE5", "non_native" = "#260F99",
+                 "translocated" = "#85B22C", "all" = "#35978F")
 
+ all_minimum |> 
+    filter(category %in% c("native", "endemic")) |>
+    ggplot(aes(rdiv, sign, color = category)) +
+    geom_point() +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 40) +
+    labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) +
+   scale_color_manual(values = mycolors)
  
+ 
+ all_minimum |> 
+   filter(category %in% c("native", "endemic")) |> 
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors)
+ 
+ a +   geom_segment(aes(y=sign, yend= nat_sign,
+                        x=rdiv, xend=nat_rdiv))
+    
  #minimum 
   library(ggrepel)
   
+  # 
+  # E.e. geom_segment(aes(x = endemic$dissimilarity,
+  #                       xend = nonendemic$dissimilarity, y = endemic$divergence, yend = nonendemic$divergence)…
  end_mini <- endemic_minimum |>
     ggplot(aes(rdiv, sign)) +
     geom_point(color = "#990F0F") +
@@ -1466,6 +1526,16 @@ trans_resp_div <- readRDS("total_models/translocated_resp_div.rds")
     theme_bw(base_size = 16) +
     ylim(0,1) +
    labs(title = "endemic")
+ 
+ 
+native_short <- native_minimum |> 
+  filter(!Lake %in% c("Geneva", "Joux", "Lugano", "Maggiore", "Poschiavo"))
+ 
+nati_mini +
+   geom_curve(aes(x = endemic_minimum$rdiv, y = endemic_minimum$sign, xend = native_short$rdiv, yend = native_short$sign, colour = "curve"))
+ 
+ 
+   geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2, colour = "segment"), data = df)
   
  nat_mini <- native_minimum |>
    ggplot(aes(rdiv, sign)) +
