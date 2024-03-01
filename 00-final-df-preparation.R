@@ -2,15 +2,14 @@
 
 library(tidyverse)
 
-projet_lac_data <- read.csv("~/Downloads/PLDB_final_short_depth_climate_cleantaxa_20052022(2).csv")
-
+projet_lac_data <- read.csv("~/Dropbox/Downloads/PLDB_final_short_depth_climate_cleantaxa_20052022(2).csv")
 
 abundance_data <- projet_lac_data |> 
   # take out no fish
   filter(!Taxa_latin_FINAL %in% "NO_FISH") |> 
   filter(!Protocol %in% "electro") |> 
   #add LakeBasin, Fishec_Action (observation, defines presence absence of species), temp. day or 7days, 
-  group_by(Lake, Fishec_action, mean_temp_per_day, mean_last_7days, Weightg_raw, Weightg_soak, Depth_sample, Taxa_latin_FINAL, Protocol) |> #added Protocol to be able to only look at netting
+  group_by(Lake, Basin3, Fishec_action, mean_temp_per_day, mean_last_7days, Weightg_raw, Weightg_soak, Depth_sample, Taxa_latin_FINAL, Protocol) |> #added Protocol to be able to only look at netting
   tally() |> 
   # values_fill = 0 added to make all NAs into 0
   pivot_wider(names_from = Taxa_latin_FINAL, values_from = n, values_fill = 0) 
@@ -47,3 +46,29 @@ max(df_final$LakePresence)
 min(df_final$LakePresence)
 
 saveRDS(df_final, "/home/sophie/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/df_final.rds")
+
+# alternative df with basin 
+
+#we only need present species per lake, not all of them
+abundance_data_long_basinpresence <- abundance_data_long |> 
+  group_by(Basin3, Species) |>
+  # . stands for data being piped in do function
+  do(BasinPresence = max(.$Presence)) |> 
+  unnest(cols = BasinPresence)
+
+# species per lake
+abundance_data_long_basinpresence |>
+  filter(BasinPresence %in% "1") |> 
+  group_by(Basin3, BasinPresence) |>
+  count()
+
+df_final_basin <- abundance_data_long_basinpresence |> 
+  filter(BasinPresence %in% "1") |> 
+  left_join(abundance_data_long )
+
+#double-check if all lakepresence = 1
+max(df_final_basin$BasinPresence)
+min(df_final_basin$BasinPresence)
+
+saveRDS(df_final_basin, "/home/sophie/Dropbox/Dokumente/Master Thesis R/response-diversity-in-swiss-lakes/df_final_basin.rds")
+
