@@ -15,6 +15,8 @@ library(forcats)
 library(gridExtra)
 library(grid)
 library(gghighlight)
+library(ggrepel)
+library(ggpubr)
 
 
 ###############################################################################
@@ -1451,8 +1453,8 @@ minimum_rdiv <- resp_div_all |>
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
     filter(temp %in% min(temp)) |> 
-    # rename(end_rdiv = rdiv) |> 
-    # rename(end_sign = sign) |> 
+    # rename(end_rdiv = rdiv) |>
+    # rename(end_sign = sign) |>
     mutate(category =  factor("endemic"))
   
   native_minimum <- native_resp_div |> 
@@ -1461,7 +1463,7 @@ minimum_rdiv <- resp_div_all |>
     filter(temp %in% min(temp)) |> 
     # rename(nat_rdiv = rdiv) |>
     # rename(nat_sign = sign) |>
-    mutate(category =  factor("native"))
+    mutate(category =  factor("non_endemic_native"))
   
   
   
@@ -1473,20 +1475,34 @@ minimum_rdiv <- resp_div_all |>
     # rename(trans_sign = sign) |> 
     mutate(category =  factor("translocated"))
   
-  distances <- all_minimum |> 
+  
   
   
   all_minimum <- rbind(minimum_rdiv, endemic_minimum, native_minimum, trans_minimum)
+
   
-  distances <- all_minimum |> 
-    group_by(Lake) |> 
-    mutate(dist = )
-  
-  mycolors <-  c("endemic"= "#990F0F", "native"="#8F7EE5", "non_native" = "#260F99",
+  mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
                  "translocated" = "#85B22C", "all" = "#35978F")
 
- all_minimum |> 
-    filter(category %in% c("native", "endemic")) |>
+# native_short <- native_minimum |> 
+#   filter(!Lake %in% c("Joux", "Maggiore", "Lugano", "Geneva", "Poschiavo")) |> 
+#   rename(nat_rdiv = rdiv) |>
+#   rename(nat_sign = sign) |> 
+#   select(Lake, nat_rdiv, nat_sign)
+# 
+# endemic_short <- endemic_minimum |> 
+#   rename(end_rdiv = rdiv) |>
+#   rename(end_sign = sign) |>
+#   select(Lake, end_rdiv, end_sign)
+# 
+# 
+# df <- merge(endemic_short, native_short)
+  
+# geom segment looks bad and not working how I want it
+
+
+ a <- all_minimum |> 
+    filter(category %in% c("all", "non_endemic_native")) |>
     ggplot(aes(rdiv, sign, color = category)) +
     geom_point() +
     geom_text_repel(aes(label = Lake), size = 3.5,
@@ -1494,11 +1510,274 @@ minimum_rdiv <- resp_div_all |>
     labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
     theme_bw(base_size = 16) +
     ylim(0,1) +
-   scale_color_manual(values = mycolors)
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ b <- all_minimum |> 
+   filter(category %in% c("all", "endemic")) |>
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ 
+ c <- all_minimum |> 
+   filter(category %in% c("non_endemic_native", "endemic")) |> 
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL)
+ 
+ 
+ tiff(paste("total_models/plots/minimum_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(a)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/minimum_temp_b.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(b)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/minimum_temp_c.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(c)
+ 
+ dev.off()
+ 
+ # maximum
+ 
+ all_mean <- resp_div_all |> 
+   select(temp, rdiv, Med, sign, fLake) |> 
+   group_by(fLake) |>  
+   mutate(mean_temp = mean(temp)) |> 
+   mutate(category =  factor("all")) |> 
+   rename(Lake = fLake)
+ 
+ all_mean$temp <- round(all_mean$temp, 1)
+ all_mean$mean_temp <- round(all_mean$mean_temp, 1)
+ 
+all_mean_temp <- all_mean |> 
+   group_by(Lake) |>  
+   filter(temp == mean_temp) |> 
+   distinct(Lake, .keep_all = TRUE) |> 
+   mutate(category = factor("all"))
+ 
+  
+endemic_mean <- endemic_resp_div |> 
+  select(temp, rdiv, Med, sign, Lake) |> 
+  group_by(Lake) |>  
+  mutate(mean_temp = mean(temp))
+  
+  endemic_mean$temp <- round(endemic_mean$temp, 1)
+  endemic_mean$mean_temp <- round(endemic_mean$mean_temp, 1)
+  
+  endemic_mean_temp <- endemic_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE) |> 
+    mutate(category = factor("endemic"))
+  
+  native_mean <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
+  
+  native_mean$temp <- round(native_mean$temp, 1)
+  native_mean$mean_temp <- round(native_mean$mean_temp, 1)
+  
+  native_mean_temp <- native_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)  |> 
+    mutate(category = factor("non_endemic_native"))
+  
+  trans_mean <- trans_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
+  
+  trans_mean$temp <- round(trans_mean$temp, 1)
+  trans_mean$mean_temp <- round(trans_mean$mean_temp, 1)
+  
+  trans_mean_temp <- trans_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)  |> 
+    mutate(category = factor("translocated"))
+  
+df_mean <- rbind(endemic_mean_temp, native_mean_temp, trans_mean_temp, all_mean_temp)
+
+ 
+ mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+                "translocated" = "#85B22C", "all" = "#35978F")
+ 
+ a_mean <- df_mean |> 
+   filter(category %in% c("all", "non_endemic_native")) |>
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ b_mean <- df_mean |> 
+   filter(category %in% c("all", "endemic")) |>
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ 
+ c_mean <- df_mean |> 
+   filter(category %in% c("non_endemic_native", "endemic")) |> 
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL)
+ 
+ 
+ tiff(paste("total_models/plots/mean_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(a_mean)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/mean_temp_b.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(b_mean)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/mean_temp_c.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(c_mean)
+ 
+ dev.off()
+ 
+ ################3
+ # maximum
+ 
+ maximum_rdiv <- resp_div_all |> 
+   select(temp, rdiv, Med, sign, fLake) |> 
+   group_by(fLake) |>  
+   filter(temp %in% max(temp)) |> 
+   mutate(category =  factor("all")) |> 
+   rename(Lake = fLake)
+ 
+ endemic_max <- endemic_resp_div |> 
+   select(temp, rdiv, Med, sign, Lake) |> 
+   group_by(Lake) |>  
+   filter(temp %in% max(temp)) |> 
+   # rename(end_rdiv = rdiv) |>
+   # rename(end_sign = sign) |>
+   mutate(category =  factor("endemic"))
+ 
+ native_max <- native_resp_div |> 
+   select(temp, rdiv, Med, sign, Lake) |> 
+   group_by(Lake) |>  
+   filter(temp %in% max(temp)) |> 
+   # rename(nat_rdiv = rdiv) |>
+   # rename(nat_sign = sign) |>
+   mutate(category =  factor("non_endemic_native"))
+ 
+ 
+ trans_max <- trans_resp_div |> 
+   select(temp, rdiv, Med, sign, Lake) |> 
+   group_by(Lake) |>  
+   filter(temp %in% max(temp)) |> 
+   # rename(trans_rdiv = rdiv) |> 
+   # rename(trans_sign = sign) |> 
+   mutate(category =  factor("translocated"))
+ 
+ 
+ maximum_all <- rbind(maximum_rdiv, endemic_max, native_max, trans_max)
+ 
+ 
+ mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+                "translocated" = "#85B22C", "all" = "#35978F")
+ 
+ a_max <- maximum_all |> 
+   filter(category %in% c("all", "non_endemic_native")) |>
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ b_max <- maximum_all |> 
+   filter(category %in% c("all", "endemic")) |>
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL) 
+ 
+ 
+ c_max <- maximum_all |> 
+   filter(category %in% c("non_endemic_native", "endemic")) |> 
+   ggplot(aes(rdiv, sign, color = category)) +
+   geom_point() +
+   geom_text_repel(aes(label = Lake), size = 3.5,
+                   max.overlaps = 40) +
+   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+   theme_bw(base_size = 16) +
+   ylim(0,1) +
+   scale_color_manual(values = mycolors, guide = NULL)
+ 
+ 
+ tiff(paste("total_models/plots/max_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(a_max)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/max_temp_b.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(b_max)
+ 
+ dev.off()
+ 
+ tiff(paste("total_models/plots/max_temp_c.tiff", sep = ""), units="in", width=7, height=5, res=300)
+ 
+ plot(c_max)
+ 
+ dev.off()
+ 
+ 
+ 
+ 
+ ########################################################################33
+ 
  
  
  all_minimum |> 
-   filter(category %in% c("native", "endemic")) |> 
+   filter(category %in% c("non_endemic_native", "endemic")) |> 
    ggplot(aes(rdiv, sign, color = category)) +
    geom_point() +
    geom_text_repel(aes(label = Lake), size = 3.5,
@@ -1508,8 +1787,8 @@ minimum_rdiv <- resp_div_all |>
    ylim(0,1) +
    scale_color_manual(values = mycolors)
  
- a +   geom_segment(aes(y=sign, yend= nat_sign,
-                        x=rdiv, xend=nat_rdiv))
+ # a +   geom_segment(aes(y=sign, yend= nat_sign,
+ #                        x=rdiv, xend=nat_rdiv))
     
  #minimum 
   library(ggrepel)
