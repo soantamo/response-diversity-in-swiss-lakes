@@ -1510,18 +1510,24 @@ minimum_rdiv <- resp_div_all |>
     labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
     theme_bw(base_size = 16) +
     ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 2.5, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL) 
+a
  
- b <- all_minimum |> 
-   filter(category %in% c("all", "endemic")) |>
-   ggplot(aes(rdiv, sign, color = category)) +
-   geom_point() +
-   geom_text_repel(aes(label = Lake), size = 3.5,
-                   max.overlaps = 40) +
-   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
-   theme_bw(base_size = 16) +
-   ylim(0,1) +
-   scale_color_manual(values = mycolors, guide = NULL) 
+ # b <- all_minimum |> 
+ #   filter(category %in% c("all", "endemic")) |>
+ #   ggplot(aes(rdiv, sign, color = category)) +
+ #   geom_point() +
+ #   geom_text_repel(aes(label = Lake), size = 3.5,
+ #                   max.overlaps = 40) +
+ #   labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
+ #   theme_bw(base_size = 16) +
+ #   ylim(0,1) +
+ #   geom_hline(yintercept = 0.5) +
+ #   geom_vline(xintercept = 2) +
+ #   scale_color_manual(values = mycolors, guide = NULL) 
  
  
  c <- all_minimum |> 
@@ -1533,9 +1539,12 @@ minimum_rdiv <- resp_div_all |>
    labs(x = "minimum temp dissimilarity", y = "minimum temp divergence") +
    theme_bw(base_size = 16) +
    ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 2, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL)
  
- 
+ c
  tiff(paste("total_models/plots/minimum_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
  
  plot(a)
@@ -1630,18 +1639,22 @@ df_mean <- rbind(endemic_mean_temp, native_mean_temp, trans_mean_temp, all_mean_
    labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
    theme_bw(base_size = 16) +
    ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 2.5, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL) 
+ a_mean
  
- b_mean <- df_mean |> 
-   filter(category %in% c("all", "endemic")) |>
-   ggplot(aes(rdiv, sign, color = category)) +
-   geom_point() +
-   geom_text_repel(aes(label = Lake), size = 3.5,
-                   max.overlaps = 40) +
-   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
-   theme_bw(base_size = 16) +
-   ylim(0,1) +
-   scale_color_manual(values = mycolors, guide = NULL) 
+ # b_mean <- df_mean |> 
+ #   filter(category %in% c("all", "endemic")) |>
+ #   ggplot(aes(rdiv, sign, color = category)) +
+ #   geom_point() +
+ #   geom_text_repel(aes(label = Lake), size = 3.5,
+ #                   max.overlaps = 40) +
+ #   labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
+ #   theme_bw(base_size = 16) +
+ #   ylim(0,1) +
+ #   scale_color_manual(values = mycolors, guide = NULL) 
  
  
  c_mean <- df_mean |> 
@@ -1653,7 +1666,11 @@ df_mean <- rbind(endemic_mean_temp, native_mean_temp, trans_mean_temp, all_mean_
    labs(x = "mean temp dissimilarity", y = "mean temp divergence") +
    theme_bw(base_size = 16) +
    ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 1.6, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL)
+ c_mean
  
  
  tiff(paste("total_models/plots/mean_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
@@ -1725,18 +1742,23 @@ df_mean <- rbind(endemic_mean_temp, native_mean_temp, trans_mean_temp, all_mean_
    labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
    theme_bw(base_size = 16) +
    ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 1.9, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL) 
  
- b_max <- maximum_all |> 
-   filter(category %in% c("all", "endemic")) |>
-   ggplot(aes(rdiv, sign, color = category)) +
-   geom_point() +
-   geom_text_repel(aes(label = Lake), size = 3.5,
-                   max.overlaps = 40) +
-   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
-   theme_bw(base_size = 16) +
-   ylim(0,1) +
-   scale_color_manual(values = mycolors, guide = NULL) 
+ a_max
+ 
+ # b_max <- maximum_all |> 
+ #   filter(category %in% c("all", "endemic")) |>
+ #   ggplot(aes(rdiv, sign, color = category)) +
+ #   geom_point() +
+ #   geom_text_repel(aes(label = Lake), size = 3.5,
+ #                   max.overlaps = 40) +
+ #   labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
+ #   theme_bw(base_size = 16) +
+ #   ylim(0,1) +
+ #   scale_color_manual(values = mycolors, guide = NULL) 
  
  
  c_max <- maximum_all |> 
@@ -1748,8 +1770,12 @@ df_mean <- rbind(endemic_mean_temp, native_mean_temp, trans_mean_temp, all_mean_
    labs(x = "maximum temp dissimilarity", y = "maximum temp divergence") +
    theme_bw(base_size = 16) +
    ylim(0,1) +
+   xlim(0,4.1) +
+   geom_hline(yintercept = 0.5, linetype = "dotted") +
+   geom_vline(xintercept = 1.5, linetype = "dotted") +
    scale_color_manual(values = mycolors, guide = NULL)
  
+ c_max
  
  tiff(paste("total_models/plots/max_temp_a.tiff", sep = ""), units="in", width=7, height=5, res=300)
  
