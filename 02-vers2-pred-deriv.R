@@ -18,7 +18,6 @@ library(gghighlight)
 library(ggrepel)
 library(ggpubr)
 
-
 ###############################################################################
 #get model predictions 
 
@@ -142,7 +141,6 @@ for (i in species_list) {
 }
 
 
-
 ################################################################################
 # categories and predictions
 
@@ -159,7 +157,8 @@ for (i in species_list) {
 species_category <- read_excel("species-category.xlsx") |> 
   select(-notes) |> 
   mutate(category = ifelse(category == "native", "non_endemic_native", category)) |> 
-  mutate(category = ifelse(category == "non_native_region", "non_endemic_native_and_translocated", category))
+  mutate(category = ifelse(category == "non_native_region", "non_endemic_native_and_translocated", category)) |> 
+  mutate(category2 = factor("all"))
 
 
 species_category$category <- as.factor(species_category$category)
@@ -203,7 +202,7 @@ model_pred_categories_rescaled <- model_pred_categories |>
 
 
 
-
+# all four categories
 plot_pred <- model_pred_categories_rescaled |>
   filter(species != "Lepomis_gibbosus") |> 
   ggplot(aes(temp, fit_rescaled, group = species, color = category)) +
@@ -224,6 +223,89 @@ tiff(paste("total_models/plots/plot_category_predictions.tiff", sep = ""), units
 plot(plot_category_predictions)
 
 dev.off()
+
+# plot g) for figure 2. 
+# all species
+
+category2_names <- c(
+  `all` = "whole-lake community"
+)
+
+mycolors2 <-  c("all"= "#35978F")
+
+part_1_plot <- model_pred_categories_rescaled |> 
+  filter(species != "Lepomis_gibbosus") |> 
+  ggplot(aes(temp, fit_rescaled, group = species, color = category2)) +
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("rescaled prediction") +
+  xlab("temperature") +
+  scale_color_manual(values = mycolors2, guide = NULL) +
+  facet_grid(~category2, labeller = as_labeller(category2_names))
+part_1_plot
+
+# non-endemic native
+part_2_plot <- model_pred_categories_rescaled |>
+  filter(species != "Lepomis_gibbosus") |> 
+  filter(category %in% c("non_endemic_native")) |> 
+  ggplot(aes(temp, fit_rescaled, group = species, color = category)) +
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("rescaled prediction") +
+  xlab("temperature") +
+  scale_color_manual(values = mycolors1, guide = NULL) + 
+  facet_grid(~category, labeller = as_labeller(category_names))
+
+# endemic
+part_3_plot <- model_pred_categories_rescaled |>
+  filter(species != "Lepomis_gibbosus") |> 
+  filter(category %in% c("endemic")) |> 
+  ggplot(aes(temp, fit_rescaled, group = species, color = category)) +
+  # ggplot(aes(temp, fit, color = species)) +
+  geom_line() +
+  # geom_line() +
+  theme_bw(base_size = 16) +
+  ylab("rescaled prediction") +
+  xlab("temperature") +
+  scale_color_manual(values = mycolors1, guide = NULL) + 
+  facet_grid(~category, labeller = as_labeller(category_names))
+
+
+plot_2g <- ggarrange(part_1_plot, part_2_plot, part_3_plot,  ncol = 3)
+
+
+tiff(paste("total_models/plots/plot_2_g_categories.tiff", sep = ""), units="in", width=15, height=4, res=300)
+
+plot(plot_2g)
+
+dev.off()
+
+
+# color guide 
+
+
+myPalette <-  c("endemic" = "#990F0F", "non-endemic native" = "#8F7EE5"," whole-lake community" = "#35978F")
+
+colorKey <- data.frame(colorName = names(myPalette))
+
+
+plot_guide_2 <- ggplot(data = colorKey, aes(x = 1, y = 1:nrow(colorKey), fill = colorName, label = colorName)) +
+  geom_tile() +
+  scale_fill_manual(values = myPalette) +
+  geom_text(color = "black", size = 4) +  # Corrected to use 'color' aesthetic
+  theme_void() +
+  theme(legend.position = "none")
+
+tiff(paste("total_models/plots/plot_guide_2.tiff", sep = ""), units="in", width=6, height=4, res=300)
+
+plot(plot_guide_2)
+
+dev.off()
+
 
 ############################################################################
 #comparing depth and temp models
@@ -538,7 +620,7 @@ for (i in species_list) {
     # 
     # newdata <- tibble(mean_last_7days = seq(
     #   from = min(data_lake$temp, na.rm = TRUE),
-    #   to = max(data_lake$temp, na.rm = TRUE), length = 200),
+    #   to = max(data_lake$temp, na.rm = TRUE), lenqh = 200),
     #   fProtocol = factor("VERT"), fLake = factor(random_lake))
     
     grid <- expand.grid(mean_last_7days = seq(
@@ -786,6 +868,17 @@ plot_percentiles <- df_new |>
                                 "Barbatula_sp_Lineage_I"="steelblue", 
                                "Phoxinus_csikii" = "#66C2A5", "Salmo_trutta" = "#F46D43"))
 
+df_new |> 
+  filter(species != "Salmo_trutta") |>
+  # filter(mean_derivative < 10) |>
+  ggplot(aes(x = mean_derivative, fill = factor(species))) + 
+  geom_histogram(aes(y = after_stat(count / sum(count))), binwidth = 1.5) +
+  # geom_histogram(aes())
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = c("Cyprinus_carpio" = "purple",
+                               "Alburnus_arborella" = "orange",
+                               "Barbatula_sp_Lineage_I"="steelblue", 
+                               "Phoxinus_csikii" = "#66C2A5", "Salmo_trutta" = "#F46D43"))
 
 # scale_fill_manual(breaks = levels(df_new$groups),
 #                     values = c("#313695", "#313695", "#313695", "#313695", "#313695", "#313695", "#313695",
@@ -793,12 +886,25 @@ plot_percentiles <- df_new |>
 
 plot_percentiles
 
-plot_percentiles +
+plot_percentiles_1 <- plot_percentiles +
   geom_vline(xintercept = 19.9, color = "red") +
-  annotate("text", x= 16.5, y = 0.3, label="90th percentile", angle=90) +
+  annotate("text", x= 18, y = 0.12, label="90th percentile", angle=90) +
   geom_vline(xintercept = 2.911987e+00, color = "red") +
-  annotate("text", x= 1.5, y = 0.3, label="85th percentile", angle=90)
+  annotate("text", x= 1.5, y = 0.12, label="85th percentile", angle=90) +
+  theme_bw(base_size = 13) +
+  xlab("mean species derivative per lake") +
+  ylab("percentage") +
+ guides(fill = guide_legend(
+    title = "species")) +
+  ylim(0, 0.2)
   
+
+
+tiff(paste("total_models/plots/plot_deriv_percentiles_1.tiff", sep = ""), units="in", width=12, height=6, res=300)
+
+plot(plot_percentiles_1)
+
+dev.off()
 
 # above 90% = 2.018455e+01
 
@@ -841,7 +947,7 @@ data_new <- df_new |>
   distinct(mean_derivative, max_derivative, fLake, species)
 
 
-data_new$groups <- cut(data_new$mean_derivative,              
+data_new$percentiles <- cut(data_new$mean_derivative,              
                      breaks = c(-1.579943e+06, -2.342866e+00, -8.822087e-01,
                                 -4.543748e-01, 3.454218e-04, 2.485142e-01,
                                 5.527792e-01, 2.911987e+00, 2.018455e+01, 1.280898e+02,
@@ -850,20 +956,30 @@ data_new$groups <- cut(data_new$mean_derivative,
                                 "95-99%", "99-100%"))
 
 max_deriv_plot <- data_new |> 
-  ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= groups)) + 
+  ggplot(aes(fLake, y = fct_reorder(species, mean_derivative), fill= percentiles)) + 
   geom_tile() +
   # scale_fill_distiller(palette = "PRGn")
   # scale_fill_gradient(low = "#006FAB",
   #                     high = "#971B20",
   #                     guide = "colorbar") +
-  scale_fill_manual(breaks = levels(data_new$groups),
+  scale_fill_manual(breaks = levels(data_new$percentiles),
                     values = rev(brewer.pal(11, "BrBG")))
 
 
 # values = c("#313695", "#1A66FF", "#3399FF", "#66CCFF", "#99EEFF", "#CCFFFF",
 #            "#FFFFCC", "#FFEE99", "#FFCC66", "#FF9933", "#FF661A", "#FF2B00"))
 # 
-max_deriv_plot
+derivative_percentiles_2 <- max_deriv_plot +
+  guides(fill = guide_legend(title = "percentiles (mean derivative)", reverse = TRUE)) +
+  xlab("") +
+  ylab("") +
+  theme_bw(base_size = 16)
+
+tiff(paste("total_models/plots/plot_deriv_percentiles_2.tiff", sep = ""), units="in", width=19, height=12, res=300)
+
+plot(derivative_percentiles_2)
+
+dev.off()
 # tiff(paste("total_models/plots/max_derivatives.tiff", sep = ""), units="in", width=12, height=8, res=300)
 # # plot(ggarrange(depth1, depth2, ncol = 2))
 # # plot science discussion
@@ -1442,62 +1558,265 @@ resp_div_all <- readRDS("total_models/resp_div_all.rds")
 #   
   # new overview plots with rdiv at minimum, mean  and maximum temp
 
+mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
+               "translocated" = "#85B22C", "all" = "#35978F")
+
+
 minimum_rdiv <- resp_div_all |> 
   select(temp, rdiv, Med, sign, fLake) |> 
   group_by(fLake) |>  
   filter(temp %in% min(temp)) |> 
+  mutate(level =  factor("minimum")) |>
   mutate(category =  factor("all")) |> 
   rename(Lake = fLake)
+
+# mean
+
+all_mean <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  mutate(mean_temp = mean(temp)) |> 
+  mutate(category =  factor("all")) |> 
+  mutate(level =  factor("mean")) |> 
+  rename(Lake = fLake)
+
+all_mean$temp <- round(all_mean$temp, 1)
+all_mean$mean_temp <- round(all_mean$mean_temp, 1)
+
+all_mean_temp <- all_mean |> 
+  group_by(Lake) |>  
+  filter(temp == mean_temp) |> 
+  distinct(Lake, .keep_all = TRUE) |> 
+  mutate(level = factor("mean")) |> 
+  mutate(category =  factor("all"))
+
+# maximum
+
+maximum_rdiv <- resp_div_all |> 
+  select(temp, rdiv, Med, sign, fLake) |> 
+  group_by(fLake) |>  
+  filter(temp %in% max(temp)) |> 
+  mutate(level =  factor("maximum")) |> 
+  mutate(category =  factor("all")) |> 
+  rename(Lake = fLake)
+
+rdiv_all <- rbind(minimum_rdiv, all_mean_temp, maximum_rdiv)
+
+# plotting 2a-c
+
+
+temp_names <- c(
+  `minimum` = "minimum lake temperature",
+  `mean` = "mean lake temperature",
+  `maximum` = "maximum lake temperature"
+)
+
+rdiv_all |> 
+  ggplot(aes(rdiv, sign, color = category)) +
+  geom_point() +
+  geom_text_repel(aes(label = Lake), size = 3.5,
+                  max.overlaps = 40, color = "black") +
+  labs(x = "dissimilarity", y = "divergence") +
+  theme_bw(base_size = 16) +
+  ylim(0,1) +
+  # xlim(0,4.1) +
+  geom_hline(yintercept = 0.5, linetype = "dashed") +
+  geom_vline(xintercept = 2.5, linetype = "dashed") +
+  scale_color_manual(values = mycolors, guide = NULL) +
+  facet_wrap(~level, labeller = as_labeller(temp_names))
+
+# 
+# 
+# plot_2a1 <- rdiv_all |> 
+#   filter(level == "minimum") |> 
+#   ggplot(aes(rdiv, sign, color = category)) +
+#   geom_point() +
+#   geom_text_repel(aes(label = Lake), size = 3.5,
+#                     max.overlaps = 40, color = "black") +
+#   labs(x = "dissimilarity", y = "divergence") +
+#   theme_bw(base_size = 16) +
+#   ylim(0,1) +
+#   # xlim(0,4.1) +
+#   geom_hline(yintercept = 0.5, linetype = "dashed") +
+#   geom_vline(xintercept = 2.75, linetype = "dashed") +
+#   scale_color_manual(values = mycolors, guide = NULL) +
+#   facet_wrap(~level, labeller = as_labeller(temp_names))
+# 
+# plot_2a1
+# 
+# plot_2a2 <- rdiv_all |> 
+#   filter(level == "mean") |> 
+#   ggplot(aes(rdiv, sign, color = category)) +
+#   geom_point() +
+#   geom_text_repel(aes(label = Lake), size = 3.5,
+#                   max.overlaps = 40, color = "black") +
+#   labs(x = "dissimilarity", y = "divergence") +
+#   theme_bw(base_size = 16) +
+#   ylim(0,1) +
+#   # xlim(0,4.1) +
+#   geom_hline(yintercept = 0.5, linetype = "dashed") +
+#   geom_vline(xintercept = 2.3, linetype = "dashed") +
+#   scale_color_manual(values = mycolors, guide = NULL) +
+#   facet_wrap(~level, labeller = as_labeller(temp_names))
+# 
+# plot_2a2
+# 
+# plot_2a3 <- rdiv_all |> 
+#   filter(level == "maximum") |> 
+#   ggplot(aes(rdiv, sign, color = category)) +
+#   geom_point() +
+#   geom_text_repel(aes(label = Lake), size = 3.5,
+#                   max.overlaps = 40, color = "black") +
+#   labs(x = "dissimilarity", y = "divergence") +
+#   theme_bw(base_size = 16) +
+#   ylim(0,1) +
+#   # xlim(0,4.1) +
+#   geom_hline(yintercept = 0.5, linetype = "dashed") +
+#   geom_vline(xintercept = 2.75, linetype = "dashed") +
+#   scale_color_manual(values = mycolors, guide = NULL) +
+#   facet_wrap(~level, labeller = as_labeller(temp_names))
+# 
+# plot_2a3
+
+
+
+# plot 2c-e
 
   endemic_minimum <- endemic_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
     filter(temp %in% min(temp)) |> 
-    # rename(end_rdiv = rdiv) |>
-    # rename(end_sign = sign) |>
+    mutate(level =  factor("minimum")) |> 
     mutate(category =  factor("endemic"))
   
   native_minimum <- native_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
     filter(temp %in% min(temp)) |> 
-    # rename(nat_rdiv = rdiv) |>
-    # rename(nat_sign = sign) |>
+    mutate(level =  factor("minimum")) |> 
     mutate(category =  factor("non_endemic_native"))
   
-  
-  
-  trans_minimum <- trans_resp_div |> 
+  # mean
+
+  endemic_mean <- endemic_resp_div |> 
     select(temp, rdiv, Med, sign, Lake) |> 
     group_by(Lake) |>  
-    filter(temp %in% min(temp)) |> 
-    # rename(trans_rdiv = rdiv) |> 
-    # rename(trans_sign = sign) |> 
-    mutate(category =  factor("translocated"))
+    mutate(mean_temp = mean(temp))
   
+  endemic_mean$temp <- round(endemic_mean$temp, 1)
+  endemic_mean$mean_temp <- round(endemic_mean$mean_temp, 1)
   
+  endemic_mean_temp <- endemic_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE) |> 
+    mutate(level =  factor("mean")) |> 
+    mutate(category = factor("endemic"))
   
+  native_mean <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    mutate(mean_temp = mean(temp))
   
-  all_minimum <- rbind(minimum_rdiv, endemic_minimum, native_minimum, trans_minimum)
+  native_mean$temp <- round(native_mean$temp, 1)
+  native_mean$mean_temp <- round(native_mean$mean_temp, 1)
+  
+  native_mean_temp <- native_mean |> 
+    group_by(Lake) |>  
+    filter(temp == mean_temp) |> 
+    distinct(Lake, .keep_all = TRUE)  |>
+    mutate(level =  factor("mean")) |> 
+    mutate(category = factor("non_endemic_native"))
+  
+  # maximum
+  endemic_max <- endemic_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% max(temp)) |> 
+    mutate(level =  factor("maximum")) |> 
+    mutate(category =  factor("endemic"))
+  
+  native_max <- native_resp_div |> 
+    select(temp, rdiv, Med, sign, Lake) |> 
+    group_by(Lake) |>  
+    filter(temp %in% max(temp)) |> 
+    mutate(level =  factor("maximum")) |> 
+    mutate(category =  factor("non_endemic_native"))
+
+  
+  df_all <- rbind(rdiv_all, endemic_minimum, endemic_mean_temp, endemic_max, native_minimum,
+                  native_mean_temp, native_max)
+  
 
   
   mycolors <-  c("endemic"= "#990F0F", "non_endemic_native"="#8F7EE5", "non_native" = "#260F99",
                  "translocated" = "#85B22C", "all" = "#35978F")
 
-# native_short <- native_minimum |> 
-#   filter(!Lake %in% c("Joux", "Maggiore", "Lugano", "Geneva", "Poschiavo")) |> 
-#   rename(nat_rdiv = rdiv) |>
-#   rename(nat_sign = sign) |> 
-#   select(Lake, nat_rdiv, nat_sign)
-# 
-# endemic_short <- endemic_minimum |> 
-#   rename(end_rdiv = rdiv) |>
-#   rename(end_sign = sign) |>
-#   select(Lake, end_rdiv, end_sign)
-# 
-# 
-# df <- merge(endemic_short, native_short)
+  plot_2abc <- df_all |> 
+    filter(category == "all") |> 
+    ggplot(aes(rdiv, sign, color = category)) +
+    geom_point() +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 40) +
+    labs(x = "dissimilarity", y = "divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) +
+    xlim(1,4.1) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_vline(xintercept = 2.5, linetype = "dashed") +
+    scale_color_manual(values = mycolors, guide = NULL) +
+    facet_wrap(~level, labeller = as_labeller(temp_names))
+
+  tiff(paste("total_models/plots/plot_2abc.tiff", sep = ""), units="in", width=15, height=5, res=300)
   
+  plot(plot_2abc)
+  
+  dev.off()
+
+  plot2def <- df_all |> 
+    filter(category %in% c("all", "non_endemic_native")) |>
+    ggplot(aes(rdiv, sign, color = category)) +
+    geom_point() +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 45) +
+    labs(x = "dissimilarity", y = "divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) +
+    xlim(0,4.1) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_vline(xintercept = 2, linetype = "dashed") +
+    scale_color_manual(values = mycolors, guide = NULL) +
+    facet_wrap(~level, labeller = as_labeller(temp_names))
+  
+  
+  
+  tiff(paste("total_models/plots/plot_2def.tiff", sep = ""), units="in", width=15, height=5, res=300)
+  
+  plot(plot2def)
+  
+  dev.off()
+  
+  
+  plot2ghi <- df_all |> 
+    filter(category %in% c("endemic", "non_endemic_native")) |>
+    ggplot(aes(rdiv, sign, color = category)) +
+    geom_point() +
+    geom_text_repel(aes(label = Lake), size = 3.5,
+                    max.overlaps = 45) +
+    labs(x = "dissimilarity", y = "divergence") +
+    theme_bw(base_size = 16) +
+    ylim(0,1) +
+    xlim(0,4.1) +
+    geom_hline(yintercept = 0.5, linetype = "dashed") +
+    geom_vline(xintercept = 2, linetype = "dashed") +
+    scale_color_manual(values = mycolors, guide = NULL) +
+    facet_wrap(~level, labeller = as_labeller(temp_names))
+  
+  tiff(paste("total_models/plots/plot_2ghi.tiff", sep = ""), units="in", width=15, height=5, res=300)
+  
+  plot(plot2ghi)
+  
+  dev.off()
 # geom segment looks bad and not working how I want it
 
 
